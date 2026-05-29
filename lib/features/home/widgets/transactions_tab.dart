@@ -28,7 +28,10 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
 
   @override
   Widget build(BuildContext context) {
-    final transactions = _filteredTransactions();
+    final categoryById = {
+      for (final category in widget.state.categories) category.id: category,
+    };
+    final transactions = _filteredTransactions(categoryById);
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -57,7 +60,10 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
         ...transactions.map(
           (item) => TransactionTile(
             transaction: item,
-            onTap: () => _showEditSheet(item),
+            categoryLabel: categoryById[item.categoryId]?.name,
+            onTap: item.type == TransactionType.transfer
+                ? null
+                : () => _showEditSheet(item),
             onDelete: () => _confirmDelete(item),
           ),
         ),
@@ -65,14 +71,18 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
     );
   }
 
-  List<FinanceTransaction> _filteredTransactions() {
+  List<FinanceTransaction> _filteredTransactions(
+    Map<String, FinanceCategory> categoryById,
+  ) {
     final query = _search.text.trim().toLowerCase();
     return widget.state.transactions.where((item) {
+      final category = categoryById[item.categoryId];
       final matchesType = _filter == null || item.type == _filter;
       final matchesQuery =
           query.isEmpty ||
           item.note.toLowerCase().contains(query) ||
-          item.categoryId.toLowerCase().contains(query);
+          item.categoryId.toLowerCase().contains(query) ||
+          (category?.name.toLowerCase().contains(query) ?? false);
       return matchesType && matchesQuery;
     }).toList();
   }

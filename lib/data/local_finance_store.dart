@@ -151,17 +151,106 @@ class LocalFinanceStore {
       throw ArgumentError.value(amount, 'amount', 'Amount must be positive');
     }
     final db = await _open();
-    db.execute('insert into transactions values (?, ?, ?, ?, ?, ?, ?, ?, ?)', [
-      _id('trf'),
-      fromWalletId,
-      toWalletId,
-      'transfer',
-      'transfer',
-      amount,
-      date.toIso8601String(),
-      note,
-      0,
+    db.execute('begin immediate');
+    try {
+      db.execute(
+        'insert into transactions values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        [
+          _id('trf'),
+          fromWalletId,
+          toWalletId,
+          'transfer',
+          'transfer',
+          amount,
+          date.toIso8601String(),
+          note,
+          0,
+        ],
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
+  }
+
+  Future<void> upsertBudget({
+    required String categoryId,
+    required DateTime month,
+    required int limitAmount,
+  }) async {
+    if (limitAmount <= 0) {
+      throw ArgumentError.value(
+        limitAmount,
+        'limitAmount',
+        'Limit must be positive',
+      );
+    }
+    final db = await _open();
+    final monthKey = DateTime(month.year, month.month).toIso8601String();
+    final existing = db.select(
+      'select id from budgets where category_id = ? and month = ? limit 1',
+      [categoryId, monthKey],
+    );
+    if (existing.isEmpty) {
+      db.execute('insert into budgets values (?, ?, ?, ?)', [
+        _id('budget'),
+        categoryId,
+        monthKey,
+        limitAmount,
+      ]);
+      return;
+    }
+    db.execute('update budgets set limit_amount = ? where id = ?', [
+      limitAmount,
+      existing.first['id'],
     ]);
+  }
+
+  Future<void> deleteBudget(String id) async {
+    final db = await _open();
+    db.execute('delete from budgets where id = ?', [id]);
+  }
+
+  Future<void> saveGoal({
+    String? id,
+    required String name,
+    required int targetAmount,
+    required int savedAmount,
+    required DateTime deadline,
+  }) async {
+    if (name.trim().isEmpty) {
+      throw ArgumentError('Goal name is required');
+    }
+    if (targetAmount <= 0) {
+      throw ArgumentError.value(
+        targetAmount,
+        'targetAmount',
+        'Target must be positive',
+      );
+    }
+    if (savedAmount < 0 || savedAmount > targetAmount) {
+      throw ArgumentError.value(
+        savedAmount,
+        'savedAmount',
+        'Saved amount must be between zero and target',
+      );
+    }
+    final db = await _open();
+    if (id == null) {
+      db.execute('insert into saving_goals values (?, ?, ?, ?, ?)', [
+        _id('goal'),
+        name.trim(),
+        targetAmount,
+        savedAmount,
+        deadline.toIso8601String(),
+      ]);
+      return;
+    }
+    db.execute(
+      'update saving_goals set name = ?, target_amount = ?, saved_amount = ?, deadline = ? where id = ?',
+      [name.trim(), targetAmount, savedAmount, deadline.toIso8601String(), id],
+    );
   }
 
   void _migrate(Database db) {
@@ -180,6 +269,27 @@ class LocalFinanceStore {
     );
     db.execute(
       'create table if not exists saving_goals(id text primary key, name text not null, target_amount integer not null, saved_amount integer not null, deadline text not null)',
+    );
+    final transactionColumns = db
+        .select('pragma table_info(transactions)')
+        .map((row) => row['name'] as String)
+        .toSet();
+    if (!transactionColumns.contains('is_recurring')) {
+      db.execute(
+        'alter table transactions add column is_recurring integer not null default 0',
+      );
+    }
+    db.execute(
+      'create index if not exists idx_transactions_date on transactions(date desc)',
+    );
+    db.execute(
+      'create index if not exists idx_transactions_wallet on transactions(wallet_id)',
+    );
+    db.execute(
+      'create index if not exists idx_transactions_category_date on transactions(category_id, date)',
+    );
+    db.execute(
+      'create unique index if not exists idx_budgets_category_month on budgets(category_id, month)',
     );
   }
 

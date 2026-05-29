@@ -33,7 +33,26 @@ class FakePrivacyLockService extends PrivacyLockService {
 }
 
 class FakeFinanceStore extends LocalFinanceStore {
-  var _transactions = [
+  FakeFinanceStore() : _transactions = List.of(_defaultTransactions);
+
+  FakeFinanceStore.withTransfer()
+    : _transactions = [
+        FinanceTransaction(
+          id: 'txn-transfer',
+          walletId: 'bank',
+          toWalletId: 'cash',
+          categoryId: 'transfer',
+          type: TransactionType.transfer,
+          amount: 250000,
+          date: DateTime(2026, 5),
+          note: 'Chuyển tiền',
+        ),
+        ..._defaultTransactions,
+      ];
+
+  late List<FinanceTransaction> _transactions;
+
+  static final _defaultTransactions = [
     FinanceTransaction(
       id: 'txn-breakfast',
       walletId: 'cash',
@@ -83,6 +102,12 @@ class FakeFinanceStore extends LocalFinanceStore {
         type: TransactionType.income,
         colorHex: 0xFF2196F3,
       ),
+      FinanceCategory(
+        id: 'transfer',
+        name: 'Chuyển ví',
+        type: TransactionType.transfer,
+        colorHex: 0xFF16A34A,
+      ),
     ];
     final budgets = [
       Budget(
@@ -111,6 +136,29 @@ class FakeFinanceStore extends LocalFinanceStore {
   @override
   Future<void> deleteTransaction(String id) async {
     _transactions = _transactions.where((item) => item.id != id).toList();
+  }
+
+  @override
+  Future<void> transfer({
+    required String fromWalletId,
+    required String toWalletId,
+    required int amount,
+    required DateTime date,
+    required String note,
+  }) async {
+    _transactions = [
+      FinanceTransaction(
+        id: 'transfer',
+        walletId: fromWalletId,
+        toWalletId: toWalletId,
+        categoryId: 'transfer',
+        type: TransactionType.transfer,
+        amount: amount,
+        date: date,
+        note: note,
+      ),
+      ..._transactions,
+    ];
   }
 }
 
@@ -187,11 +235,11 @@ void main() {
 
     await tester.tap(find.text('Giao dịch'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Lương');
+    await tester.enterText(find.byType(TextField), 'Ăn uống');
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(ListTile, 'Lương'), findsOneWidget);
-    expect(find.widgetWithText(ListTile, 'Ăn sáng'), findsNothing);
+    expect(find.widgetWithText(ListTile, 'Ăn sáng'), findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'Lương'), findsNothing);
   });
 
   testWidgets('deletes a transaction after confirmation', (tester) async {
@@ -205,6 +253,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Ăn sáng'), findsNothing);
+  });
+
+  testWidgets('does not open income expense editor for transfers', (
+    tester,
+  ) async {
+    await _pumpApp(tester, store: FakeFinanceStore.withTransfer());
+
+    await tester.tap(find.text('Giao dịch'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ListTile, 'Chuyển tiền').first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Lưu giao dịch'), findsNothing);
   });
 
   testWidgets('opens report export preview with CSV content', (tester) async {
@@ -225,11 +286,11 @@ void main() {
   });
 }
 
-Future<void> _pumpApp(WidgetTester tester) async {
+Future<void> _pumpApp(WidgetTester tester, {FakeFinanceStore? store}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        financeStoreProvider.overrideWithValue(FakeFinanceStore()),
+        financeStoreProvider.overrideWithValue(store ?? FakeFinanceStore()),
         privacyLockBypassProvider.overrideWithValue(true),
       ],
       child: const CashFlowManagerApp(),

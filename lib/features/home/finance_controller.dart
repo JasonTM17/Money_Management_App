@@ -77,6 +77,82 @@ class FinanceController extends AsyncNotifier<FinanceState> {
     }
   }
 
+  Future<String?> transferFromForm({
+    required String amountInput,
+    required String note,
+    required String fromWalletId,
+    required String toWalletId,
+  }) async {
+    try {
+      final amount = parseVndAmount(amountInput);
+      await _store.transfer(
+        fromWalletId: fromWalletId,
+        toWalletId: toWalletId,
+        amount: amount,
+        date: DateTime.now(),
+        note: note.trim(),
+      );
+      state = AsyncData(await _store.load());
+      return null;
+    } on FormatException catch (error) {
+      return error.message;
+    } on Object catch (error) {
+      return error.toString();
+    }
+  }
+
+  Future<String?> upsertBudgetFromForm({
+    required String categoryId,
+    required String limitAmountInput,
+    DateTime? month,
+  }) async {
+    try {
+      final limitAmount = parseVndAmount(limitAmountInput);
+      await _store.upsertBudget(
+        categoryId: categoryId,
+        month: month ?? DateTime.now(),
+        limitAmount: limitAmount,
+      );
+      state = AsyncData(await _store.load());
+      return null;
+    } on FormatException catch (error) {
+      return error.message;
+    } on Object catch (error) {
+      return error.toString();
+    }
+  }
+
+  Future<void> deleteBudget(String id) async {
+    await _store.deleteBudget(id);
+    state = AsyncData(await _store.load());
+  }
+
+  Future<String?> saveGoalFromForm({
+    SavingGoal? goal,
+    required String name,
+    required String targetInput,
+    required String savedInput,
+    required DateTime deadline,
+  }) async {
+    try {
+      final targetAmount = parseVndAmount(targetInput);
+      final savedAmount = parseVndAmount(savedInput);
+      await _store.saveGoal(
+        id: goal?.id,
+        name: name,
+        targetAmount: targetAmount,
+        savedAmount: savedAmount,
+        deadline: deadline,
+      );
+      state = AsyncData(await _store.load());
+      return null;
+    } on FormatException catch (error) {
+      return error.message;
+    } on Object catch (error) {
+      return error.toString();
+    }
+  }
+
   Future<void> deleteTransaction(String id) async {
     await _store.deleteTransaction(id);
     state = AsyncData(await _store.load());

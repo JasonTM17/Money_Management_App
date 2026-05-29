@@ -17,7 +17,6 @@ class BudgetsTab extends StatelessWidget {
       return const EmptyState(message: 'Chưa có ngân sách');
     }
     final calculator = const FinanceCalculator();
-    final now = DateTime.now();
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -29,7 +28,7 @@ class BudgetsTab extends StatelessWidget {
           final spent = calculator.categorySpend(
             transactions: state.transactions,
             categoryId: budget.categoryId,
-            month: now,
+            month: budget.month,
           );
           final progress = (spent / budget.limitAmount).clamp(0.0, 1.0);
           final progressColor = progress >= 1

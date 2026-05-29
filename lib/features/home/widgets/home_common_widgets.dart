@@ -57,11 +57,13 @@ class TransactionTile extends StatelessWidget {
   const TransactionTile({
     super.key,
     required this.transaction,
+    this.categoryLabel,
     this.onTap,
     this.onDelete,
   });
 
   final FinanceTransaction transaction;
+  final String? categoryLabel;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
 
@@ -96,11 +98,13 @@ class TransactionTile extends StatelessWidget {
           ),
         ),
         title: Text(
-          transaction.note.isEmpty ? transaction.categoryId : transaction.note,
+          transaction.note.isEmpty
+              ? categoryLabel ?? transaction.categoryId
+              : transaction.note,
           style: const TextStyle(fontWeight: FontWeight.w700),
         ),
         subtitle: Text(
-          '${transaction.categoryId} • ${transaction.date.day}/${transaction.date.month}/${transaction.date.year}',
+          '${categoryLabel ?? transaction.categoryId} • ${transaction.date.day}/${transaction.date.month}/${transaction.date.year}',
         ),
         trailing: Wrap(
           spacing: 4,
