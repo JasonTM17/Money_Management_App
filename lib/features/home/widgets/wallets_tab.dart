@@ -4,6 +4,7 @@ import '../../../core/finance_calculator.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
 import 'home_common_widgets.dart';
+import 'wallet_transfer_sheet.dart';
 
 class WalletsTab extends StatelessWidget {
   const WalletsTab({super.key, required this.state});
@@ -20,6 +21,14 @@ class WalletsTab extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       children: [
         const SectionTitle('Ví / tài khoản'),
+        FilledButton.icon(
+          onPressed: state.wallets.length < 2
+              ? null
+              : () => _showTransferSheet(context),
+          icon: const Icon(Icons.swap_horiz),
+          label: const Text('Chuyển tiền giữa ví'),
+        ),
+        const SizedBox(height: 12),
         ...state.wallets.map(
           (wallet) => Card(
             child: ListTile(
@@ -49,6 +58,14 @@ class WalletsTab extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _showTransferSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => WalletTransferSheet(state: state),
     );
   }
 }
