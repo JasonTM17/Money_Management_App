@@ -2,6 +2,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
 
+import '../core/finance_backup_service.dart';
 import '../core/finance_calculator.dart';
 import '../core/finance_models.dart';
 
@@ -39,40 +40,84 @@ class LocalFinanceStore {
 
   Future<FinanceState> load() async {
     final db = await _open();
-    final wallets = db
-        .select('select * from wallets order by name')
-        .map(_walletFromRow)
-        .toList();
-    final categories = db
-        .select('select * from categories order by type, name')
-        .map(_categoryFromRow)
-        .toList();
-    final transactions = db
-        .select('select * from transactions order by date desc')
-        .map(_transactionFromRow)
-        .toList();
-    final budgets = db
-        .select('select * from budgets')
-        .map(_budgetFromRow)
-        .toList();
-    final goals = db
-        .select('select * from saving_goals order by deadline')
-        .map(_goalFromRow)
-        .toList();
-    final summary = _calculator.dashboardSummary(
-      wallets: wallets,
-      transactions: transactions,
-      budgets: budgets,
-      month: DateTime.now(),
+    return _stateFromDb(db);
+  }
+
+  Future<String> exportBackup() async {
+    final state = await load();
+    return const FinanceBackupService().encode(
+      wallets: state.wallets,
+      categories: state.categories,
+      transactions: state.transactions,
+      budgets: state.budgets,
+      goals: state.goals,
     );
-    return FinanceState(
-      wallets: wallets,
-      categories: categories,
-      transactions: transactions,
-      budgets: budgets,
-      goals: goals,
-      summary: summary,
-    );
+  }
+
+  Future<void> restoreBackup(String input) async {
+    final backup = const FinanceBackupService().decode(input);
+    final db = await _open();
+    db.execute('begin immediate');
+    try {
+      db.execute('delete from transactions');
+      db.execute('delete from budgets');
+      db.execute('delete from saving_goals');
+      db.execute('delete from categories');
+      db.execute('delete from wallets');
+      for (final wallet in backup.wallets) {
+        db.execute('insert into wallets values (?, ?, ?, ?)', [
+          wallet.id,
+          wallet.name,
+          wallet.type.name,
+          wallet.initialBalance,
+        ]);
+      }
+      for (final category in backup.categories) {
+        db.execute('insert into categories values (?, ?, ?, ?)', [
+          category.id,
+          category.name,
+          category.type.name,
+          category.colorHex,
+        ]);
+      }
+      for (final transaction in backup.transactions) {
+        db.execute(
+          'insert into transactions values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            transaction.id,
+            transaction.walletId,
+            transaction.toWalletId,
+            transaction.categoryId,
+            transaction.type.name,
+            transaction.amount,
+            transaction.date.toIso8601String(),
+            transaction.note,
+            transaction.isRecurring ? 1 : 0,
+          ],
+        );
+      }
+      for (final budget in backup.budgets) {
+        db.execute('insert into budgets values (?, ?, ?, ?)', [
+          budget.id,
+          budget.categoryId,
+          budget.month.toIso8601String(),
+          budget.limitAmount,
+        ]);
+      }
+      for (final goal in backup.goals) {
+        db.execute('insert into saving_goals values (?, ?, ?, ?, ?)', [
+          goal.id,
+          goal.name,
+          goal.targetAmount,
+          goal.savedAmount,
+          goal.deadline.toIso8601String(),
+        ]);
+      }
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   Future<void> addTransaction({
@@ -250,6 +295,43 @@ class LocalFinanceStore {
     db.execute(
       'update saving_goals set name = ?, target_amount = ?, saved_amount = ?, deadline = ? where id = ?',
       [name.trim(), targetAmount, savedAmount, deadline.toIso8601String(), id],
+    );
+  }
+
+  FinanceState _stateFromDb(Database db) {
+    final wallets = db
+        .select('select * from wallets order by name')
+        .map(_walletFromRow)
+        .toList();
+    final categories = db
+        .select('select * from categories order by type, name')
+        .map(_categoryFromRow)
+        .toList();
+    final transactions = db
+        .select('select * from transactions order by date desc')
+        .map(_transactionFromRow)
+        .toList();
+    final budgets = db
+        .select('select * from budgets')
+        .map(_budgetFromRow)
+        .toList();
+    final goals = db
+        .select('select * from saving_goals order by deadline')
+        .map(_goalFromRow)
+        .toList();
+    final summary = _calculator.dashboardSummary(
+      wallets: wallets,
+      transactions: transactions,
+      budgets: budgets,
+      month: DateTime.now(),
+    );
+    return FinanceState(
+      wallets: wallets,
+      categories: categories,
+      transactions: transactions,
+      budgets: budgets,
+      goals: goals,
+      summary: summary,
     );
   }
 

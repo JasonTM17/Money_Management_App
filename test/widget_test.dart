@@ -230,6 +230,23 @@ void main() {
     expect(find.textContaining('50.000'), findsWidgets);
   });
 
+  testWidgets('transfers money between wallets from wallet tab', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Ví'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chuyển tiền giữa ví'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Số tiền'), '100000');
+    await tester.tap(find.text('Thực hiện chuyển ví'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('850.000'), findsOneWidget);
+    expect(find.textContaining('20.100.000'), findsOneWidget);
+  });
+
   testWidgets('filters transactions by search query', (tester) async {
     await _pumpApp(tester);
 
@@ -283,6 +300,19 @@ void main() {
       findsWidgets,
     );
     expect(find.textContaining('date,type,wallet_id'), findsOneWidget);
+  });
+
+  testWidgets('opens backup restore sheet from settings', (tester) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Cài đặt'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Backup / restore'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Backup / restore dữ liệu'), findsOneWidget);
+    expect(find.text('Xuất backup JSON'), findsOneWidget);
+    expect(find.text('Khôi phục từ file JSON'), findsOneWidget);
   });
 }
 

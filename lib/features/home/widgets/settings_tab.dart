@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/finance_calculator.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
+import 'backup_restore_sheet.dart';
 import 'home_common_widgets.dart';
 
 class SettingsTab extends StatelessWidget {
@@ -45,11 +46,13 @@ class SettingsTab extends StatelessWidget {
             subtitle: Text('VND'),
           ),
         ),
-        const Card(
+        Card(
           child: ListTile(
-            leading: Icon(Icons.backup),
-            title: Text('Backup / restore'),
-            subtitle: Text('Offline trước, cloud sync ở roadmap'),
+            leading: const Icon(Icons.backup),
+            title: const Text('Backup / restore'),
+            subtitle: const Text('Xuất và khôi phục file JSON offline'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showBackupRestoreSheet(context),
           ),
         ),
         const Card(
@@ -60,6 +63,14 @@ class SettingsTab extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Future<void> _showBackupRestoreSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const BackupRestoreSheet(),
     );
   }
 }

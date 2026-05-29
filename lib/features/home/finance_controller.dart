@@ -101,6 +101,20 @@ class FinanceController extends AsyncNotifier<FinanceState> {
     }
   }
 
+  Future<String> exportBackup() => _store.exportBackup();
+
+  Future<String?> restoreBackup(String input) async {
+    try {
+      await _store.restoreBackup(input);
+      state = AsyncData(await _store.load());
+      return null;
+    } on FormatException catch (error) {
+      return error.message;
+    } on Object catch (error) {
+      return error.toString();
+    }
+  }
+
   Future<String?> upsertBudgetFromForm({
     required String categoryId,
     required String limitAmountInput,
