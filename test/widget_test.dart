@@ -432,6 +432,19 @@ void main() {
     expect(find.text('Lưu giao dịch'), findsNothing);
   });
 
+  testWidgets('shows report insights and forecast cards', (tester) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Báo cáo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Chi tiêu theo danh mục'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Top category chi tiêu'), 300);
+    expect(find.text('Top category chi tiêu'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Dự báo dòng tiền'), 300);
+    expect(find.text('Nhắc hóa đơn sắp tới'), findsOneWidget);
+  });
+
   testWidgets('opens report export preview with CSV content', (tester) async {
     await _pumpApp(tester);
 

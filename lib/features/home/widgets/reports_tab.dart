@@ -4,8 +4,10 @@ import 'package:printing/printing.dart';
 import '../../../core/export_service.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
+import 'cashflow_forecast_card.dart';
 import 'dashboard_tab.dart';
 import 'home_common_widgets.dart';
+import 'report_insight_cards.dart';
 
 class ReportsTab extends StatelessWidget {
   const ReportsTab({super.key, required this.state});
@@ -22,6 +24,12 @@ class ReportsTab extends StatelessWidget {
       children: [
         const SectionTitle('Báo cáo tháng'),
         ChartCard(state: state),
+        const SizedBox(height: 12),
+        CategoryPieCard(state: state),
+        const SizedBox(height: 12),
+        TopCategoryCard(state: state),
+        const SizedBox(height: 12),
+        CashflowForecastCard(state: state),
         const SizedBox(height: 12),
         MetricCard(
           title: 'Net cashflow',
