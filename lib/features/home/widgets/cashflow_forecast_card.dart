@@ -8,13 +8,17 @@ import '../../../data/local_finance_store.dart';
 import 'home_common_widgets.dart';
 
 class CashflowForecastCard extends StatelessWidget {
-  const CashflowForecastCard({super.key, required this.state});
+  const CashflowForecastCard({
+    super.key,
+    required this.state,
+    required this.now,
+  });
 
   final FinanceState state;
+  final DateTime now;
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
     final calculator = const FinanceCalculator();
     final currentForecast = calculator.forecastEndBalance(
       currentBalance: state.summary.totalBalance,
@@ -34,8 +38,10 @@ class CashflowForecastCard extends StatelessWidget {
               (item) =>
                   item.isRecurring && item.type == TransactionType.expense,
             )
+            .map((item) => _UpcomingBill(item, _nextOccurrence(item, now)))
+            .where((item) => item.date.difference(now).inDays <= 31)
             .toList()
-          ..sort((a, b) => b.amount.compareTo(a.amount));
+          ..sort((a, b) => a.date.compareTo(b.date));
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -82,10 +88,16 @@ class CashflowForecastCard extends StatelessWidget {
                       contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.notifications_active_outlined),
                       title: Text(
-                        item.note.isEmpty ? item.categoryId : item.note,
+                        item.transaction.note.isEmpty
+                            ? item.transaction.categoryId
+                            : item.transaction.note,
                       ),
-                      subtitle: const Text('Lặp lại hằng tháng'),
-                      trailing: Text(Money(item.amount).formatVnd()),
+                      subtitle: Text(
+                        'Đến hạn ${item.date.day}/${item.date.month}',
+                      ),
+                      trailing: Text(
+                        Money(item.transaction.amount).formatVnd(),
+                      ),
                     ),
                   ),
           ],
@@ -93,4 +105,25 @@ class CashflowForecastCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _UpcomingBill {
+  const _UpcomingBill(this.transaction, this.date);
+
+  final FinanceTransaction transaction;
+  final DateTime date;
+}
+
+DateTime _nextOccurrence(FinanceTransaction transaction, DateTime now) {
+  final currentMonthDay = transaction.date.day.clamp(
+    1,
+    DateTime(now.year, now.month + 1, 0).day,
+  );
+  final currentMonth = DateTime(now.year, now.month, currentMonthDay);
+  if (currentMonth.isAfter(now)) return currentMonth;
+  final nextMonthDay = transaction.date.day.clamp(
+    1,
+    DateTime(now.year, now.month + 2, 0).day,
+  );
+  return DateTime(now.year, now.month + 1, nextMonthDay);
 }

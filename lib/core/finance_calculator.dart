@@ -104,12 +104,6 @@ class FinanceCalculator {
     required DateTime now,
   }) {
     var balance = currentBalance;
-    final months =
-        ((until.year - now.year) * 12 + until.month - now.month).clamp(
-          0,
-          1200,
-        ) +
-        1;
     for (final transaction in recurringTransactions.where(
       (item) => item.isRecurring,
     )) {
@@ -118,8 +112,29 @@ class FinanceCalculator {
         TransactionType.expense => -transaction.amount,
         TransactionType.transfer => 0,
       };
-      balance += signedAmount * months;
+      balance += signedAmount * _futureOccurrenceCount(transaction, now, until);
     }
     return balance;
+  }
+
+  int _futureOccurrenceCount(
+    FinanceTransaction transaction,
+    DateTime now,
+    DateTime until,
+  ) {
+    if (!until.isAfter(now)) return 0;
+    var count = 0;
+    var cursor = DateTime(now.year, now.month);
+    final endMonth = DateTime(until.year, until.month);
+    while (!cursor.isAfter(endMonth)) {
+      final day = transaction.date.day.clamp(
+        1,
+        DateTime(cursor.year, cursor.month + 1, 0).day,
+      );
+      final occurrence = DateTime(cursor.year, cursor.month, day);
+      if (occurrence.isAfter(now) && !occurrence.isAfter(until)) count++;
+      cursor = DateTime(cursor.year, cursor.month + 1);
+    }
+    return count;
   }
 }

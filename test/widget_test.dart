@@ -55,6 +55,23 @@ class FakeFinanceStore extends LocalFinanceStore {
       _budgets = List.of(_defaultBudgets),
       _goals = <SavingGoal>[];
 
+  FakeFinanceStore.withReportInsights()
+    : _transactions = [
+        FinanceTransaction(
+          id: 'txn-bill',
+          walletId: 'cash',
+          categoryId: 'food',
+          type: TransactionType.expense,
+          amount: 300000,
+          date: DateTime(2026, 5, 15),
+          note: 'Tiền điện',
+          isRecurring: true,
+        ),
+        ..._defaultTransactions,
+      ],
+      _budgets = List.of(_defaultBudgets),
+      _goals = <SavingGoal>[];
+
   late List<FinanceTransaction> _transactions;
   late List<Budget> _budgets;
   late List<SavingGoal> _goals;
@@ -138,6 +155,7 @@ class FakeFinanceStore extends LocalFinanceStore {
       budgets: _budgets,
       goals: _goals,
       summary: summary,
+      reportMonth: DateTime(2026, 5),
     );
   }
 
@@ -432,17 +450,22 @@ void main() {
     expect(find.text('Lưu giao dịch'), findsNothing);
   });
 
-  testWidgets('shows report insights and forecast cards', (tester) async {
-    await _pumpApp(tester);
+  testWidgets('shows populated report insights and forecast cards', (
+    tester,
+  ) async {
+    await _pumpApp(tester, store: FakeFinanceStore.withReportInsights());
 
     await tester.tap(find.text('Báo cáo'));
     await tester.pumpAndSettle();
 
     expect(find.text('Chi tiêu theo danh mục'), findsOneWidget);
+    expect(find.textContaining('Ăn uống: 350.000'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Top category chi tiêu'), 300);
-    expect(find.text('Top category chi tiêu'), findsOneWidget);
+    expect(find.text('Ăn uống'), findsWidgets);
+    expect(find.textContaining('350.000'), findsWidgets);
     await tester.scrollUntilVisible(find.text('Dự báo dòng tiền'), 300);
     expect(find.text('Nhắc hóa đơn sắp tới'), findsOneWidget);
+    expect(find.text('Tiền điện'), findsOneWidget);
   });
 
   testWidgets('opens report export preview with CSV content', (tester) async {

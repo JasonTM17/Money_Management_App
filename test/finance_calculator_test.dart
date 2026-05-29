@@ -161,4 +161,36 @@ void main() {
       );
     },
   );
+
+  test('forecast only adds recurring occurrences after now', () {
+    final forecast = const FinanceCalculator().forecastEndBalance(
+      currentBalance: 2000000,
+      recurringTransactions: [
+        FinanceTransaction(
+          id: 'posted-salary',
+          walletId: 'bank',
+          categoryId: 'salary',
+          type: TransactionType.income,
+          amount: 1000000,
+          date: DateTime(2026, 5, 1),
+          note: '',
+          isRecurring: true,
+        ),
+        FinanceTransaction(
+          id: 'future-bill',
+          walletId: 'cash',
+          categoryId: 'bill',
+          type: TransactionType.expense,
+          amount: 200000,
+          date: DateTime(2026, 5, 20),
+          note: '',
+          isRecurring: true,
+        ),
+      ],
+      now: DateTime(2026, 5, 10),
+      until: DateTime(2026, 5, 31),
+    );
+
+    expect(forecast, 1800000);
+  });
 }

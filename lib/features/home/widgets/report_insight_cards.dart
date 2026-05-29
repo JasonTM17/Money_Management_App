@@ -8,13 +8,14 @@ import '../../../data/local_finance_store.dart';
 import 'home_common_widgets.dart';
 
 class CategoryPieCard extends StatelessWidget {
-  const CategoryPieCard({super.key, required this.state});
+  const CategoryPieCard({super.key, required this.state, required this.month});
 
   final FinanceState state;
+  final DateTime month;
 
   @override
   Widget build(BuildContext context) {
-    final data = _categoryExpenses(state);
+    final data = _categoryExpenses(state, month);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -71,13 +72,14 @@ class CategoryPieCard extends StatelessWidget {
 }
 
 class TopCategoryCard extends StatelessWidget {
-  const TopCategoryCard({super.key, required this.state});
+  const TopCategoryCard({super.key, required this.state, required this.month});
 
   final FinanceState state;
+  final DateTime month;
 
   @override
   Widget build(BuildContext context) {
-    final data = _categoryExpenses(state).take(5).toList();
+    final data = _categoryExpenses(state, month).take(5).toList();
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -113,14 +115,13 @@ class TopCategoryCard extends StatelessWidget {
   }
 }
 
-List<_CategoryExpense> _categoryExpenses(FinanceState state) {
-  final now = DateTime.now();
+List<_CategoryExpense> _categoryExpenses(FinanceState state, DateTime month) {
   final total = state.transactions
       .where(
         (item) =>
             item.type == TransactionType.expense &&
-            item.date.year == now.year &&
-            item.date.month == now.month,
+            item.date.year == month.year &&
+            item.date.month == month.month,
       )
       .fold(0, (sum, item) => sum + item.amount);
   if (total == 0) return const [];
@@ -132,7 +133,7 @@ List<_CategoryExpense> _categoryExpenses(FinanceState state) {
     final amount = calculator.categorySpend(
       transactions: state.transactions,
       categoryId: category.id,
-      month: now,
+      month: month,
     );
     if (amount == 0) continue;
     items.add(

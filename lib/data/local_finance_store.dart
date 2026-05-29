@@ -14,6 +14,7 @@ class FinanceState {
     required this.budgets,
     required this.goals,
     required this.summary,
+    required this.reportMonth,
   });
 
   final List<WalletAccount> wallets;
@@ -22,6 +23,7 @@ class FinanceState {
   final List<Budget> budgets;
   final List<SavingGoal> goals;
   final DashboardSummary summary;
+  final DateTime reportMonth;
 }
 
 class LocalFinanceStore {
@@ -345,11 +347,12 @@ class LocalFinanceStore {
         .select('select * from saving_goals order by deadline')
         .map(_goalFromRow)
         .toList();
+    final reportMonth = DateTime.now();
     final summary = _calculator.dashboardSummary(
       wallets: wallets,
       transactions: transactions,
       budgets: budgets,
-      month: DateTime.now(),
+      month: reportMonth,
     );
     return FinanceState(
       wallets: wallets,
@@ -358,6 +361,7 @@ class LocalFinanceStore {
       budgets: budgets,
       goals: goals,
       summary: summary,
+      reportMonth: reportMonth,
     );
   }
 
