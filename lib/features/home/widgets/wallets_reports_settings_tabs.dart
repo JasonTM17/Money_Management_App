@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 
 import '../../../core/export_service.dart';
 import '../../../core/finance_calculator.dart';
@@ -85,7 +86,8 @@ class ReportsTab extends StatelessWidget {
           ),
         ),
         FilledButton.icon(
-          onPressed: () => _showExportSheet(context, report, csv),
+          onPressed: () =>
+              _showExportSheet(context, exportService, report, csv),
           icon: const Icon(Icons.file_download),
           label: const Text('Xuất CSV/PDF'),
         ),
@@ -95,6 +97,7 @@ class ReportsTab extends StatelessWidget {
 
   Future<void> _showExportSheet(
     BuildContext context,
+    ExportService exportService,
     String report,
     String csv,
   ) async {
@@ -129,7 +132,22 @@ class ReportsTab extends StatelessWidget {
               const SizedBox(height: 8),
               SelectableText(csv),
               const SizedBox(height: 12),
-              FilledButton(
+              FilledButton.icon(
+                onPressed: () async {
+                  final bytes = await exportService.monthlyPdfReport(
+                    summary: state.summary,
+                    transactions: state.transactions,
+                  );
+                  await Printing.sharePdf(
+                    bytes: bytes,
+                    filename: 'cashflow-manager-report.pdf',
+                  );
+                },
+                icon: const Icon(Icons.picture_as_pdf),
+                label: const Text('Chia sẻ PDF'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Đóng'),
               ),
