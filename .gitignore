@@ -24,6 +24,7 @@ coverage/
 
 # Android/iOS generated artifacts
 android/.gradle/
+android/.kotlin/
 android/local.properties
 ios/Flutter/Generated.xcconfig
 ios/Flutter/flutter_export_environment.sh
