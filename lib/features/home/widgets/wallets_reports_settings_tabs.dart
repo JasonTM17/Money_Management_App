@@ -62,7 +62,9 @@ class ReportsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final report = const ExportService().monthlyTextReport(state.summary);
+    final exportService = const ExportService();
+    final report = exportService.monthlyTextReport(state.summary);
+    final csv = exportService.transactionsToCsv(state.transactions);
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -83,11 +85,58 @@ class ReportsTab extends StatelessWidget {
           ),
         ),
         FilledButton.icon(
-          onPressed: () {},
+          onPressed: () => _showExportSheet(context, report, csv),
           icon: const Icon(Icons.file_download),
           label: const Text('Xuất CSV/PDF'),
         ),
       ],
+    );
+  }
+
+  Future<void> _showExportSheet(
+    BuildContext context,
+    String report,
+    String csv,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Nội dung xuất báo cáo',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 12),
+              Text(report),
+              const SizedBox(height: 16),
+              Text(
+                'CSV giao dịch',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              SelectableText(csv),
+              const SizedBox(height: 12),
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Đóng'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

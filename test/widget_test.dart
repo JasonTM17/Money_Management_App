@@ -133,6 +133,23 @@ void main() {
 
     expect(find.text('Ăn sáng'), findsNothing);
   });
+
+  testWidgets('opens report export preview with CSV content', (tester) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Báo cáo'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Xuất CSV/PDF'), 300);
+    await tester.tap(find.text('Xuất CSV/PDF'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Nội dung xuất báo cáo'), findsOneWidget);
+    expect(
+      find.textContaining('CashFlow Manager - Báo cáo tháng'),
+      findsWidgets,
+    );
+    expect(find.textContaining('date,type,wallet_id'), findsOneWidget);
+  });
 }
 
 Future<void> _pumpApp(WidgetTester tester) async {
