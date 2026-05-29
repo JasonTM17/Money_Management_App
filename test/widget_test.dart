@@ -1,11 +1,36 @@
 import 'package:cashflow_manager/core/finance_calculator.dart';
 import 'package:cashflow_manager/core/finance_models.dart';
+import 'package:cashflow_manager/core/privacy_lock_service.dart';
 import 'package:cashflow_manager/data/local_finance_store.dart';
+import 'package:cashflow_manager/features/auth/privacy_gate.dart';
 import 'package:cashflow_manager/features/home/finance_controller.dart';
 import 'package:cashflow_manager/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+class FakePrivacyLockService extends PrivacyLockService {
+  FakePrivacyLockService({this.initialPin});
+
+  String? initialPin;
+
+  @override
+  Future<bool> get hasPin async => initialPin != null;
+
+  @override
+  Future<void> savePin(String pin) async {
+    if (!RegExp(r'^\d{4,6}$').hasMatch(pin)) {
+      throw const FormatException('PIN phải có 4-6 chữ số');
+    }
+    initialPin = pin;
+  }
+
+  @override
+  Future<bool> verifyPin(String pin) async => pin == initialPin;
+
+  @override
+  Future<bool> authenticateBiometric() async => false;
+}
 
 class FakeFinanceStore extends LocalFinanceStore {
   var _transactions = [
@@ -90,6 +115,54 @@ class FakeFinanceStore extends LocalFinanceStore {
 }
 
 void main() {
+  testWidgets('sets up first-run PIN before showing dashboard', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          financeStoreProvider.overrideWithValue(FakeFinanceStore()),
+          privacyLockServiceProvider.overrideWithValue(
+            FakePrivacyLockService(),
+          ),
+        ],
+        child: const CashFlowManagerApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bảo vệ dữ liệu tài chính'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'PIN mới'), '1234');
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Nhập lại PIN'),
+      '1234',
+    );
+    await tester.tap(find.text('Tạo PIN'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tổng số dư hiện tại'), findsOneWidget);
+  });
+
+  testWidgets('unlocks existing PIN before showing dashboard', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          financeStoreProvider.overrideWithValue(FakeFinanceStore()),
+          privacyLockServiceProvider.overrideWithValue(
+            FakePrivacyLockService(initialPin: '4321'),
+          ),
+        ],
+        child: const CashFlowManagerApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mở khóa CashFlow Manager'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'PIN'), '4321');
+    await tester.tap(find.text('Mở khóa'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Tổng số dư hiện tại'), findsOneWidget);
+  });
+
   testWidgets('shows CashFlow Manager dashboard shell', (tester) async {
     await _pumpApp(tester);
 
@@ -155,7 +228,10 @@ void main() {
 Future<void> _pumpApp(WidgetTester tester) async {
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [financeStoreProvider.overrideWithValue(FakeFinanceStore())],
+      overrides: [
+        financeStoreProvider.overrideWithValue(FakeFinanceStore()),
+        privacyLockBypassProvider.overrideWithValue(true),
+      ],
       child: const CashFlowManagerApp(),
     ),
   );

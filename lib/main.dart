@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/app_theme.dart';
+import 'features/auth/privacy_gate.dart';
 import 'features/home/home_screen.dart';
 
 void main() {
@@ -18,7 +19,7 @@ class CashFlowManagerApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      home: const HomeScreen(),
+      home: const PrivacyGate(child: HomeScreen()),
     );
   }
 }
