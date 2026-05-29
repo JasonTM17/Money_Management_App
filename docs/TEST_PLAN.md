@@ -16,11 +16,17 @@ flutter build apk --debug
 | Wallet balance | Income, expense, transfer |
 | Budget warning | 90% threshold |
 | Saving goals | Required monthly saving |
-| Export | Empty CSV, monthly text report |
+| Export | Empty CSV, monthly text report, PDF payload |
+| Forecast | Future recurring occurrences only |
 
 ## Widget Tests
 
+- Privacy lock first-run PIN and existing PIN unlock flows.
 - Dashboard shell renders app title, FAB, and total balance section.
+- Budget create/delete and saving goal create/delete flows, with edit flows noted for follow-up coverage.
+- Wallet transfer updates source and target balances.
+- Transaction search/delete and transfer-row behavior.
+- Report insight, forecast, CSV/PDF preview, and backup/restore entry flows.
 - Test overrides Riverpod store to avoid native plugin dependency.
 
 ## Manual QA Checklist

@@ -59,3 +59,5 @@ SQLite powers the MVP local database.
 - Transfers debit source and credit target.
 - Wallet deletion should be blocked when transactions exist.
 - Budget warnings trigger at 90% or more of limit.
+- Forecast only applies recurring occurrences after the active report date so posted recurring ledger rows are not counted twice.
+- Backup/restore validates required base lists, duplicate ids, positive amounts, and cross references before replacing local data.

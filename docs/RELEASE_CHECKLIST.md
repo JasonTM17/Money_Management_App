@@ -41,13 +41,13 @@ Archive and upload through Xcode Organizer or Fastlane.
 
 - Supabase/Firebase sync deferred.
 - Receipt image/OCR deferred.
-- Edit/delete transaction screens need next iteration.
-- Full PDF sharing UI is roadmap; export service foundation exists.
+- Dark/light mode setting persistence still needs a polish pass.
+- Receipt image/OCR deferred.
+- iOS archive must be verified on macOS/Xcode.
 
 ## Next Roadmap
 
-1. Split large home UI into feature widgets.
-2. Add transaction edit/delete.
-3. Add import/backup flow.
-4. Add PDF generation UI.
-5. Add cloud sync with encrypted user opt-in.
+1. Add dark/light mode persistence and stronger settings reset confirmation.
+2. Split long widget tests into focused files and helper fixtures.
+3. Add more report filters, line/yearly charts, and dedicated bill schedule rules.
+4. Add cloud sync with encrypted user opt-in.

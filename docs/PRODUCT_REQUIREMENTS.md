@@ -20,17 +20,16 @@ CashFlow Manager helps Vietnamese users track personal income, expenses, wallets
 - Transactions: add income/expense, wallet, category, amount, date, note, recurring flag in model.
 - Wallets: cash, bank, e-wallet, credit-card-ready model, transfer logic.
 - Budgets: monthly/category budget and warning at 90%+.
-- Reports: month report, charts, CSV/text export service.
-- Forecast: recurring transaction projection.
-- Saving goals: target, saved, deadline, suggested monthly saving.
-- Settings: theme-ready, VND, backup/export/privacy/reset placeholders.
+- Reports: month report, income/expense chart, category pie, top category, CSV preview, and PDF sharing.
+- Forecast: future recurring transaction projection and upcoming bill reminders.
+- Saving goals: target, saved, deadline, progress, create/edit/delete flow, suggested monthly saving logic.
+- Settings: VND, backup/restore, export/import data, privacy lock, reset entry.
 
 ## Should Have
 
-- Better edit/delete screens.
-- Full PDF generation UI.
-- Import/restore file picker.
-- More chart variants and filters.
+- More edit screens and validation-state coverage.
+- Dark/light mode setting persistence.
+- More report filters and line/yearly chart variants.
 
 ## Could Have
 

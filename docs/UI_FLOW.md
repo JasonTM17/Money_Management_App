@@ -2,13 +2,14 @@
 
 ## Navigation
 
-Bottom navigation has five destinations:
+Bottom navigation has six destinations:
 
 1. Tổng quan
 2. Giao dịch
 3. Ví
-4. Báo cáo
-5. Cài đặt
+4. Ngân sách
+5. Báo cáo
+6. Cài đặt
 
 A prominent floating action button opens the quick add transaction sheet.
 
@@ -44,11 +45,11 @@ Shows wallet balances and saving goal progress.
 
 ## Reports
 
-Shows chart and monthly report text. Export service supports CSV/text foundation; PDF UI action is present for release roadmap.
+Shows income/expense chart, category pie, top spending categories, forecast cards, monthly report text, CSV preview, and PDF share action.
 
 ## Settings
 
-Shows privacy lock, VND currency, backup/restore roadmap, and reset data entry.
+Shows privacy lock, VND currency, backup/restore actions, and reset data entry.
 
 ## Stitch Prompt
 

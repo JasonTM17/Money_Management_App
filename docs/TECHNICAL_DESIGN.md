@@ -17,7 +17,7 @@ lib/features/home       Riverpod controller and mobile screens
 2. `HomeScreen` watches `financeControllerProvider`.
 3. `FinanceController` loads data through `LocalFinanceStore`.
 4. `LocalFinanceStore` persists data in SQLite and seeds starter wallets/categories.
-5. `FinanceCalculator` derives balances, monthly totals, budget alerts, forecast, and saving suggestions.
+5. `FinanceCalculator` derives balances, monthly totals, budget alerts, future recurring forecast, and saving suggestions.
 
 ## State Management
 
@@ -25,7 +25,7 @@ Riverpod `AsyncNotifierProvider` owns async loading and write commands. UI rende
 
 ## Persistence
 
-SQLite database file: `cashflow_manager.sqlite` in app documents directory. Schema is created with `create table if not exists`. Foreign keys are enabled.
+SQLite database file: `cashflow_manager.sqlite` in app documents directory. Schema is created with `create table if not exists`. Data reloads into `FinanceState`, including the active report month used by reports and forecast widgets. Foreign keys are enabled at connection level; stronger table-level FK/check constraints remain a hardening follow-up.
 
 ## Security and Privacy
 
