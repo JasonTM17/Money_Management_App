@@ -252,9 +252,35 @@ class LocalFinanceStore {
     ]);
   }
 
+  Future<void> updateBudget({
+    required String id,
+    required String categoryId,
+    required DateTime month,
+    required int limitAmount,
+  }) async {
+    if (limitAmount <= 0) {
+      throw ArgumentError.value(
+        limitAmount,
+        'limitAmount',
+        'Limit must be positive',
+      );
+    }
+    final db = await _open();
+    final monthKey = DateTime(month.year, month.month).toIso8601String();
+    db.execute(
+      'update budgets set category_id = ?, month = ?, limit_amount = ? where id = ?',
+      [categoryId, monthKey, limitAmount, id],
+    );
+  }
+
   Future<void> deleteBudget(String id) async {
     final db = await _open();
     db.execute('delete from budgets where id = ?', [id]);
+  }
+
+  Future<void> deleteGoal(String id) async {
+    final db = await _open();
+    db.execute('delete from saving_goals where id = ?', [id]);
   }
 
   Future<void> saveGoal({

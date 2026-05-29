@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/finance_calculator.dart';
+import '../../../core/finance_models.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
+import '../finance_controller.dart';
 import 'home_common_widgets.dart';
+import 'saving_goal_form_sheet.dart';
 import 'wallet_transfer_sheet.dart';
 
 class WalletsTab extends StatelessWidget {
@@ -44,19 +48,48 @@ class WalletsTab extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         const SectionTitle('Mục tiêu tiết kiệm'),
-        ...state.goals.map(
-          (goal) => Card(
+        FilledButton.icon(
+          onPressed: () => _showGoalSheet(context),
+          icon: const Icon(Icons.savings),
+          label: const Text('Thêm mục tiêu'),
+        ),
+        const SizedBox(height: 12),
+        if (state.goals.isEmpty)
+          const Card(
+            child: ListTile(title: Text('Chưa có mục tiêu tiết kiệm')),
+          ),
+        ...state.goals.map((goal) {
+          final progress = (goal.savedAmount / goal.targetAmount).clamp(
+            0.0,
+            1.0,
+          );
+          final remaining = (goal.targetAmount - goal.savedAmount).clamp(
+            0,
+            goal.targetAmount,
+          );
+          return Card(
             child: ListTile(
+              onTap: () => _showGoalSheet(context, goal),
               title: Text(goal.name),
-              subtitle: LinearProgressIndicator(
-                value: (goal.savedAmount / goal.targetAmount).clamp(0, 1),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(value: progress),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Còn ${Money(remaining).formatVnd()} đến ${goal.deadline.day}/${goal.deadline.month}/${goal.deadline.year}',
+                  ),
+                ],
               ),
-              trailing: Text(
-                Money(goal.targetAmount - goal.savedAmount).formatVnd(),
+              trailing: IconButton(
+                tooltip: 'Xóa mục tiêu',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: () => _confirmDeleteGoal(context, goal),
               ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
@@ -67,5 +100,37 @@ class WalletsTab extends StatelessWidget {
       isScrollControlled: true,
       builder: (_) => WalletTransferSheet(state: state),
     );
+  }
+
+  Future<void> _showGoalSheet(BuildContext context, [SavingGoal? goal]) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => SavingGoalFormSheet(goal: goal),
+    );
+  }
+
+  Future<void> _confirmDeleteGoal(BuildContext context, SavingGoal goal) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Xóa mục tiêu?'),
+        content: const Text('Mục tiêu tiết kiệm này sẽ bị xóa.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Hủy'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Xóa'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await ProviderScope.containerOf(
+      context,
+    ).read(financeControllerProvider.notifier).deleteGoal(goal.id);
   }
 }

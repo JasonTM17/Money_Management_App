@@ -116,17 +116,27 @@ class FinanceController extends AsyncNotifier<FinanceState> {
   }
 
   Future<String?> upsertBudgetFromForm({
+    Budget? budget,
     required String categoryId,
     required String limitAmountInput,
     DateTime? month,
   }) async {
     try {
       final limitAmount = parseVndAmount(limitAmountInput);
-      await _store.upsertBudget(
-        categoryId: categoryId,
-        month: month ?? DateTime.now(),
-        limitAmount: limitAmount,
-      );
+      if (budget == null) {
+        await _store.upsertBudget(
+          categoryId: categoryId,
+          month: month ?? DateTime.now(),
+          limitAmount: limitAmount,
+        );
+      } else {
+        await _store.updateBudget(
+          id: budget.id,
+          categoryId: categoryId,
+          month: month ?? budget.month,
+          limitAmount: limitAmount,
+        );
+      }
       state = AsyncData(await _store.load());
       return null;
     } on FormatException catch (error) {
@@ -138,6 +148,11 @@ class FinanceController extends AsyncNotifier<FinanceState> {
 
   Future<void> deleteBudget(String id) async {
     await _store.deleteBudget(id);
+    state = AsyncData(await _store.load());
+  }
+
+  Future<void> deleteGoal(String id) async {
+    await _store.deleteGoal(id);
     state = AsyncData(await _store.load());
   }
 

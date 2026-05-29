@@ -33,7 +33,10 @@ class FakePrivacyLockService extends PrivacyLockService {
 }
 
 class FakeFinanceStore extends LocalFinanceStore {
-  FakeFinanceStore() : _transactions = List.of(_defaultTransactions);
+  FakeFinanceStore()
+    : _transactions = List.of(_defaultTransactions),
+      _budgets = List.of(_defaultBudgets),
+      _goals = <SavingGoal>[];
 
   FakeFinanceStore.withTransfer()
     : _transactions = [
@@ -48,9 +51,13 @@ class FakeFinanceStore extends LocalFinanceStore {
           note: 'Chuyển tiền',
         ),
         ..._defaultTransactions,
-      ];
+      ],
+      _budgets = List.of(_defaultBudgets),
+      _goals = <SavingGoal>[];
 
   late List<FinanceTransaction> _transactions;
+  late List<Budget> _budgets;
+  late List<SavingGoal> _goals;
 
   static final _defaultTransactions = [
     FinanceTransaction(
@@ -70,6 +77,15 @@ class FakeFinanceStore extends LocalFinanceStore {
       amount: 18000000,
       date: DateTime(2026, 5),
       note: 'Lương',
+    ),
+  ];
+
+  static final _defaultBudgets = [
+    Budget(
+      id: 'budget-food',
+      categoryId: 'food',
+      month: DateTime(2026, 5),
+      limitAmount: 100000,
     ),
   ];
 
@@ -109,26 +125,18 @@ class FakeFinanceStore extends LocalFinanceStore {
         colorHex: 0xFF16A34A,
       ),
     ];
-    final budgets = [
-      Budget(
-        id: 'budget-food',
-        categoryId: 'food',
-        month: DateTime(2026, 5),
-        limitAmount: 100000,
-      ),
-    ];
     final summary = const FinanceCalculator().dashboardSummary(
       wallets: wallets,
       transactions: _transactions,
-      budgets: budgets,
+      budgets: _budgets,
       month: DateTime(2026, 5),
     );
     return FinanceState(
       wallets: wallets,
       categories: categories,
       transactions: _transactions,
-      budgets: budgets,
-      goals: const [],
+      budgets: _budgets,
+      goals: _goals,
       summary: summary,
     );
   }
@@ -136,6 +144,87 @@ class FakeFinanceStore extends LocalFinanceStore {
   @override
   Future<void> deleteTransaction(String id) async {
     _transactions = _transactions.where((item) => item.id != id).toList();
+  }
+
+  @override
+  Future<void> upsertBudget({
+    required String categoryId,
+    required DateTime month,
+    required int limitAmount,
+  }) async {
+    final monthKey = DateTime(month.year, month.month);
+    final existing = _budgets.indexWhere(
+      (item) =>
+          item.categoryId == categoryId &&
+          item.month.year == monthKey.year &&
+          item.month.month == monthKey.month,
+    );
+    final budget = Budget(
+      id: existing == -1
+          ? 'budget-${_budgets.length + 1}'
+          : _budgets[existing].id,
+      categoryId: categoryId,
+      month: monthKey,
+      limitAmount: limitAmount,
+    );
+    if (existing == -1) {
+      _budgets = [..._budgets, budget];
+      return;
+    }
+    _budgets = [
+      for (final item in _budgets) item.id == budget.id ? budget : item,
+    ];
+  }
+
+  @override
+  Future<void> updateBudget({
+    required String id,
+    required String categoryId,
+    required DateTime month,
+    required int limitAmount,
+  }) async {
+    final monthKey = DateTime(month.year, month.month);
+    _budgets = [
+      for (final item in _budgets)
+        item.id == id
+            ? Budget(
+                id: id,
+                categoryId: categoryId,
+                month: monthKey,
+                limitAmount: limitAmount,
+              )
+            : item,
+    ];
+  }
+
+  @override
+  Future<void> deleteBudget(String id) async {
+    _budgets = _budgets.where((item) => item.id != id).toList();
+  }
+
+  @override
+  Future<void> saveGoal({
+    String? id,
+    required String name,
+    required int targetAmount,
+    required int savedAmount,
+    required DateTime deadline,
+  }) async {
+    final goal = SavingGoal(
+      id: id ?? 'goal-${_goals.length + 1}',
+      name: name.trim(),
+      targetAmount: targetAmount,
+      savedAmount: savedAmount,
+      deadline: deadline,
+    );
+    _goals = id == null
+        ? [..._goals, goal]
+        : [for (final item in _goals) item.id == id ? goal : item];
+  }
+
+  @override
+  Future<void> deleteGoal(String id) async {
+    _goals = _goals.where((item) => item.id != id).toList();
   }
 
   @override
@@ -228,6 +317,64 @@ void main() {
     expect(find.text('Ngân sách tháng này'), findsOneWidget);
     expect(find.text('Ăn uống'), findsOneWidget);
     expect(find.textContaining('50.000'), findsWidgets);
+  });
+
+  testWidgets('creates and deletes a monthly budget', (tester) async {
+    final store = FakeFinanceStore();
+    await _pumpApp(tester, store: store);
+
+    await tester.tap(find.text('Ngân sách'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Thêm ngân sách'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Hạn mức tháng'),
+      '250000',
+    );
+    await tester.tap(find.text('Lưu ngân sách'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('250.000'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Xóa ngân sách').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Xóa'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('250.000'), findsNothing);
+  });
+
+  testWidgets('creates and deletes a saving goal', (tester) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Ví'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Thêm mục tiêu'));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Tên mục tiêu'),
+      'Du lịch',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Số tiền mục tiêu'),
+      '3000000',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Đã tiết kiệm'),
+      '500000',
+    );
+    await tester.tap(find.text('Lưu mục tiêu'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Du lịch'), findsOneWidget);
+    expect(find.textContaining('2.500.000'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Xóa mục tiêu'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Xóa'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Du lịch'), findsNothing);
   });
 
   testWidgets('transfers money between wallets from wallet tab', (
