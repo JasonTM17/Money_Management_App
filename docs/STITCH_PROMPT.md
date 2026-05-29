@@ -1,0 +1,7 @@
+# Stitch Prompt
+
+Stitch project created: `projects/10529407878013129791`. Screen generation timed out, so this prompt is the preserved design source.
+
+```text
+Design a modern mobile personal finance app named CashFlow Manager for Android and iOS. Vietnamese-first UI. Style: clean, premium but friendly, financial dashboard, green primary (#16A34A), deep slate backgrounds, amber warning, red expense, blue income. Must support light and dark mode visual language. Generate a complete mobile app design system and key screens: onboarding, PIN/biometric lock, dashboard with balance/month income/month expense/net cashflow/charts/recent transactions/budget alerts, quick add transaction form, transaction list with filters/search/edit/delete, wallet/account list and transfer flow, budgets by month/category, reports with pie/line/bar charts and export CSV/PDF actions, cashflow forecast with recurring bills and warnings, saving goals, settings with theme/currency/backup/privacy/reset. Navigation: bottom tabs Dashboard, Transactions, Budgets, Reports, Settings; prominent floating add transaction button. Components: balance cards, stat cards, transaction row, wallet card, category chip, chart card, budget progress, empty states, form fields, date picker, segmented controls, export bottom sheet. Typography: Inter-like, high readability. Include Vietnamese labels like Tổng số dư, Thu tháng này, Chi tháng này, Thêm giao dịch, Ngân sách, Báo cáo, Dòng tiền, Mục tiêu tiết kiệm. Avoid clutter; large tap targets; accessible contrast.
+```
