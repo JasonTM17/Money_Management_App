@@ -1,0 +1,33 @@
+name: cashflow_manager
+description: "Offline-first personal expense and cashflow manager for Android and iOS."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.12.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^3.0.3
+  intl: ^0.20.2
+  fl_chart: ^1.1.1
+  sqlite3: ^3.3.2
+  sqlite3_flutter_libs: ^0.5.40
+  path: ^1.9.1
+  path_provider: ^2.1.5
+  local_auth: ^2.3.0
+  flutter_secure_storage: ^10.0.0
+  csv: ^6.0.0
+  crypto: ^3.0.6
+  pdf: ^3.11.3
+  printing: ^5.14.2
+  cupertino_icons: ^1.0.8
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
