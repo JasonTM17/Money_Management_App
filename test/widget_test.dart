@@ -412,6 +412,38 @@ void main() {
     expect(find.textContaining('20.100.000'), findsOneWidget);
   });
 
+  testWidgets('shows Vietnamese validation for same-wallet transfer', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Ví'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Chuyển tiền giữa ví'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButtonFormField<String>).at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tiền mặt').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Số tiền'), '100000');
+    await tester.tap(find.text('Thực hiện chuyển ví'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ví nguồn và ví nhận phải khác nhau'), findsOneWidget);
+  });
+
+  testWidgets('changes theme mode from settings', (tester) async {
+    await _pumpApp(tester);
+
+    await tester.tap(find.text('Cài đặt'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Tối'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Giao diện'), findsOneWidget);
+    expect(find.byIcon(Icons.dark_mode), findsOneWidget);
+  });
+
   testWidgets('filters transactions by search query', (tester) async {
     await _pumpApp(tester);
 
@@ -490,6 +522,7 @@ void main() {
 
     await tester.tap(find.text('Cài đặt'));
     await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Backup / restore'), 300);
     await tester.tap(find.text('Backup / restore'));
     await tester.pumpAndSettle();
 

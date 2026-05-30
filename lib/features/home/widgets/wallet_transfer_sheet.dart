@@ -20,6 +20,7 @@ class _WalletTransferSheetState extends ConsumerState<WalletTransferSheet> {
   late String _fromWalletId;
   late String _toWalletId;
   String? _error;
+  var _isSubmitting = false;
 
   @override
   void initState() {
@@ -82,7 +83,9 @@ class _WalletTransferSheetState extends ConsumerState<WalletTransferSheet> {
                       ),
                     )
                     .toList(),
-                onChanged: (value) => setState(() => _fromWalletId = value!),
+                onChanged: _isSubmitting
+                    ? null
+                    : (value) => setState(() => _fromWalletId = value!),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -96,7 +99,9 @@ class _WalletTransferSheetState extends ConsumerState<WalletTransferSheet> {
                       ),
                     )
                     .toList(),
-                onChanged: (value) => setState(() => _toWalletId = value!),
+                onChanged: _isSubmitting
+                    ? null
+                    : (value) => setState(() => _toWalletId = value!),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -118,9 +123,16 @@ class _WalletTransferSheetState extends ConsumerState<WalletTransferSheet> {
               ],
               const SizedBox(height: 20),
               FilledButton.icon(
-                onPressed: wallets.length < 2 ? null : _submit,
-                icon: const Icon(Icons.swap_horiz),
-                label: const Text('Thực hiện chuyển ví'),
+                onPressed: wallets.length < 2 || _isSubmitting ? null : _submit,
+                icon: _isSubmitting
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.swap_horiz),
+                label: Text(
+                  _isSubmitting ? 'Đang chuyển...' : 'Thực hiện chuyển ví',
+                ),
               ),
             ],
           ),
@@ -130,6 +142,15 @@ class _WalletTransferSheetState extends ConsumerState<WalletTransferSheet> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+    if (_fromWalletId == _toWalletId) {
+      setState(() => _error = 'Ví nguồn và ví nhận phải khác nhau');
+      return;
+    }
+    setState(() {
+      _error = null;
+      _isSubmitting = true;
+    });
     final error = await ref
         .read(financeControllerProvider.notifier)
         .transferFromForm(
@@ -140,7 +161,10 @@ class _WalletTransferSheetState extends ConsumerState<WalletTransferSheet> {
         );
     if (!mounted) return;
     if (error != null) {
-      setState(() => _error = error);
+      setState(() {
+        _error = error;
+        _isSubmitting = false;
+      });
       return;
     }
     Navigator.pop(context);

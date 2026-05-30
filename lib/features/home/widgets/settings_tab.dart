@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/finance_calculator.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
+import '../../../app/app_theme.dart';
 import 'backup_restore_sheet.dart';
 import 'home_common_widgets.dart';
 
-class SettingsTab extends StatelessWidget {
+class SettingsTab extends ConsumerWidget {
   const SettingsTab({super.key, required this.state});
 
   final FinanceState state;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref
+        .watch(themeModeControllerProvider)
+        .maybeWhen(data: (mode) => mode, orElse: () => ThemeMode.system);
     final forecast = const FinanceCalculator().forecastEndBalance(
       currentBalance: state.summary.totalBalance,
       recurringTransactions: state.transactions,
@@ -37,6 +42,44 @@ class SettingsTab extends StatelessWidget {
             onChanged: null,
             title: Text('Privacy lock / PIN sinh trắc học'),
             subtitle: Text('PIN fallback, biometric nếu thiết bị hỗ trợ'),
+          ),
+        ),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Giao diện',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<ThemeMode>(
+                  segments: const [
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      icon: Icon(Icons.brightness_auto),
+                      label: Text('Hệ thống'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      icon: Icon(Icons.light_mode),
+                      label: Text('Sáng'),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      icon: Icon(Icons.dark_mode),
+                      label: Text('Tối'),
+                    ),
+                  ],
+                  selected: {themeMode},
+                  onSelectionChanged: (selection) => ref
+                      .read(themeModeControllerProvider.notifier)
+                      .setThemeMode(selection.first),
+                ),
+              ],
+            ),
           ),
         ),
         const Card(

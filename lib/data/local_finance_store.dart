@@ -400,8 +400,33 @@ class LocalFinanceStore {
     db.execute(
       'create index if not exists idx_transactions_category_date on transactions(category_id, date)',
     );
+    _cleanInvalidRows(db);
     db.execute(
       'create unique index if not exists idx_budgets_category_month on budgets(category_id, month)',
+    );
+  }
+
+  void _cleanInvalidRows(Database db) {
+    db.execute('delete from budgets where limit_amount <= 0');
+    db.execute(
+      'delete from budgets where category_id not in (select id from categories)',
+    );
+    db.execute(
+      'delete from budgets where rowid not in (select min(rowid) from budgets group by category_id, month)',
+    );
+    db.execute('delete from saving_goals where target_amount <= 0');
+    db.execute(
+      'delete from saving_goals where saved_amount < 0 or saved_amount > target_amount',
+    );
+    db.execute('delete from transactions where amount <= 0');
+    db.execute(
+      'delete from transactions where wallet_id not in (select id from wallets)',
+    );
+    db.execute(
+      'delete from transactions where category_id not in (select id from categories)',
+    );
+    db.execute(
+      "delete from transactions where type = 'transfer' and (to_wallet_id is null or to_wallet_id not in (select id from wallets) or to_wallet_id = wallet_id)",
     );
   }
 

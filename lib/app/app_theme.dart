@@ -1,4 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+final secureStorageProvider = Provider<FlutterSecureStorage>(
+  (ref) => const FlutterSecureStorage(),
+);
+
+final themeModeControllerProvider =
+    AsyncNotifierProvider<ThemeModeController, ThemeMode>(
+      ThemeModeController.new,
+    );
+
+class ThemeModeController extends AsyncNotifier<ThemeMode> {
+  static const _key = 'theme_mode';
+
+  @override
+  Future<ThemeMode> build() async {
+    try {
+      final value = await ref.read(secureStorageProvider).read(key: _key);
+      return _themeModeFromName(value);
+    } on Object {
+      return ThemeMode.system;
+    }
+  }
+
+  Future<void> setThemeMode(ThemeMode mode) async {
+    try {
+      await ref.read(secureStorageProvider).write(key: _key, value: mode.name);
+    } on Object {
+      // Platform storage may be unavailable in widget tests.
+    }
+    state = AsyncData(mode);
+  }
+}
+
+ThemeMode _themeModeFromName(String? value) => switch (value) {
+  'light' => ThemeMode.light,
+  'dark' => ThemeMode.dark,
+  _ => ThemeMode.system,
+};
 
 class AppTheme {
   static const seed = Color(0xFF16A34A);
