@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_localizations.dart';
+import '../../../app/app_theme.dart';
 import '../../../core/finance_calculator.dart';
 import '../../../core/finance_models.dart';
 import '../../../core/money.dart';
@@ -21,43 +23,33 @@ class WalletsTab extends StatelessWidget {
       wallets: state.wallets,
       transactions: state.transactions,
     );
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    final l10n = context.l10n;
+    return AppScrollView(
       children: [
-        const SectionTitle('Ví / tài khoản'),
-        FilledButton.icon(
-          onPressed: state.wallets.length < 2
-              ? null
-              : () => _showTransferSheet(context),
-          icon: const Icon(Icons.swap_horiz),
-          label: const Text('Chuyển tiền giữa ví'),
+        AppSectionHeader(
+          title: l10n.t('wallets'),
+          action: SectionActionButton(
+            label: l10n.t('transferBetweenWallets'),
+            icon: Icons.swap_horiz,
+            onPressed: state.wallets.length < 2
+                ? null
+                : () => _showTransferSheet(context),
+          ),
         ),
-        const SizedBox(height: 12),
         ...state.wallets.map(
-          (wallet) => Card(
-            child: ListTile(
-              leading: const Icon(Icons.account_balance_wallet),
-              title: Text(wallet.name),
-              subtitle: Text(walletTypeLabel(wallet.type)),
-              trailing: Text(
-                Money(balances[wallet.id] ?? 0).formatVnd(),
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
+          (wallet) =>
+              _WalletCard(wallet: wallet, balance: balances[wallet.id] ?? 0),
+        ),
+        AppSectionHeader(
+          title: l10n.t('goals'),
+          action: SectionActionButton(
+            label: l10n.t('addGoal'),
+            icon: Icons.savings,
+            onPressed: () => _showGoalSheet(context),
           ),
         ),
-        const SizedBox(height: 12),
-        const SectionTitle('Mục tiêu tiết kiệm'),
-        FilledButton.icon(
-          onPressed: () => _showGoalSheet(context),
-          icon: const Icon(Icons.savings),
-          label: const Text('Thêm mục tiêu'),
-        ),
-        const SizedBox(height: 12),
         if (state.goals.isEmpty)
-          const Card(
-            child: ListTile(title: Text('Chưa có mục tiêu tiết kiệm')),
-          ),
+          EmptyState(icon: Icons.savings, message: l10n.t('noSavingGoals')),
         ...state.goals.map((goal) {
           final progress = (goal.savedAmount / goal.targetAmount).clamp(
             0.0,
@@ -67,25 +59,68 @@ class WalletsTab extends StatelessWidget {
             0,
             goal.targetAmount,
           );
-          return Card(
-            child: ListTile(
+          final monthlySaving = const FinanceCalculator().requiredMonthlySaving(
+            goal,
+            DateTime.now(),
+          );
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: SoftPanel(
+              tint: AppTheme.seed,
               onTap: () => _showGoalSheet(context, goal),
-              title: Text(goal.name),
-              subtitle: Column(
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: AppTheme.seed.withValues(alpha: 0.13),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.flag_outlined,
+                          color: AppTheme.seed,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          goal.name,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                      IconButton(
+                        key: ValueKey('delete-goal-${goal.id}'),
+                        tooltip: l10n.t('deleteGoal'),
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _confirmDeleteGoal(context, goal),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
                   LinearProgressIndicator(value: progress),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   Text(
-                    'Còn ${Money(remaining).formatVnd()} đến ${goal.deadline.day}/${goal.deadline.month}/${goal.deadline.year}',
+                    l10n.remainingGoal(
+                      Money(remaining).formatVnd(),
+                      goal.deadline,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    l10n.monthlySavingSuggestion(
+                      Money(monthlySaving).formatVnd(),
+                    ),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ],
-              ),
-              trailing: IconButton(
-                tooltip: 'Xóa mục tiêu',
-                icon: const Icon(Icons.delete_outline),
-                onPressed: () => _confirmDeleteGoal(context, goal),
               ),
             ),
           );
@@ -114,16 +149,16 @@ class WalletsTab extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Xóa mục tiêu?'),
-        content: const Text('Mục tiêu tiết kiệm này sẽ bị xóa.'),
+        title: Text(context.l10n.t('deleteGoalQuestion')),
+        content: Text(context.l10n.t('deleteGoalWarning')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Hủy'),
+            child: Text(context.l10n.t('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Xóa'),
+            child: Text(context.l10n.t('delete')),
           ),
         ],
       ),
@@ -132,5 +167,82 @@ class WalletsTab extends StatelessWidget {
     await ProviderScope.containerOf(
       context,
     ).read(financeControllerProvider.notifier).deleteGoal(goal.id);
+  }
+}
+
+class _WalletCard extends StatelessWidget {
+  const _WalletCard({required this.wallet, required this.balance});
+
+  final WalletAccount wallet;
+  final int balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (wallet.type) {
+      WalletType.cash => AppTheme.warningAmber,
+      WalletType.bank => AppTheme.incomeBlue,
+      WalletType.eWallet => AppTheme.seed,
+      WalletType.creditCard => AppTheme.expenseRed,
+    };
+    final icon = switch (wallet.type) {
+      WalletType.cash => Icons.payments,
+      WalletType.bank => Icons.account_balance,
+      WalletType.eWallet => Icons.account_balance_wallet,
+      WalletType.creditCard => Icons.credit_card,
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: SoftPanel(
+        tint: color,
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    wallet.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    localizedWalletTypeLabel(context, wallet.type),
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Flexible(
+              child: Text(
+                Money(balance).formatVnd(),
+                textAlign: TextAlign.end,
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.3,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

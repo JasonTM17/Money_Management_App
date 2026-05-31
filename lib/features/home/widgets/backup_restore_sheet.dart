@@ -5,7 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../../../app/app_localizations.dart';
+import '../../../core/finance_backup_service.dart';
+import '../../auth/privacy_gate.dart';
 import '../finance_controller.dart';
+import 'home_common_widgets.dart';
 
 class BackupRestoreSheet extends ConsumerStatefulWidget {
   const BackupRestoreSheet({super.key});
@@ -15,67 +19,49 @@ class BackupRestoreSheet extends ConsumerStatefulWidget {
 }
 
 class _BackupRestoreSheetState extends ConsumerState<BackupRestoreSheet> {
+  static const _maxBackupBytes = 5 * 1024 * 1024;
+
   var _busy = false;
   String? _message;
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          MediaQuery.of(context).viewInsets.bottom + 20,
+    final l10n = context.l10n;
+    return AppSheetScaffold(
+      children: [
+        SheetTitle(
+          title: l10n.t('backupRestoreData'),
+          icon: Icons.backup_outlined,
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 44,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.outlineVariant,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Backup / restore dữ liệu',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Xuất file JSON offline hoặc khôi phục dữ liệu từ file backup CashFlow Manager.',
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _busy ? null : _exportBackup,
-              icon: const Icon(Icons.ios_share),
-              label: const Text('Xuất backup JSON'),
-            ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              onPressed: _busy ? null : _restoreBackup,
-              icon: const Icon(Icons.restore),
-              label: const Text('Khôi phục từ file JSON'),
-            ),
-            if (_message != null) ...[
-              const SizedBox(height: 12),
-              Text(_message!),
-            ],
-          ],
+        const SizedBox(height: 8),
+        Text(l10n.t('backupIntro')),
+        const SizedBox(height: 8),
+        Text(
+          l10n.t('backupSensitiveWarning'),
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.error,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-      ),
+        const SizedBox(height: 16),
+        FilledButton.icon(
+          onPressed: _busy ? null : _exportBackup,
+          icon: const Icon(Icons.ios_share),
+          label: Text(l10n.t('exportBackupJson')),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _busy ? null : _restoreBackup,
+          icon: const Icon(Icons.restore),
+          label: Text(l10n.t('restoreFromJson')),
+        ),
+        if (_message != null) ...[const SizedBox(height: 12), Text(_message!)],
+      ],
     );
   }
 
   Future<void> _exportBackup() async {
+    final l10n = context.l10n;
     setState(() {
       _busy = true;
       _message = null;
@@ -93,16 +79,17 @@ class _BackupRestoreSheetState extends ConsumerState<BackupRestoreSheet> {
         ),
       );
       if (!mounted) return;
-      setState(() => _message = 'Đã tạo file backup JSON.');
-    } on Object catch (error) {
+      setState(() => _message = l10n.t('backupCreated'));
+    } on Object {
       if (!mounted) return;
-      setState(() => _message = 'Không xuất được backup: $error');
+      setState(() => _message = l10n.t('backupExportFailed'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _restoreBackup() async {
+    final l10n = context.l10n;
     setState(() {
       _busy = true;
       _message = null;
@@ -119,20 +106,77 @@ class _BackupRestoreSheetState extends ConsumerState<BackupRestoreSheet> {
       }
       final bytes = result.files.single.bytes;
       if (bytes == null) {
-        throw const FormatException('Không đọc được file backup');
+        throw FormatException(l10n.t('restoreFileReadFailed'));
       }
-      final error = await ref
-          .read(financeControllerProvider.notifier)
-          .restoreBackup(utf8.decode(bytes));
+      if (bytes.length > _maxBackupBytes) {
+        throw FormatException(l10n.t('restoreFileTooLarge'));
+      }
+      final input = utf8.decode(bytes);
+      final controller = ref.read(financeControllerProvider.notifier);
+      final preview = controller.previewBackup(input);
+      if (!mounted) return;
+      final confirmed = await _confirmRestore(preview);
+      if (!mounted) return;
+      if (!confirmed) {
+        setState(() => _message = l10n.t('restoreCancelled'));
+        return;
+      }
+      final authenticated = await confirmSensitiveAction(context, ref);
+      if (!mounted) return;
+      if (!authenticated) {
+        setState(() => _message = l10n.t('restoreCancelled'));
+        return;
+      }
+      final error = await controller.restoreBackup(input);
       if (!mounted) return;
       setState(() {
-        _message = error ?? 'Đã khôi phục dữ liệu thành công.';
+        _message = error == null ? l10n.t('restoreSuccess') : l10n.error(error);
       });
-    } on Object catch (error) {
+    } on FormatException catch (error) {
       if (!mounted) return;
-      setState(() => _message = 'Không khôi phục được: $error');
+      setState(
+        () => _message = l10n
+            .t('restoreFormatFailed')
+            .replaceFirst('{message}', l10n.error(error.message)),
+      );
+    } on Object {
+      if (!mounted) return;
+      setState(() => _message = l10n.t('restoreFailed'));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<bool> _confirmRestore(FinanceBackupPreview preview) async {
+    final exportedAt = preview.exportedAt;
+    final l10n = context.l10n;
+    final exportedCopy = exportedAt == null
+        ? l10n.t('restoreExportMissing')
+        : 'Export: ${l10n.shortDate(exportedAt.toLocal())}';
+    return await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l10n.t('restoreConfirmTitle')),
+            content: Text(
+              '$exportedCopy\n'
+              '${l10n.t('wallets')}: ${preview.walletCount}\n'
+              '${l10n.t('transactions')}: ${preview.transactionCount}\n'
+              '${l10n.t('budgets')}: ${preview.budgetCount}\n'
+              '${l10n.t('goals')}: ${preview.goalCount}\n\n'
+              '${l10n.t('restoreReplaceWarning')}',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l10n.t('cancel')),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l10n.t('restoreConfirm')),
+              ),
+            ],
+          ),
+        ) ??
+        false;
   }
 }

@@ -1,6 +1,7 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
+import '../../../app/app_localizations.dart';
 import '../../../core/finance_calculator.dart';
 import '../../../core/finance_models.dart';
 import '../../../core/money.dart';
@@ -16,17 +17,30 @@ class CategoryPieCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = _categoryExpenses(state, month);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionTitle('Chi tiêu theo danh mục'),
-            if (data.isEmpty)
-              const Text('Chưa có chi tiêu trong tháng này')
-            else ...[
-              SizedBox(
+    final l10n = context.l10n;
+    return SoftPanel(
+      tint: Theme.of(context).colorScheme.tertiary,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppSectionHeader(title: l10n.t('expenseCategoryChart')),
+          if (data.isEmpty)
+            EmptyState(
+              icon: Icons.pie_chart_outline,
+              message: l10n.t('categoryExpenseChartEmpty'),
+            )
+          else ...[
+            Semantics(
+              label: l10n.categoryExpenseChartSemantics(
+                data
+                    .map(
+                      (item) =>
+                          '${item.category.name} ${Money(item.amount).formatVnd()}',
+                    )
+                    .join(', '),
+              ),
+              child: SizedBox(
                 height: 180,
                 child: PieChart(
                   PieChartData(
@@ -47,25 +61,25 @@ class CategoryPieCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final item in data)
-                    Chip(
-                      avatar: CircleAvatar(
-                        backgroundColor: Color(item.category.colorHex),
-                      ),
-                      label: Text(
-                        '${item.category.name}: ${Money(item.amount).formatVnd()}',
-                      ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                for (final item in data)
+                  Chip(
+                    avatar: CircleAvatar(
+                      backgroundColor: Color(item.category.colorHex),
                     ),
-                ],
-              ),
-            ],
+                    label: Text(
+                      '${item.category.name}: ${Money(item.amount).formatVnd()}',
+                    ),
+                  ),
+              ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -80,36 +94,34 @@ class TopCategoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final data = _categoryExpenses(state, month).take(5).toList();
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SectionTitle('Top category chi tiêu'),
-            if (data.isEmpty)
-              const Text('Chưa đủ dữ liệu xếp hạng')
-            else
-              ...data.map(
-                (item) => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: CircleAvatar(
-                    backgroundColor: Color(
-                      item.category.colorHex,
-                    ).withValues(alpha: 0.14),
-                    foregroundColor: Color(item.category.colorHex),
-                    child: const Icon(Icons.pie_chart),
-                  ),
-                  title: Text(item.category.name),
-                  subtitle: LinearProgressIndicator(
-                    value: item.amount / data.first.amount,
-                    color: Color(item.category.colorHex),
-                  ),
-                  trailing: Text(Money(item.amount).formatVnd()),
+    final l10n = context.l10n;
+    return SoftPanel(
+      tint: Theme.of(context).colorScheme.primary,
+      padding: const EdgeInsets.all(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AppSectionHeader(title: l10n.t('topExpenseCategories')),
+          if (data.isEmpty)
+            EmptyState(
+              icon: Icons.leaderboard_outlined,
+              message: l10n.t('topExpenseCategoriesEmpty'),
+            )
+          else
+            ...data.map((item) {
+              final color = Color(item.category.colorHex);
+              return CompactListRow(
+                icon: Icons.pie_chart,
+                title: item.category.name,
+                color: color,
+                subtitle: '${item.percent}% ${l10n.t('expense')}',
+                trailing: Text(
+                  Money(item.amount).formatVnd(),
+                  style: TextStyle(color: color, fontWeight: FontWeight.w900),
                 ),
-              ),
-          ],
-        ),
+              );
+            }),
+        ],
       ),
     );
   }

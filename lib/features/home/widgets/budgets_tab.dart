@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_localizations.dart';
 import '../../../app/app_theme.dart';
 import '../../../core/finance_calculator.dart';
 import '../../../core/finance_models.dart';
@@ -18,20 +19,21 @@ class BudgetsTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final calculator = const FinanceCalculator();
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    final l10n = context.l10n;
+    return AppScrollView(
       children: [
-        const SectionTitle('Ngân sách tháng này'),
-        FilledButton.icon(
-          onPressed: () => _showBudgetSheet(context),
-          icon: const Icon(Icons.add_chart),
-          label: const Text('Thêm ngân sách'),
+        AppSectionHeader(
+          title: l10n.t('budgetThisMonth'),
+          action: SectionActionButton(
+            label: l10n.t('addBudget'),
+            icon: Icons.add_chart,
+            onPressed: () => _showBudgetSheet(context),
+          ),
         ),
-        const SizedBox(height: 12),
         if (state.budgets.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
-            child: EmptyState(message: 'Chưa có ngân sách'),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: EmptyState(message: l10n.t('noBudgets')),
           ),
         ...state.budgets.map((budget) {
           final category = state.categories
@@ -49,48 +51,82 @@ class BudgetsTab extends StatelessWidget {
               ? AppTheme.warningAmber
               : AppTheme.seed;
           final isWarning = progress >= 0.8;
-          return Card(
-            color: isWarning ? progressColor.withValues(alpha: 0.14) : null,
-            child: InkWell(
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: SoftPanel(
+              tint: progressColor,
               onTap: () => _showBudgetSheet(context, budget),
-              borderRadius: BorderRadius.circular(16),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            category?.name ?? budget.categoryId,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          color: progressColor.withValues(alpha: 0.13),
+                          shape: BoxShape.circle,
                         ),
-                        if (isWarning)
-                          Icon(Icons.warning_amber, color: progressColor),
-                        IconButton(
-                          tooltip: 'Xóa ngân sách',
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: () =>
-                              _confirmDeleteBudget(context, budget),
+                        child: Icon(
+                          isWarning ? Icons.warning_amber : Icons.track_changes,
+                          color: progressColor,
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          category?.name ?? budget.categoryId,
+                          style: Theme.of(context).textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: l10n.t('deleteBudget'),
+                        icon: const Icon(Icons.delete_outline),
+                        onPressed: () => _confirmDeleteBudget(context, budget),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Semantics(
+                    label: l10n.budgetProgressSemantics(
+                      category?.name ?? budget.categoryId,
+                      Money(spent).formatVnd(),
+                      Money(budget.limitAmount).formatVnd(),
                     ),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
+                    child: LinearProgressIndicator(
                       value: progress,
                       color: progressColor,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '${Money(spent).formatVnd()} / ${Money(budget.limitAmount).formatVnd()}',
-                    ),
-                    Text(
-                      'Còn lại: ${Money((budget.limitAmount - spent).clamp(0, budget.limitAmount)).formatVnd()}',
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${Money(spent).formatVnd()} / ${Money(budget.limitAmount).formatVnd()}',
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      Text(
+                        l10n.budgetRemaining(
+                          Money(
+                            (budget.limitAmount - spent).clamp(
+                              0,
+                              budget.limitAmount,
+                            ),
+                          ).formatVnd(),
+                        ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           );
@@ -111,16 +147,16 @@ class BudgetsTab extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Xóa ngân sách?'),
-        content: const Text('Ngân sách này sẽ bị xóa khỏi tháng đã chọn.'),
+        title: Text(context.l10n.t('deleteBudgetQuestion')),
+        content: Text(context.l10n.t('deleteBudgetWarning')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Hủy'),
+            child: Text(context.l10n.t('cancel')),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Xóa'),
+            child: Text(context.l10n.t('delete')),
           ),
         ],
       ),

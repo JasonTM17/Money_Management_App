@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_localizations.dart';
 import '../../../core/finance_models.dart';
 import '../finance_controller.dart';
+import 'home_common_widgets.dart';
 
 class SavingGoalFormSheet extends ConsumerStatefulWidget {
   const SavingGoalFormSheet({super.key, this.goal});
@@ -26,6 +28,7 @@ class _SavingGoalFormSheetState extends ConsumerState<SavingGoalFormSheet> {
       widget.goal?.deadline ??
       DateTime(DateTime.now().year, DateTime.now().month + 6, 1);
   String? _error;
+  var _isSubmitting = false;
 
   @override
   void dispose() {
@@ -37,64 +40,51 @@ class _SavingGoalFormSheetState extends ConsumerState<SavingGoalFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        16,
-        16,
-        16,
-        MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              widget.goal == null ? 'Thêm mục tiêu' : 'Sửa mục tiêu',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _name,
-              decoration: const InputDecoration(labelText: 'Tên mục tiêu'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _target,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Số tiền mục tiêu'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _saved,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Đã tiết kiệm'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _pickDeadline,
-              icon: const Icon(Icons.event_available),
-              label: Text(
-                'Deadline ${_deadline.day}/${_deadline.month}/${_deadline.year}',
-              ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 8),
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-            const SizedBox(height: 12),
-            FilledButton(
-              onPressed: _save,
-              child: Text(
-                widget.goal == null ? 'Lưu mục tiêu' : 'Cập nhật mục tiêu',
-              ),
-            ),
-          ],
+    final l10n = context.l10n;
+    return AppSheetScaffold(
+      children: [
+        SheetTitle(
+          title: widget.goal == null ? l10n.t('addGoal') : l10n.t('updateGoal'),
+          icon: Icons.savings,
         ),
-      ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _name,
+          decoration: InputDecoration(labelText: l10n.t('goalName')),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _target,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: l10n.t('goalTargetAmount')),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _saved,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: l10n.t('goalSavedAmount')),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          onPressed: _pickDeadline,
+          icon: const Icon(Icons.event_available),
+          label: Text(l10n.deadline(_deadline)),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+        const SizedBox(height: 12),
+        FilledButton(
+          onPressed: _isSubmitting ? null : _save,
+          child: Text(
+            widget.goal == null ? l10n.t('saveGoal') : l10n.t('updateGoal'),
+          ),
+        ),
+      ],
     );
   }
 
@@ -109,6 +99,11 @@ class _SavingGoalFormSheetState extends ConsumerState<SavingGoalFormSheet> {
   }
 
   Future<void> _save() async {
+    if (_isSubmitting) return;
+    setState(() {
+      _isSubmitting = true;
+      _error = null;
+    });
     final error = await ref
         .read(financeControllerProvider.notifier)
         .saveGoalFromForm(
@@ -123,6 +118,9 @@ class _SavingGoalFormSheetState extends ConsumerState<SavingGoalFormSheet> {
       Navigator.pop(context);
       return;
     }
-    setState(() => _error = error);
+    setState(() {
+      _isSubmitting = false;
+      _error = context.l10n.error(error);
+    });
   }
 }

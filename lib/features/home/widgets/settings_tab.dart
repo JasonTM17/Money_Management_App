@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_localizations.dart';
+import '../../auth/privacy_gate.dart';
 import '../../../core/finance_calculator.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
 import '../../../app/app_theme.dart';
+import '../finance_controller.dart';
 import 'backup_restore_sheet.dart';
 import 'home_common_widgets.dart';
 
@@ -18,92 +21,132 @@ class SettingsTab extends ConsumerWidget {
     final themeMode = ref
         .watch(themeModeControllerProvider)
         .maybeWhen(data: (mode) => mode, orElse: () => ThemeMode.system);
+    final locale = ref
+        .watch(localeControllerProvider)
+        .maybeWhen(data: (locale) => locale, orElse: () => const Locale('vi'));
+    final l10n = context.l10n;
     final forecast = const FinanceCalculator().forecastEndBalance(
       currentBalance: state.summary.totalBalance,
       recurringTransactions: state.transactions,
       until: DateTime(DateTime.now().year, DateTime.now().month + 1, 1),
       now: DateTime.now(),
     );
-    return ListView(
-      padding: const EdgeInsets.all(20),
+    return AppScrollView(
       children: [
-        const SectionTitle('Dòng tiền tương lai'),
+        AppSectionHeader(title: l10n.t('futureCashflow')),
         MetricCard(
-          title: 'Dự kiến cuối tháng sau',
+          title: l10n.t('forecastNextMonthEnd'),
           value: Money(forecast).formatVnd(),
           icon: Icons.calendar_month,
           color: Colors.teal,
         ),
-        const SizedBox(height: 12),
-        const SectionTitle('Cài đặt'),
-        const Card(
-          child: SwitchListTile(
-            value: true,
-            onChanged: null,
-            title: Text('Privacy lock / PIN sinh trắc học'),
-            subtitle: Text('PIN fallback, biometric nếu thiết bị hỗ trợ'),
+        AppSectionHeader(title: l10n.t('settings')),
+        InlineInfoCard(
+          icon: Icons.lock_person,
+          title: l10n.t('privacyLock'),
+          subtitle: l10n.t('privacyLockSubtitle'),
+          trailing: Chip(label: Text(l10n.t('privacyLockEnabled'))),
+        ),
+        const SizedBox(height: 10),
+        SoftPanel(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.t('theme'),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 12),
+              SegmentedButton<ThemeMode>(
+                key: const ValueKey('theme-mode-segmented-button'),
+                segments: [
+                  ButtonSegment(
+                    value: ThemeMode.system,
+                    icon: const Icon(Icons.brightness_auto),
+                    label: Text(l10n.t('systemTheme')),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.light,
+                    icon: const Icon(Icons.light_mode),
+                    label: Text(l10n.t('themeLight')),
+                  ),
+                  ButtonSegment(
+                    value: ThemeMode.dark,
+                    icon: const Icon(Icons.dark_mode),
+                    label: Text(l10n.t('themeDark')),
+                  ),
+                ],
+                selected: {themeMode},
+                onSelectionChanged: (selection) => ref
+                    .read(themeModeControllerProvider.notifier)
+                    .setThemeMode(selection.first),
+              ),
+            ],
           ),
         ),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Giao diện',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                SegmentedButton<ThemeMode>(
-                  segments: const [
-                    ButtonSegment(
-                      value: ThemeMode.system,
-                      icon: Icon(Icons.brightness_auto),
-                      label: Text('Hệ thống'),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.light,
-                      icon: Icon(Icons.light_mode),
-                      label: Text('Sáng'),
-                    ),
-                    ButtonSegment(
-                      value: ThemeMode.dark,
-                      icon: Icon(Icons.dark_mode),
-                      label: Text('Tối'),
-                    ),
-                  ],
-                  selected: {themeMode},
-                  onSelectionChanged: (selection) => ref
-                      .read(themeModeControllerProvider.notifier)
-                      .setThemeMode(selection.first),
-                ),
-              ],
-            ),
+        const SizedBox(height: 10),
+        InlineInfoCard(
+          icon: Icons.currency_exchange,
+          title: l10n.t('currency'),
+          subtitle: l10n.t('defaultCurrency'),
+        ),
+        const SizedBox(height: 10),
+        SoftPanel(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.t('language'),
+                style: Theme.of(
+                  context,
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 12),
+              SegmentedButton<Locale>(
+                key: const ValueKey('locale-segmented-button'),
+                segments: [
+                  ButtonSegment(
+                    value: const Locale('vi'),
+                    label: Text(l10n.t('languageVietnamese')),
+                  ),
+                  ButtonSegment(
+                    value: const Locale('en'),
+                    label: Text(l10n.t('languageEnglish')),
+                  ),
+                  ButtonSegment(
+                    value: const Locale('ja'),
+                    label: Text(l10n.t('languageJapanese')),
+                  ),
+                ],
+                selected: {locale},
+                onSelectionChanged: (selection) => ref
+                    .read(localeControllerProvider.notifier)
+                    .setLocale(selection.first),
+              ),
+            ],
           ),
         ),
-        const Card(
-          child: ListTile(
-            leading: Icon(Icons.currency_exchange),
-            title: Text('Tiền tệ mặc định'),
-            subtitle: Text('VND'),
-          ),
+        const SizedBox(height: 10),
+        InlineInfoCard(
+          key: const ValueKey('backup-restore-card'),
+          icon: Icons.backup,
+          title: l10n.t('backupRestore'),
+          subtitle: l10n.t('backupRestoreSubtitle'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => _showBackupRestoreSheet(context),
         ),
-        Card(
-          child: ListTile(
-            leading: const Icon(Icons.backup),
-            title: const Text('Backup / restore'),
-            subtitle: const Text('Xuất và khôi phục file JSON offline'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => _showBackupRestoreSheet(context),
-          ),
-        ),
-        const Card(
-          child: ListTile(
-            leading: Icon(Icons.delete_forever),
-            title: Text('Reset data'),
-            subtitle: Text('Yêu cầu xác nhận trước khi xóa'),
-          ),
+        const SizedBox(height: 10),
+        InlineInfoCard(
+          key: const ValueKey('reset-data-card'),
+          icon: Icons.delete_forever,
+          title: l10n.t('resetData'),
+          subtitle: l10n.t('resetDataSubtitle'),
+          color: Theme.of(context).colorScheme.error,
+          onTap: () => _confirmResetData(context, ref),
         ),
       ],
     );
@@ -114,6 +157,42 @@ class SettingsTab extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       builder: (_) => const BackupRestoreSheet(),
+    );
+  }
+
+  Future<void> _confirmResetData(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(context.l10n.t('resetDataConfirmTitle')),
+        content: Text(context.l10n.t('resetDataWarning')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.t('cancel')),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(context.l10n.t('resetData')),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    final authenticated = await confirmSensitiveAction(context, ref);
+    if (!authenticated || !context.mounted) return;
+    final error = await ref
+        .read(financeControllerProvider.notifier)
+        .resetData();
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          error == null
+              ? context.l10n.t('resetDataSuccess')
+              : context.l10n.error(error),
+        ),
+      ),
     );
   }
 }

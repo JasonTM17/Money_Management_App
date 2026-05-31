@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../app/app_localizations.dart';
 import '../../../data/local_finance_store.dart';
 import '../finance_controller.dart';
+import 'home_common_widgets.dart';
 
 class WalletTransferSheet extends ConsumerStatefulWidget {
   const WalletTransferSheet({super.key, required this.state});
@@ -41,116 +43,91 @@ class _WalletTransferSheetState extends ConsumerState<WalletTransferSheet> {
   @override
   Widget build(BuildContext context) {
     final wallets = widget.state.wallets;
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          20,
-          12,
-          20,
-          MediaQuery.of(context).viewInsets.bottom + 20,
+    final l10n = context.l10n;
+    return AppSheetScaffold(
+      children: [
+        SheetTitle(
+          title: l10n.t('transferBetweenWallets'),
+          icon: Icons.swap_horiz,
         ),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Container(
-                  width: 44,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.outlineVariant,
-                    borderRadius: BorderRadius.circular(999),
-                  ),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          initialValue: _fromWalletId,
+          decoration: InputDecoration(labelText: l10n.t('walletSource')),
+          items: wallets
+              .map(
+                (wallet) => DropdownMenuItem(
+                  value: wallet.id,
+                  child: Text(wallet.name),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Chuyển tiền giữa ví',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 16),
-              DropdownButtonFormField<String>(
-                initialValue: _fromWalletId,
-                decoration: const InputDecoration(labelText: 'Ví nguồn'),
-                items: wallets
-                    .map(
-                      (wallet) => DropdownMenuItem(
-                        value: wallet.id,
-                        child: Text(wallet.name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _isSubmitting
-                    ? null
-                    : (value) => setState(() => _fromWalletId = value!),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: _toWalletId,
-                decoration: const InputDecoration(labelText: 'Ví nhận'),
-                items: wallets
-                    .map(
-                      (wallet) => DropdownMenuItem(
-                        value: wallet.id,
-                        child: Text(wallet.name),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _isSubmitting
-                    ? null
-                    : (value) => setState(() => _toWalletId = value!),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _amount,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(labelText: 'Số tiền'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _note,
-                decoration: const InputDecoration(labelText: 'Ghi chú'),
-              ),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  _error!,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+              )
+              .toList(),
+          onChanged: _isSubmitting
+              ? null
+              : (value) => setState(() => _fromWalletId = value!),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          initialValue: _toWalletId,
+          decoration: InputDecoration(labelText: l10n.t('walletDestination')),
+          items: wallets
+              .map(
+                (wallet) => DropdownMenuItem(
+                  value: wallet.id,
+                  child: Text(wallet.name),
                 ),
-              ],
-              const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: wallets.length < 2 || _isSubmitting ? null : _submit,
-                icon: _isSubmitting
-                    ? const SizedBox.square(
-                        dimension: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.swap_horiz),
-                label: Text(
-                  _isSubmitting ? 'Đang chuyển...' : 'Thực hiện chuyển ví',
-                ),
-              ),
-            ],
+              )
+              .toList(),
+          onChanged: _isSubmitting
+              ? null
+              : (value) => setState(() => _toWalletId = value!),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _amount,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(labelText: l10n.t('amount')),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _note,
+          decoration: InputDecoration(labelText: l10n.t('note')),
+        ),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: wallets.length < 2 || _isSubmitting ? null : _submit,
+          icon: _isSubmitting
+              ? const SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.swap_horiz),
+          label: Text(
+            _isSubmitting ? l10n.t('transferring') : l10n.t('transferNow'),
           ),
         ),
-      ),
+      ],
     );
   }
 
   Future<void> _submit() async {
     if (_isSubmitting) return;
     if (_fromWalletId == _toWalletId) {
-      setState(() => _error = 'Ví nguồn và ví nhận phải khác nhau');
+      setState(() => _error = context.l10n.t('walletSameTransferError'));
       return;
     }
     setState(() {
       _error = null;
       _isSubmitting = true;
     });
+    final l10n = context.l10n;
     final error = await ref
         .read(financeControllerProvider.notifier)
         .transferFromForm(
@@ -162,7 +139,7 @@ class _WalletTransferSheetState extends ConsumerState<WalletTransferSheet> {
     if (!mounted) return;
     if (error != null) {
       setState(() {
-        _error = error;
+        _error = l10n.error(error);
         _isSubmitting = false;
       });
       return;
