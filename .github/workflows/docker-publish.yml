@@ -73,7 +73,7 @@ jobs:
             type=semver,pattern={{version}}
 
       - name: Build and publish API image to GHCR
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: api/Dockerfile
@@ -84,7 +84,7 @@ jobs:
           labels: ${{ steps.meta-api-ghcr.outputs.labels }}
 
       - name: Build and publish frontend image to GHCR
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.frontend
@@ -120,7 +120,7 @@ jobs:
 
       - name: Build and publish API image to Docker Hub
         if: steps.dockerhub.outputs.enabled == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: api/Dockerfile
@@ -132,7 +132,7 @@ jobs:
 
       - name: Build and publish frontend image to Docker Hub
         if: steps.dockerhub.outputs.enabled == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile.frontend
