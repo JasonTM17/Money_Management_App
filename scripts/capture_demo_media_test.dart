@@ -79,7 +79,7 @@ void main() {
         await tester.tap(find.text('Báo cáo'));
         await _pumpFrames(tester);
       },
-      ready: find.text('Chi tiêu theo danh mục'),
+      ready: find.text('Xu hướng thu chi 4 tháng'),
     );
   });
 
@@ -91,12 +91,19 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('settings-action-button')));
         await _pumpFrames(tester);
       },
-      ready: find.text('Khóa riêng tư / PIN sinh trắc học'),
+      ready: find.byKey(const ValueKey('privacy-security-panel')),
     );
   });
 }
 
 Future<void> _loadScreenshotFonts() async {
+  final beVietnamPro = FontLoader('Be Vietnam Pro')
+    ..addFont(rootBundle.load('assets/fonts/BeVietnamPro-Regular.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/BeVietnamPro-Medium.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/BeVietnamPro-SemiBold.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/BeVietnamPro-Bold.ttf'))
+    ..addFont(rootBundle.load('assets/fonts/BeVietnamPro-ExtraBold.ttf'));
+  await beVietnamPro.load();
   final notoSansJp = FontLoader('Noto Sans JP')
     ..addFont(rootBundle.load('assets/fonts/noto-sans-jp-vf.ttf'));
   await notoSansJp.load();
@@ -137,7 +144,7 @@ Future<void> _pumpDemoApp(
           financeStoreProvider.overrideWithValue(store),
           privacyLockBypassProvider.overrideWithValue(true),
           privacyLockServiceProvider.overrideWithValue(
-            FakePrivacyLockService(),
+            FakePrivacyLockService(initialPin: '1234'),
           ),
         ],
         child: const CashFlowManagerApp(),
