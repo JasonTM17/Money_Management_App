@@ -2,7 +2,7 @@
 
 ## Overview
 
-CashFlow Manager helps Vietnamese users track personal income, expenses, wallets, budgets, reports, forecasts, and saving goals from an offline-first mobile app.
+CashFlow Manager helps users track personal income, expenses, wallets, budgets, reports, forecasts, and saving goals from an offline-first mobile app with Vietnamese, English, and Japanese UI support.
 
 ## Personas
 
@@ -34,16 +34,17 @@ CashFlow Manager helps Vietnamese users track personal income, expenses, wallets
 ## Could Have
 
 - Supabase/Firebase sync.
-- Receipt images/OCR.
-- Shared household budgets.
+- Receipt images/OCR correction flow.
+- Shared household budgets on top of the backend household foundation.
 - Bank integration.
+- Store IAP plus SePay off-store premium entitlement flow.
 
 ## Out of Scope for MVP
 
 - Live bank scraping.
-- Multi-user sync.
-- Paid subscriptions.
-- OCR receipt scanning.
+- Direct bank-account integration.
+- Automatic receipt transaction creation without user confirmation.
+- Uploading receipt images to cloud storage.
 
 ## Acceptance Criteria
 
