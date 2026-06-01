@@ -124,7 +124,7 @@ jobs:
 
       - name: Attach artifacts to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: CashFlow Manager ${{ env.RELEASE_VERSION }}+1
           body_path: dist/release-notes.md
