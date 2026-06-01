@@ -52,7 +52,7 @@ jobs:
 
       - name: Extract API GHCR metadata
         id: meta-api-ghcr
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/jasontm17/cashflow-manager-api
           tags: |
@@ -63,7 +63,7 @@ jobs:
 
       - name: Extract frontend GHCR metadata
         id: meta-frontend-ghcr
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: ghcr.io/jasontm17/cashflow-manager-frontend
           tags: |
@@ -97,7 +97,7 @@ jobs:
       - name: Extract API Docker Hub metadata
         if: steps.dockerhub.outputs.enabled == 'true'
         id: meta-api-dockerhub
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: nguyenson1710/cashflow-manager-api
           tags: |
@@ -109,7 +109,7 @@ jobs:
       - name: Extract frontend Docker Hub metadata
         if: steps.dockerhub.outputs.enabled == 'true'
         id: meta-frontend-dockerhub
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: nguyenson1710/cashflow-manager-frontend
           tags: |
