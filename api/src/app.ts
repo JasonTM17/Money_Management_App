@@ -1,7 +1,8 @@
-import cors from '@fastify/cors';
+﻿import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import type { PrismaClient } from '@prisma/client';
 import Fastify from 'fastify';
+import { env } from './lib/env.js';
 import { handleApiError } from './lib/error-handler.js';
 import { createPrismaClient } from './lib/prisma-client.js';
 import { registerAccountRoutes } from './modules/account/account-routes.js';
@@ -21,6 +22,10 @@ declare module 'fastify' {
   interface FastifyInstance {
     prisma: PrismaClient;
   }
+
+  interface FastifyRequest {
+    rawBody?: string;
+  }
 }
 
 type BuildAppOptions = {
@@ -28,11 +33,48 @@ type BuildAppOptions = {
 };
 
 export function buildApp(options: BuildAppOptions = {}) {
-  const app = Fastify({ logger: true });
-  const databaseUrl =
-    options.databaseUrl ??
-    process.env.DATABASE_URL ??
-    'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public';
+  const app = Fastify({
+    bodyLimit: 1024 * 1024,
+    logger: {
+      redact: {
+        paths: [
+          'req.headers.authorization',
+          'req.headers.cookie',
+          'req.headers.x-sepay-signature',
+          'req.headers.x-cashflow-signature-sha256',
+          'password',
+          'refreshToken',
+          'accessToken',
+          'purchaseToken',
+          'token',
+          'req.body.password',
+          'req.body.refreshToken',
+          'req.body.accessToken',
+          'req.body.purchaseToken',
+          'req.body.token',
+          'req.body.providerSubscriptionId',
+          '*.password',
+          '*.refreshToken',
+          '*.accessToken',
+          '*.purchaseToken',
+          '*.token',
+        ],
+        censor: '[REDACTED]',
+      },
+    },
+  });
+  app.removeContentTypeParser('application/json');
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, (request, body, done) => {
+    const rawBody = typeof body === 'string' ? body : String(body ?? '');
+    request.rawBody = rawBody;
+    try {
+      done(null, rawBody.trim() === '' ? {} : JSON.parse(rawBody));
+    } catch (error) {
+      done(error as Error);
+    }
+  });
+
+  const databaseUrl = options.databaseUrl ?? env.DATABASE_URL;
   const prisma = createPrismaClient(databaseUrl);
 
   app.decorate('prisma', prisma);

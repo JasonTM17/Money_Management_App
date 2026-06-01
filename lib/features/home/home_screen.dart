@@ -74,20 +74,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
       body: finance.when(
-        data: (state) => DecoratedBox(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                colorScheme.primary.withValues(alpha: isDark ? 0.12 : 0.08),
-                colorScheme.surface,
-                colorScheme.secondary.withValues(alpha: isDark ? 0.10 : 0.05),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: _tabs(state)[_index],
-        ),
+        data: (state) => _tabs(state)[_index],
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text(l10n.t('loadDataFailed'))),
       ),

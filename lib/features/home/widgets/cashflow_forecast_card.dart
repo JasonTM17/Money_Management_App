@@ -80,7 +80,7 @@ class CashflowForecastCard extends StatelessWidget {
             l10n.t('nextBills'),
             style: Theme.of(
               context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
           if (recurringBills.isEmpty)
@@ -108,7 +108,7 @@ class CashflowForecastCard extends StatelessWidget {
                       Money(item.transaction.amount).formatVnd(),
                       style: const TextStyle(
                         color: AppTheme.expenseRed,
-                        fontWeight: FontWeight.w900,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ),
@@ -161,7 +161,7 @@ class _ForecastTile extends StatelessWidget {
                   value,
                   style: Theme.of(
                     context,
-                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ],
             ),

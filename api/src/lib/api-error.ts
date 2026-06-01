@@ -33,6 +33,10 @@ export function forbidden(code: string, message: string) {
   return new ApiError(403, code, message);
 }
 
+export function rateLimited(message = 'Too many requests') {
+  return new ApiError(429, 'rate_limited', message);
+}
+
 export function notFound(code: string, message: string) {
   return new ApiError(404, code, message);
 }

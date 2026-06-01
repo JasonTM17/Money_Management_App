@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cashflow_manager/core/finance_backup_service.dart';
 import 'package:cashflow_manager/core/finance_models.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -60,6 +62,82 @@ void main() {
     expect(decoded.goals.single.name, 'Quỹ khẩn cấp');
   });
 
+  test('encrypts and decrypts schema v2 backup data', () async {
+    final backup = await service.encodeEncrypted(
+      wallets: const [
+        WalletAccount(
+          id: 'cash',
+          name: 'Cash',
+          type: WalletType.cash,
+          initialBalance: 1000000,
+        ),
+      ],
+      categories: const [
+        FinanceCategory(
+          id: 'food',
+          name: 'Food',
+          type: TransactionType.expense,
+          colorHex: 0xFFFF9800,
+        ),
+      ],
+      transactions: [
+        FinanceTransaction(
+          id: 'txn',
+          walletId: 'cash',
+          categoryId: 'food',
+          type: TransactionType.expense,
+          amount: 100000,
+          date: DateTime(2026, 5),
+          note: 'Encrypted backup test',
+        ),
+      ],
+      budgets: const [],
+      goals: const [],
+      passphrase: 'strong-passphrase',
+    );
+
+    expect(service.isEncrypted(backup), isTrue);
+    expect(() => service.decode(backup), throwsFormatException);
+
+    final plaintext = await service.decryptToPlaintext(
+      backup,
+      passphrase: 'strong-passphrase',
+    );
+    final decoded = service.decode(plaintext);
+
+    expect(decoded.wallets.single.id, 'cash');
+    expect(decoded.transactions.single.note, 'Encrypted backup test');
+  });
+
+  test('rejects encrypted backup with the wrong passphrase', () async {
+    final backup = await service.encodeEncrypted(
+      wallets: const [
+        WalletAccount(
+          id: 'cash',
+          name: 'Cash',
+          type: WalletType.cash,
+          initialBalance: 1000000,
+        ),
+      ],
+      categories: const [
+        FinanceCategory(
+          id: 'food',
+          name: 'Food',
+          type: TransactionType.expense,
+          colorHex: 0xFFFF9800,
+        ),
+      ],
+      transactions: const [],
+      budgets: const [],
+      goals: const [],
+      passphrase: 'strong-passphrase',
+    );
+
+    await expectLater(
+      service.decryptToPlaintext(backup, passphrase: 'wrong-passphrase'),
+      throwsFormatException,
+    );
+  });
   test('rejects backup without required base lists', () {
     expect(
       () => service.decode('''
@@ -73,6 +151,41 @@ void main() {
   "goals": []
 }
 '''),
+      throwsFormatException,
+    );
+  });
+
+  test('rejects encrypted backup after ciphertext tampering', () async {
+    final backup = await service.encodeEncrypted(
+      wallets: const [
+        WalletAccount(
+          id: 'cash',
+          name: 'Cash',
+          type: WalletType.cash,
+          initialBalance: 1000000,
+        ),
+      ],
+      categories: const [
+        FinanceCategory(
+          id: 'food',
+          name: 'Food',
+          type: TransactionType.expense,
+          colorHex: 0xFFFF9800,
+        ),
+      ],
+      transactions: const [],
+      budgets: const [],
+      goals: const [],
+      passphrase: 'strong-passphrase',
+    );
+    final root = jsonDecode(backup) as Map<String, Object?>;
+    root['ciphertext'] = '${root['ciphertext']}AA';
+
+    await expectLater(
+      service.decryptToPlaintext(
+        jsonEncode(root),
+        passphrase: 'strong-passphrase',
+      ),
       throwsFormatException,
     );
   });

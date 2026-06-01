@@ -86,7 +86,7 @@ class MonthlyTrendCard extends StatelessWidget {
                                     color: Theme.of(
                                       context,
                                     ).colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                   ),
                             );
                           },
@@ -155,7 +155,7 @@ class MonthlyTrendCard extends StatelessWidget {
               l10n.netCashflow(Money(latest.netCashflow).formatVnd()),
               style: Theme.of(
                 context,
-              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
             ),
           ],
         ],

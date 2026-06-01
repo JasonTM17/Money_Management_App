@@ -106,6 +106,18 @@ class FinanceController extends AsyncNotifier<FinanceState> {
 
   Future<String> exportBackup() => _store.exportBackup();
 
+  Future<String> exportEncryptedBackup(String passphrase) =>
+      _store.exportEncryptedBackup(passphrase);
+
+  bool isEncryptedBackup(String input) =>
+      const FinanceBackupService().isEncrypted(input);
+
+  Future<String> decryptBackup(String input, {required String passphrase}) =>
+      const FinanceBackupService().decryptToPlaintext(
+        input,
+        passphrase: passphrase,
+      );
+
   FinanceBackupPreview previewBackup(String input) =>
       const FinanceBackupService().preview(input);
 

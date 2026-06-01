@@ -11,6 +11,59 @@ void main() {
   });
 
   group('dashboard and budgets', () {
+    testWidgets('main shell stays usable on small phone with large text', (
+      tester,
+    ) async {
+      await usePhoneSurface(
+        tester,
+        size: const Size(360, 800),
+        textScaleFactor: 1.6,
+      );
+      await pumpCashFlowApp(
+        tester,
+        store: FakeFinanceStore.withReportInsights(),
+      );
+
+      expect(
+        find.byKey(const ValueKey('add-transaction-action-button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('settings-action-button')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(
+        find.byKey(const ValueKey('add-transaction-action-button')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('transaction-submit-button')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+      Navigator.of(
+        tester.element(find.byKey(const ValueKey('transaction-submit-button'))),
+      ).pop();
+      await tester.pumpAndSettle();
+
+      for (final icon in [
+        Icons.receipt_long_outlined,
+        Icons.account_balance_wallet_outlined,
+        Icons.savings_outlined,
+        Icons.pie_chart_outline,
+      ]) {
+        await tester.tap(find.byIcon(icon).last);
+        await tester.pumpAndSettle();
+        expect(tester.takeException(), isNull);
+      }
+
+      await tester.tap(find.byKey(const ValueKey('settings-action-button')));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('shows budget tab with progress copy', (tester) async {
       await pumpCashFlowApp(tester);
 

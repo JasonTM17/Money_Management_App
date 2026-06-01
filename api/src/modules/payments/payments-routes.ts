@@ -1,8 +1,9 @@
-import { createHmac, createHash } from 'node:crypto';
+import { createHmac, createHash, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { badRequest, serviceUnavailable } from '../../lib/api-error.js';
 import { serializeBigInts } from '../../lib/finance-serializers.js';
+import { InMemoryRateLimiter, rateLimitKey } from '../../lib/rate-limiter.js';
 import { parseBody } from '../../lib/validation.js';
 import { requireAuth } from '../auth/auth-context.js';
 
@@ -28,8 +29,15 @@ const sepayWebhookSchema = z.object({
 });
 
 export async function registerPaymentRoutes(app: FastifyInstance) {
+  const paymentLimiter = new InMemoryRateLimiter({
+    windowMs: 60_000,
+    maxAttempts: 30,
+    message: 'Too many payment requests',
+  });
+
   app.post('/v1/iap/verify', async (request) => {
     const auth = requireAuth(request);
+    paymentLimiter.check(rateLimitKey(request, 'iap-verify', auth.sub));
     const input = parseBody(iapVerifySchema, request.body);
     if (iapVerificationMode() !== 'mock') {
       throw serviceUnavailable(
@@ -72,6 +80,7 @@ export async function registerPaymentRoutes(app: FastifyInstance) {
 
   app.post('/v1/payments/sepay/orders', async (request, reply) => {
     const auth = requireAuth(request);
+    paymentLimiter.check(rateLimitKey(request, 'sepay-order', auth.sub));
     const input = parseBody(sepayOrderSchema, request.body);
     if (!sepayEnabled()) {
       throw serviceUnavailable(
@@ -111,23 +120,23 @@ export async function registerPaymentRoutes(app: FastifyInstance) {
   });
 
   app.post('/v1/payments/sepay/webhook', async (request) => {
-    assertSePaySignature(request.headers['x-sepay-signature'], request.body);
+    paymentLimiter.check(rateLimitKey(request, 'sepay-webhook'));
+    assertSePaySignature(request.headers['x-sepay-signature'], request.rawBody ?? '{}');
     const input = parseBody(sepayWebhookSchema, request.body);
     const order = await app.prisma.paymentOrder.findFirst({
       where: { provider: 'sepay', providerOrderId: input.providerOrderId },
     });
     if (!order) throw badRequest('payment_order_not_found', 'Payment order not found');
 
-    const paidAt = input.status === 'paid' ? new Date(input.paidAt ?? Date.now()) : null;
-    const updatedOrder = await app.prisma.paymentOrder.update({
-      where: { id: order.id },
-      data: {
-        status: input.status,
-        paidAt,
-      },
-    });
+    const orderUpdate = resolveSePayOrderUpdate(order, input);
+    const updatedOrder = orderUpdate
+      ? await app.prisma.paymentOrder.update({
+          where: { id: order.id },
+          data: orderUpdate,
+        })
+      : order;
 
-    if (input.status === 'paid') {
+    if (orderUpdate?.status === 'paid') {
       const metadata = order.metadata as { plan?: string } | null;
       await app.prisma.entitlement.upsert({
         where: {
@@ -155,6 +164,26 @@ export async function registerPaymentRoutes(app: FastifyInstance) {
   });
 }
 
+type SePayOrderState = {
+  status: 'pending' | 'paid' | 'expired' | 'cancelled';
+  amount: bigint;
+  paidAt: Date | null;
+};
+
+type SePayWebhookInput = z.infer<typeof sepayWebhookSchema>;
+
+export function resolveSePayOrderUpdate(order: SePayOrderState, input: SePayWebhookInput) {
+  if (input.amount !== undefined && order.amount !== BigInt(input.amount)) {
+    throw badRequest('payment_amount_mismatch', 'Webhook amount does not match the payment order');
+  }
+  if (order.status === 'paid') {
+    return null;
+  }
+  return {
+    status: input.status,
+    paidAt: input.status === 'paid' ? new Date(input.paidAt ?? Date.now()) : null,
+  };
+}
 function buildSePayCheckoutUrl(providerOrderId: string, amount: number) {
   const baseUrl = process.env.SEPAY_CHECKOUT_BASE_URL;
   if (!baseUrl) return null;
@@ -164,7 +193,7 @@ function buildSePayCheckoutUrl(providerOrderId: string, amount: number) {
   return url.toString();
 }
 
-function assertSePaySignature(header: string | string[] | undefined, body: unknown) {
+function assertSePaySignature(header: string | string[] | undefined, rawBody: string) {
   const webhookSecret = process.env.SEPAY_WEBHOOK_SECRET;
   if (!webhookSecret) {
     throw serviceUnavailable(
@@ -173,10 +202,16 @@ function assertSePaySignature(header: string | string[] | undefined, body: unkno
     );
   }
   const signature = Array.isArray(header) ? header[0] : header;
-  const expected = createHmac('sha256', webhookSecret)
-    .update(JSON.stringify(body ?? {}))
-    .digest('hex');
-  if (!signature || signature !== expected) {
+  if (!signature || !/^[a-f0-9]{64}$/i.test(signature)) {
+    throw badRequest('invalid_sepay_signature', 'Invalid SePay webhook signature');
+  }
+  const expected = createHmac('sha256', webhookSecret).update(rawBody).digest('hex');
+  const receivedBuffer = Buffer.from(signature, 'hex');
+  const expectedBuffer = Buffer.from(expected, 'hex');
+  if (
+    receivedBuffer.length !== expectedBuffer.length ||
+    !timingSafeEqual(receivedBuffer, expectedBuffer)
+  ) {
     throw badRequest('invalid_sepay_signature', 'Invalid SePay webhook signature');
   }
 }

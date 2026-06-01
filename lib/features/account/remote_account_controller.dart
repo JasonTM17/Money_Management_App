@@ -5,15 +5,10 @@ import '../../core/remote_session_store.dart';
 import '../../core/remote_sync_client.dart';
 import '../../core/sync_models.dart';
 
+const _developmentApiBaseUrl = 'http://localhost:3000';
+
 final remoteSyncClientProvider = Provider<RemoteSyncClient>(
-  (ref) => RemoteSyncClient(
-    baseUri: Uri.parse(
-      const String.fromEnvironment(
-        'CASHFLOW_API_BASE_URL',
-        defaultValue: 'http://localhost:3000',
-      ),
-    ),
-  ),
+  (ref) => RemoteSyncClient(baseUri: configuredRemoteSyncBaseUri()),
 );
 
 final remoteSessionStoreProvider = Provider<RemoteSessionStore>(
@@ -25,6 +20,50 @@ final remoteAccountControllerProvider =
       RemoteAccountController.new,
     );
 
+class RemoteSyncConfigurationException implements Exception {
+  const RemoteSyncConfigurationException(this.messageKey);
+
+  final String messageKey;
+
+  @override
+  String toString() => 'RemoteSyncConfigurationException($messageKey)';
+}
+
+Uri configuredRemoteSyncBaseUri() => resolveRemoteSyncBaseUri(
+  releaseMode: const bool.fromEnvironment('dart.vm.product'),
+  syncEnabled: const bool.fromEnvironment('CASHFLOW_SYNC_ENABLED'),
+  configuredBaseUrl: const String.fromEnvironment('CASHFLOW_API_BASE_URL'),
+);
+
+Uri resolveRemoteSyncBaseUri({
+  required bool releaseMode,
+  required bool syncEnabled,
+  required String configuredBaseUrl,
+}) {
+  final trimmedBaseUrl = configuredBaseUrl.trim();
+  if (releaseMode) {
+    if (!syncEnabled || trimmedBaseUrl.isEmpty) {
+      throw const RemoteSyncConfigurationException('syncReleaseDisabled');
+    }
+    final uri = _parseBaseUri(trimmedBaseUrl);
+    if (uri.scheme != 'https') {
+      throw const RemoteSyncConfigurationException('syncHttpsRequired');
+    }
+    return uri;
+  }
+  return _parseBaseUri(
+    trimmedBaseUrl.isEmpty ? _developmentApiBaseUrl : trimmedBaseUrl,
+  );
+}
+
+Uri _parseBaseUri(String value) {
+  final uri = Uri.tryParse(value);
+  if (uri == null || !uri.hasScheme || !uri.hasAuthority) {
+    throw const RemoteSyncConfigurationException('syncInvalidBaseUrl');
+  }
+  return uri;
+}
+
 class RemoteAccountState {
   const RemoteAccountState({
     this.session,
@@ -32,6 +71,7 @@ class RemoteAccountState {
     this.lockedFeatures = const [],
     this.lastSyncAt,
     this.messageKey,
+    this.syncAvailable = true,
   });
 
   final RemoteSession? session;
@@ -39,6 +79,7 @@ class RemoteAccountState {
   final List<String> lockedFeatures;
   final DateTime? lastSyncAt;
   final String? messageKey;
+  final bool syncAvailable;
 
   bool get isSignedIn => session != null;
 
@@ -49,6 +90,7 @@ class RemoteAccountState {
     List<String>? lockedFeatures,
     DateTime? lastSyncAt,
     String? messageKey,
+    bool? syncAvailable,
   }) {
     return RemoteAccountState(
       session: clearSession ? null : session ?? this.session,
@@ -56,6 +98,7 @@ class RemoteAccountState {
       lockedFeatures: lockedFeatures ?? this.lockedFeatures,
       lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       messageKey: messageKey,
+      syncAvailable: syncAvailable ?? this.syncAvailable,
     );
   }
 }
@@ -67,7 +110,13 @@ class RemoteAccountController extends AsyncNotifier<RemoteAccountState> {
   @override
   Future<RemoteAccountState> build() async {
     try {
+      configuredRemoteSyncBaseUri();
       return RemoteAccountState(session: await _store.read());
+    } on RemoteSyncConfigurationException catch (error) {
+      return RemoteAccountState(
+        messageKey: error.messageKey,
+        syncAvailable: false,
+      );
     } on Object {
       return const RemoteAccountState(messageKey: 'syncSessionUnavailable');
     }
@@ -94,15 +143,31 @@ class RemoteAccountController extends AsyncNotifier<RemoteAccountState> {
     if (session == null) return;
     state = const AsyncLoading();
     try {
+      final activeSession = session.isExpired
+          ? RemoteSession.fromAuth(
+              await _client.refresh(refreshToken: session.refreshToken),
+            )
+          : session;
+      if (!identical(activeSession, session)) {
+        await _store.save(activeSession);
+      }
       final entitlements = await _client.fetchEntitlements(
-        accessToken: session.accessToken,
+        accessToken: activeSession.accessToken,
       );
       state = AsyncData(
-        (current ?? RemoteAccountState(session: session)).copyWith(
+        (current ?? RemoteAccountState(session: activeSession)).copyWith(
+          session: activeSession,
           premium: entitlements.premium,
           lockedFeatures: entitlements.lockedFeatures,
           lastSyncAt: DateTime.now(),
           messageKey: 'syncStatusSynced',
+        ),
+      );
+    } on RemoteSyncConfigurationException catch (error) {
+      state = AsyncData(
+        (current ?? RemoteAccountState(session: session)).copyWith(
+          messageKey: error.messageKey,
+          syncAvailable: false,
         ),
       );
     } on Object {
@@ -126,7 +191,9 @@ class RemoteAccountController extends AsyncNotifier<RemoteAccountState> {
       // Offline logout still clears local tokens so the device is signed out.
     }
     await _store.clear();
-    state = const AsyncData(RemoteAccountState());
+    state = AsyncData(
+      RemoteAccountState(syncAvailable: current?.syncAvailable ?? true),
+    );
   }
 
   Future<void> _authenticate(
@@ -141,6 +208,10 @@ class RemoteAccountController extends AsyncNotifier<RemoteAccountState> {
           session: remoteSession,
           messageKey: 'syncStatusSynced',
         ),
+      );
+    } on RemoteSyncConfigurationException catch (error) {
+      state = AsyncData(
+        RemoteAccountState(messageKey: error.messageKey, syncAvailable: false),
       );
     } on Object {
       state = const AsyncData(RemoteAccountState(messageKey: 'syncAuthFailed'));

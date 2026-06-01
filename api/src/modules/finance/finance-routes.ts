@@ -67,6 +67,7 @@ export async function registerFinanceRoutes(app: FastifyInstance) {
     const auth = requireAuth(request);
     const { id } = parseBody(idParamSchema, request.params);
     await assertWalletBelongsToUser(app, auth.sub, id);
+    await assertWalletHasNoActiveDependents(app, auth.sub, id);
     const wallet = await app.prisma.wallet.update({
       where: { id },
       data: { deletedAt: new Date(), revision: { increment: 1 } },
@@ -99,6 +100,9 @@ export async function registerFinanceRoutes(app: FastifyInstance) {
     const { id } = parseBody(idParamSchema, request.params);
     const input = parseBody(categoryPatchSchema, request.body);
     await assertCategoryBelongsToUser(app, auth.sub, id);
+    if (input.type !== undefined) {
+      await assertCategoryHasNoActiveDependents(app, auth.sub, id);
+    }
     const category = await app.prisma.category.update({
       where: { id },
       data: { ...input, revision: { increment: 1 } },
@@ -111,6 +115,7 @@ export async function registerFinanceRoutes(app: FastifyInstance) {
     const auth = requireAuth(request);
     const { id } = parseBody(idParamSchema, request.params);
     await assertCategoryBelongsToUser(app, auth.sub, id);
+    await assertCategoryHasNoActiveDependents(app, auth.sub, id);
     const category = await app.prisma.category.update({
       where: { id },
       data: { deletedAt: new Date(), revision: { increment: 1 } },
@@ -297,7 +302,15 @@ export async function registerFinanceRoutes(app: FastifyInstance) {
     const auth = requireAuth(request);
     const { id } = parseBody(idParamSchema, request.params);
     const input = parseBody(savingGoalPatchSchema, request.body);
-    await assertSavingGoalBelongsToUser(app, auth.sub, id);
+    const current = await getSavingGoalForUser(app, auth.sub, id);
+    const nextTargetAmount = input.targetAmount ?? Number(current.targetAmount);
+    const nextSavedAmount = input.savedAmount ?? Number(current.savedAmount);
+    if (nextSavedAmount > nextTargetAmount) {
+      throw badRequest(
+        'saving_goal_saved_exceeds_target',
+        'Saved amount must not exceed target amount',
+      );
+    }
     const savingGoal = await app.prisma.savingGoal.update({
       where: { id },
       data: {
@@ -393,6 +406,16 @@ async function assertSavingGoalBelongsToUser(
   if (!goal) throw notFound('saving_goal_not_found', 'Saving goal does not exist');
 }
 
+async function getSavingGoalForUser(app: FastifyInstance, userId: string, goalId: string) {
+  const goal = await app.prisma.savingGoal.findFirst({
+    where: { id: goalId, userId, deletedAt: null },
+  });
+  if (!goal) {
+    throw notFound('saving_goal_not_found', 'Saving goal does not exist');
+  }
+  return goal;
+}
+
 async function getCategoryTypeForUser(
   app: FastifyInstance,
   userId: string,
@@ -440,8 +463,31 @@ async function validateTransactionInput(
     }
     await assertWalletBelongsToUser(app, userId, input.toWalletId);
   }
+  if (input.type !== 'transfer' && input.toWalletId) {
+    throw badRequest(
+      'transfer_target_not_allowed',
+      'Income and expense transactions cannot have a transfer target',
+    );
+  }
   const categoryType = await getCategoryTypeForUser(app, userId, input.categoryId);
   if (categoryType !== input.type) {
     throw badRequest('category_type_mismatch', 'Category type must match transaction type');
+  }
+}
+
+async function assertWalletHasNoActiveDependents(app: FastifyInstance, userId: string, walletId: string) {
+  const count = await app.prisma.transaction.count({
+    where: { userId, deletedAt: null, OR: [{ walletId }, { toWalletId: walletId }] },
+  });
+  if (count > 0) throw badRequest('wallet_has_transactions', 'Wallet has active transactions');
+}
+
+async function assertCategoryHasNoActiveDependents(app: FastifyInstance, userId: string, categoryId: string) {
+  const [transactions, budgets] = await Promise.all([
+    app.prisma.transaction.count({ where: { userId, categoryId, deletedAt: null } }),
+    app.prisma.budget.count({ where: { userId, categoryId, deletedAt: null } }),
+  ]);
+  if (transactions + budgets > 0) {
+    throw badRequest('category_has_dependents', 'Category has active transactions or budgets');
   }
 }

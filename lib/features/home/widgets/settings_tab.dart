@@ -54,7 +54,7 @@ class SettingsTab extends ConsumerWidget {
                 l10n.t('theme'),
                 style: Theme.of(
                   context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               SegmentedButton<ThemeMode>(
@@ -112,7 +112,7 @@ class SettingsTab extends ConsumerWidget {
                 l10n.t('language'),
                 style: Theme.of(
                   context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 12),
               SegmentedButton<Locale>(

@@ -46,7 +46,7 @@ CashFlow Manager là app Flutter offline-first cho Android/iOS, giúp quản lý
 - Mục tiêu tiết kiệm với tiến độ và gợi ý số tiền cần tiết kiệm mỗi tháng.
 - Báo cáo tháng với biểu đồ thu/chi, chi tiêu theo danh mục, top chi tiêu, dự báo, CSV và PDF.
 - Khóa riêng tư bằng PIN đã hash PBKDF2-HMAC-SHA256, sinh trắc học opt-in, cooldown khi sai PIN, relock khi app rời foreground.
-- Backup/restore JSON có preview, giới hạn file và xác thực lại trước khi thay dữ liệu.
+- Backup/restore JSON có preview, giới hạn file, mã hóa v2 bằng passphrase và xác thực lại trước khi thay dữ liệu; import JSON legacy v1 vẫn được hỗ trợ.
 
 ## Kiến trúc
 
@@ -76,7 +76,7 @@ API contract: [`docs/openapi.yaml`](docs/openapi.yaml)
 - CSV, PDF, Printing, Share Plus, File Picker
 - Fastify, Prisma, PostgreSQL 16, Docker Compose
 - n8n workflow có HMAC verification
-- GitHub Actions cho Flutter, API, Docker, release artifact
+- GitHub Actions cho Flutter, Android emulator smoke, iOS simulator/no-codesign validation, API, Docker, release artifact
 
 ## Chạy nhanh
 
@@ -110,6 +110,7 @@ docker compose up --build -d api frontend
 ```bash
 flutter analyze
 flutter test --no-pub -r expanded
+flutter test --no-pub integration_test/cashflow_smoke_test.dart -d <device-id> -r expanded
 flutter test --no-pub scripts/capture_demo_media_test.dart -r expanded
 flutter build apk --debug
 ```
@@ -130,10 +131,10 @@ docs/                  # Product/technical/release docs và media
 
 ## Release và package
 
-- Android release đã được kiểm chứng trên Windows bằng APK/AAB; artifact chuẩn cho `v1.0.0` là `cashflow-manager-v1.0.0-android.apk` và `cashflow-manager-v1.0.0-android.aab` trong `dist/`.
-- iOS archive cần macOS/Xcode/Swift, không claim là đã build trên Windows.
-- Docker publish giữ Docker Hub và mirror sang GitHub Packages/GHCR: `ghcr.io/jasontm17/cashflow-manager-api` và `ghcr.io/jasontm17/cashflow-manager-frontend` với tag `latest`, git SHA và semver khi build từ release tag.
-- GitHub About trỏ homepage về `https://github.com/JasonTM17/Money_Management_App#readme` cho tới khi có trang release/download công khai thật.
+- GitHub Release `v1.0.0` đã publish tại `https://github.com/JasonTM17/Money_Management_App/releases/tag/v1.0.0` với APK `cashflow-manager-v1.0.0-android.apk` và App Bundle `cashflow-manager-v1.0.0-android.aab`; release workflow mới sẽ attach SBOM/checksum ở lần chạy tagged release tiếp theo.
+- iOS simulator/no-codesign validation cần macOS/Xcode/Swift; signed archive/IPA cần Apple signing assets và không claim là đã build trên Windows.
+- Docker publish workflow đã publish GHCR public manifests cho `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` và `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0`; release builds cũng có tag `v1.0.0`, git SHA và `latest`. Docker Hub hiện chưa public image vì workflow đã chạy khi Docker Hub secrets chưa được cấu hình.
+- GitHub About để homepage trống cho tới khi có trang release/download công khai riêng.
 ## Ghi chú riêng tư
 
 Dữ liệu tài chính là local-first. PIN luôn là fallback, sinh trắc học chỉ bật khi người dùng opt-in. Không commit secrets, `.env*`, signing key, database local, backup thật, private agent folders hoặc internal planning notes. n8n/API chỉ dùng token qua local env hoặc deployment secrets.

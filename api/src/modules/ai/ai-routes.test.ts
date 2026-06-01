@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import { createServer } from 'node:http';
 import { describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../../app.js';
+import { assertAllowedWebhookUrl } from './ai-routes.js';
 import { createAccessToken } from '../../lib/session-tokens.js';
 
 function snapshotEnv(keys: string[]) {
@@ -108,6 +109,35 @@ describe('AI analysis route', () => {
     } finally {
       restoreEnv();
       await app.close();
+    }
+  });
+
+
+  it('rejects non-HTTPS AI webhook URLs in production', () => {
+    const restoreEnv = snapshotEnv(['NODE_ENV', 'N8N_CHATBOT_ALLOWED_HOSTS']);
+    process.env.NODE_ENV = 'production';
+    delete process.env.N8N_CHATBOT_ALLOWED_HOSTS;
+
+    try {
+      expect(() =>
+        assertAllowedWebhookUrl('http://n8n.example.com/webhook/cashflow-ai-analysis'),
+      ).toThrowError(/misconfigured/);
+    } finally {
+      restoreEnv();
+    }
+  });
+
+  it('rejects AI webhook hosts outside the production allowlist', () => {
+    const restoreEnv = snapshotEnv(['NODE_ENV', 'N8N_CHATBOT_ALLOWED_HOSTS']);
+    process.env.NODE_ENV = 'production';
+    process.env.N8N_CHATBOT_ALLOWED_HOSTS = 'n8n.example.com';
+
+    try {
+      expect(() =>
+        assertAllowedWebhookUrl('https://evil.example.com/webhook/cashflow-ai-analysis'),
+      ).toThrowError(/misconfigured/);
+    } finally {
+      restoreEnv();
     }
   });
 

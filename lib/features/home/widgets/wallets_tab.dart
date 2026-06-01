@@ -90,7 +90,7 @@ class WalletsTab extends StatelessWidget {
                         child: Text(
                           goal.name,
                           style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w900),
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
                       IconButton(
@@ -117,7 +117,7 @@ class WalletsTab extends StatelessWidget {
                     ),
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ],
@@ -214,7 +214,7 @@ class _WalletCard extends StatelessWidget {
                   Text(
                     wallet.name,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w900,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -235,7 +235,7 @@ class _WalletCard extends StatelessWidget {
                 textAlign: TextAlign.end,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: color,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
             ),

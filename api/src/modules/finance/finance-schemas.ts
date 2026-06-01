@@ -1,5 +1,33 @@
 import { z } from 'zod';
 
+function isFirstDayDateOnly(value: string) {
+  const parsed = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.getUTCDate() === 1;
+}
+
+function savedAmountDoesNotExceedTarget(value: {
+  targetAmount?: number;
+  savedAmount?: number;
+}) {
+  return (
+    value.targetAmount === undefined ||
+    value.savedAmount === undefined ||
+    value.savedAmount <= value.targetAmount
+  );
+}
+
+function transferTargetShapeIsValid(value: {
+  type?: 'income' | 'expense' | 'transfer';
+  toWalletId?: string | null;
+}) {
+  return (
+    value.type === undefined ||
+    value.type === 'transfer' ||
+    value.toWalletId === undefined ||
+    value.toWalletId === null
+  );
+}
+
 export const idParamSchema = z.object({
   id: z.string().uuid(),
 });
@@ -26,7 +54,7 @@ export const categoryPatchSchema = categorySchema.partial().refine(
   'At least one field is required',
 );
 
-export const transactionSchema = z.object({
+const transactionBaseSchema = z.object({
   walletId: z.string().uuid(),
   toWalletId: z.string().uuid().nullable().optional(),
   categoryId: z.string().uuid(),
@@ -37,34 +65,55 @@ export const transactionSchema = z.object({
   isRecurring: z.boolean(),
 });
 
-export const transactionPatchSchema = transactionSchema.partial().refine(
+export const transactionSchema = transactionBaseSchema.refine(
+  transferTargetShapeIsValid,
+  'Income and expense transactions cannot have a transfer target',
+);
+
+export const transactionPatchSchema = transactionBaseSchema.partial().refine(
   (value) => Object.keys(value).length > 0,
   'At least one field is required',
+).refine(
+  transferTargetShapeIsValid,
+  'Income and expense transactions cannot have a transfer target',
 );
 
 export const transactionQuerySchema = z.object({
   month: z.string().date().optional(),
 });
 
-export const budgetSchema = z.object({
+const budgetBaseSchema = z.object({
   categoryId: z.string().uuid(),
-  month: z.string().date(),
+  month: z.string().date().refine(
+    isFirstDayDateOnly,
+    'Budget month must be the first day of the month',
+  ),
   limitAmount: z.number().int().positive(),
 });
 
-export const budgetPatchSchema = budgetSchema.partial().refine(
+export const budgetSchema = budgetBaseSchema;
+
+export const budgetPatchSchema = budgetBaseSchema.partial().refine(
   (value) => Object.keys(value).length > 0,
   'At least one field is required',
 );
 
-export const savingGoalSchema = z.object({
+const savingGoalBaseSchema = z.object({
   name: z.string().trim().min(1),
   targetAmount: z.number().int().positive(),
   savedAmount: z.number().int().nonnegative(),
   deadline: z.string().date(),
 });
 
-export const savingGoalPatchSchema = savingGoalSchema.partial().refine(
+export const savingGoalSchema = savingGoalBaseSchema.refine(
+  savedAmountDoesNotExceedTarget,
+  'Saved amount must not exceed target amount',
+);
+
+export const savingGoalPatchSchema = savingGoalBaseSchema.partial().refine(
   (value) => Object.keys(value).length > 0,
   'At least one field is required',
+).refine(
+  savedAmountDoesNotExceedTarget,
+  'Saved amount must not exceed target amount',
 );

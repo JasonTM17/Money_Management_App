@@ -3,9 +3,28 @@ import 'dart:io';
 
 import 'sync_models.dart';
 
+class RemoteApiException implements Exception {
+  const RemoteApiException({
+    required this.statusCode,
+    required this.code,
+    required this.message,
+    this.details,
+  });
+
+  final int statusCode;
+  final String code;
+  final String message;
+  final Map<String, Object?>? details;
+
+  @override
+  String toString() => 'RemoteApiException($statusCode, $code)';
+}
+
 class RemoteSyncClient {
   RemoteSyncClient({required this.baseUri, HttpClient? httpClient})
-    : _httpClient = httpClient ?? HttpClient();
+    : _httpClient = httpClient ?? HttpClient() {
+    _guardReleaseBaseUri(baseUri);
+  }
 
   final Uri baseUri;
   final HttpClient _httpClient;
@@ -143,12 +162,48 @@ class RemoteSyncClient {
   ) async {
     final body = await utf8.decodeStream(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw HttpException('syncHttp${response.statusCode}');
+      throw _remoteApiException(response.statusCode, body);
     }
     final decoded = jsonDecode(body);
     if (decoded is! Map<String, Object?>) {
       throw const FormatException('invalidSyncPayload');
     }
     return decoded;
+  }
+
+  RemoteApiException _remoteApiException(int statusCode, String body) {
+    try {
+      final decoded = jsonDecode(body);
+      if (decoded is Map<String, Object?>) {
+        final code = decoded['code'];
+        final message = decoded['message'];
+        final details = decoded['details'];
+        return RemoteApiException(
+          statusCode: statusCode,
+          code: code is String ? code : 'syncHttp$statusCode',
+          message: message is String ? message : 'Remote API request failed',
+          details: details is Map<String, Object?> ? details : null,
+        );
+      }
+    } on Object {
+      // Fall through to stable generic error.
+    }
+    return RemoteApiException(
+      statusCode: statusCode,
+      code: 'syncHttp$statusCode',
+      message: 'Remote API request failed',
+    );
+  }
+
+  void _guardReleaseBaseUri(Uri uri) {
+    const isProduct = bool.fromEnvironment('dart.vm.product');
+    final isLocalhost = uri.host == 'localhost' || uri.host == '127.0.0.1';
+    if (isProduct && uri.scheme != 'https' && !isLocalhost) {
+      throw ArgumentError.value(
+        uri.toString(),
+        'baseUri',
+        'Production sync API must use HTTPS',
+      );
+    }
   }
 }

@@ -5,6 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import '../helpers/finance_widget_test_helpers.dart';
 import '../test_app_fakes.dart';
 
+Future<void> _openReportsTab(WidgetTester tester) async {
+  await tester.tap(find.byIcon(Icons.pie_chart_outline).last);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   setUp(() {
     FlutterSecureStorage.setMockInitialValues({});
@@ -57,8 +62,7 @@ void main() {
         store: FakeFinanceStore.withReportInsights(),
       );
 
-      await tester.tap(find.text('Báo cáo'));
-      await tester.pumpAndSettle();
+      await _openReportsTab(tester);
 
       expect(find.text('Xu hướng thu chi 4 tháng'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Chi tiêu theo danh mục'), 300);
@@ -79,8 +83,7 @@ void main() {
     testWidgets('opens report export preview with CSV content', (tester) async {
       await pumpCashFlowApp(tester);
 
-      await tester.tap(find.text('Báo cáo'));
-      await tester.pumpAndSettle();
+      await _openReportsTab(tester);
       final exportAction = find.byKey(const ValueKey('report-export-action'));
       await tester.scrollUntilVisible(exportAction, 300);
       await tester.tap(exportAction);
@@ -100,8 +103,7 @@ void main() {
         store: FakeFinanceStore.withMultiMonthReports(),
       );
 
-      await tester.tap(find.text('Báo cáo'));
-      await tester.pumpAndSettle();
+      await _openReportsTab(tester);
       expect(find.text('Tháng 5/2026'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Tháng trước'));

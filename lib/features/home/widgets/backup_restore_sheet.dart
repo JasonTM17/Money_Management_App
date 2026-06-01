@@ -9,6 +9,7 @@ import '../../../app/app_localizations.dart';
 import '../../../core/finance_backup_service.dart';
 import '../../auth/privacy_gate.dart';
 import '../finance_controller.dart';
+import 'backup_passphrase_dialog.dart';
 import 'home_common_widgets.dart';
 
 class BackupRestoreSheet extends ConsumerStatefulWidget {
@@ -45,7 +46,13 @@ class _BackupRestoreSheetState extends ConsumerState<BackupRestoreSheet> {
         ),
         const SizedBox(height: 16),
         FilledButton.icon(
-          onPressed: _busy ? null : _exportBackup,
+          onPressed: _busy ? null : _exportEncryptedBackup,
+          icon: const Icon(Icons.lock_outline),
+          label: Text(l10n.t('exportEncryptedBackup')),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _busy ? null : _exportPlainBackup,
           icon: const Icon(Icons.ios_share),
           label: Text(l10n.t('exportBackupJson')),
         ),
@@ -60,7 +67,40 @@ class _BackupRestoreSheetState extends ConsumerState<BackupRestoreSheet> {
     );
   }
 
-  Future<void> _exportBackup() async {
+  Future<void> _exportEncryptedBackup() async {
+    final l10n = context.l10n;
+    final passphrase = await showBackupPassphraseDialog(context, confirm: true);
+    if (passphrase == null) return;
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      final backup = await ref
+          .read(financeControllerProvider.notifier)
+          .exportEncryptedBackup(passphrase);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [
+            XFile.fromData(utf8.encode(backup), mimeType: 'application/json'),
+          ],
+          fileNameOverrides: ['cashflow-manager-encrypted-backup.json'],
+        ),
+      );
+      if (!mounted) return;
+      setState(() => _message = l10n.t('backupCreated'));
+    } on FormatException catch (error) {
+      if (!mounted) return;
+      setState(() => _message = l10n.error(error.message));
+    } on Object {
+      if (!mounted) return;
+      setState(() => _message = l10n.t('backupExportFailed'));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _exportPlainBackup() async {
     final l10n = context.l10n;
     setState(() {
       _busy = true;
@@ -111,8 +151,21 @@ class _BackupRestoreSheetState extends ConsumerState<BackupRestoreSheet> {
       if (bytes.length > _maxBackupBytes) {
         throw FormatException(l10n.t('restoreFileTooLarge'));
       }
-      final input = utf8.decode(bytes);
+      var input = utf8.decode(bytes);
       final controller = ref.read(financeControllerProvider.notifier);
+      if (controller.isEncryptedBackup(input)) {
+        if (!mounted) return;
+        final passphrase = await showBackupPassphraseDialog(
+          context,
+          confirm: false,
+        );
+        if (!mounted) return;
+        if (passphrase == null) {
+          setState(() => _message = l10n.t('restoreCancelled'));
+          return;
+        }
+        input = await controller.decryptBackup(input, passphrase: passphrase);
+      }
       final preview = controller.previewBackup(input);
       if (!mounted) return;
       final confirmed = await _confirmRestore(preview);

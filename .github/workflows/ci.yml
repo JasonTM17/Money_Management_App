@@ -26,7 +26,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --no-pub
 
       - name: Test
         run: flutter test --no-pub -r expanded
@@ -36,6 +36,73 @@ jobs:
 
       - name: Build Android App Bundle
         run: flutter build appbundle --debug
+
+  android-emulator-smoke:
+    name: Android emulator integration smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run smoke flow on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: medium_phone
+          script: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded
+
+  ios:
+    name: iOS simulator smoke and no-codesign build
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-pub
+
+      - name: Test
+        run: flutter test --no-pub -r expanded
+
+      - name: Select iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available
+          SIMULATOR_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ && /Shutdown|Booted/ {print $2; exit}')"
+          if [ -z "$SIMULATOR_ID" ]; then
+            echo "::error::No available iPhone simulator found"
+            exit 1
+          fi
+          xcrun simctl boot "$SIMULATOR_ID" || true
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          echo "IOS_SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
+
+      - name: Run smoke flow on iOS simulator
+        run: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d "$IOS_SIMULATOR_ID" -r expanded
+
+      - name: Build iOS without codesigning
+        run: flutter build ios --release --no-codesign --no-pub
 
   api:
     name: API generate, typecheck, test, and build
@@ -56,6 +123,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Audit API dependencies
+        run: npm audit --audit-level=moderate
 
       - name: Generate Prisma client
         run: npm run prisma:generate
