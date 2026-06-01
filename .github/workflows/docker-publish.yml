@@ -17,27 +17,24 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'push'
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Check Docker Hub secrets
+        id: dockerhub
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
-          if [ -z "$DOCKERHUB_USERNAME" ] || [ -z "$DOCKERHUB_TOKEN" ]; then
-            echo "Missing DOCKERHUB_USERNAME or DOCKERHUB_TOKEN repository secret."
-            exit 1
+          if [ -n "$DOCKERHUB_USERNAME" ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Docker Hub secrets are not configured; publishing GHCR only for this run."
           fi
-
-      - name: Checkout
-        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -46,33 +43,36 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract API image metadata
-        id: meta-api
+      - name: Login to Docker Hub
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract API GHCR metadata
+        id: meta-api-ghcr
         uses: docker/metadata-action@v5
         with:
-          images: |
-            nguyenson1710/cashflow-manager-api
-            ghcr.io/jasontm17/cashflow-manager-api
+          images: ghcr.io/jasontm17/cashflow-manager-api
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long
             type=ref,event=tag
             type=semver,pattern={{version}}
 
-      - name: Extract frontend image metadata
-        id: meta-frontend
+      - name: Extract frontend GHCR metadata
+        id: meta-frontend-ghcr
         uses: docker/metadata-action@v5
         with:
-          images: |
-            nguyenson1710/cashflow-manager-frontend
-            ghcr.io/jasontm17/cashflow-manager-frontend
+          images: ghcr.io/jasontm17/cashflow-manager-frontend
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long
             type=ref,event=tag
             type=semver,pattern={{version}}
 
-      - name: Build and publish API image
+      - name: Build and publish API image to GHCR
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -80,10 +80,10 @@ jobs:
           push: true
           build-args: |
             REVISION=${{ github.sha }}
-          tags: ${{ steps.meta-api.outputs.tags }}
-          labels: ${{ steps.meta-api.outputs.labels }}
+          tags: ${{ steps.meta-api-ghcr.outputs.tags }}
+          labels: ${{ steps.meta-api-ghcr.outputs.labels }}
 
-      - name: Build and publish frontend image
+      - name: Build and publish frontend image to GHCR
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -91,5 +91,53 @@ jobs:
           push: true
           build-args: |
             REVISION=${{ github.sha }}
-          tags: ${{ steps.meta-frontend.outputs.tags }}
-          labels: ${{ steps.meta-frontend.outputs.labels }}
+          tags: ${{ steps.meta-frontend-ghcr.outputs.tags }}
+          labels: ${{ steps.meta-frontend-ghcr.outputs.labels }}
+
+      - name: Extract API Docker Hub metadata
+        if: steps.dockerhub.outputs.enabled == 'true'
+        id: meta-api-dockerhub
+        uses: docker/metadata-action@v5
+        with:
+          images: nguyenson1710/cashflow-manager-api
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+
+      - name: Extract frontend Docker Hub metadata
+        if: steps.dockerhub.outputs.enabled == 'true'
+        id: meta-frontend-dockerhub
+        uses: docker/metadata-action@v5
+        with:
+          images: nguyenson1710/cashflow-manager-frontend
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=sha,format=long
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+
+      - name: Build and publish API image to Docker Hub
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: api/Dockerfile
+          push: true
+          build-args: |
+            REVISION=${{ github.sha }}
+          tags: ${{ steps.meta-api-dockerhub.outputs.tags }}
+          labels: ${{ steps.meta-api-dockerhub.outputs.labels }}
+
+      - name: Build and publish frontend image to Docker Hub
+        if: steps.dockerhub.outputs.enabled == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: true
+          build-args: |
+            REVISION=${{ github.sha }}
+          tags: ${{ steps.meta-frontend-dockerhub.outputs.tags }}
+          labels: ${{ steps.meta-frontend-dockerhub.outputs.labels }}
