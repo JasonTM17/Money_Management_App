@@ -78,7 +78,7 @@ class BudgetsTab extends StatelessWidget {
                         child: Text(
                           category?.name ?? budget.categoryId,
                           style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w900),
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
                       IconButton(
@@ -109,7 +109,7 @@ class BudgetsTab extends StatelessWidget {
                       Text(
                         '${Money(spent).formatVnd()} / ${Money(budget.limitAmount).formatVnd()}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(

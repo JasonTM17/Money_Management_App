@@ -54,7 +54,7 @@ class CategoryPieCard extends StatelessWidget {
                           radius: 58,
                           titleStyle: const TextStyle(
                             color: Colors.white,
-                            fontWeight: FontWeight.w800,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                     ],
@@ -108,7 +108,7 @@ class _ExpenseLegendRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(
                     context,
-                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
               ),
               const SizedBox(width: 10),
@@ -116,7 +116,7 @@ class _ExpenseLegendRow extends StatelessWidget {
                 '${item.percent}%',
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
@@ -169,7 +169,7 @@ class TopCategoryCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     textAlign: TextAlign.end,
-                    style: TextStyle(color: color, fontWeight: FontWeight.w900),
+                    style: TextStyle(color: color, fontWeight: FontWeight.w800),
                   ),
                 ),
               );

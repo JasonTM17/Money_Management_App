@@ -68,7 +68,7 @@ class _PrivacySecurityPanelState extends ConsumerState<PrivacySecurityPanel> {
                     Text(
                       l10n.t('privacyLock'),
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -100,7 +100,7 @@ class _PrivacySecurityPanelState extends ConsumerState<PrivacySecurityPanel> {
               l10n.t('biometricUnlockSetting'),
               style: Theme.of(
                 context,
-              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w800),
+              ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
             ),
             subtitle: Text(biometricSubtitle),
             value: _biometricEnabled,

@@ -243,7 +243,7 @@ class _MonthSelector extends StatelessWidget {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
