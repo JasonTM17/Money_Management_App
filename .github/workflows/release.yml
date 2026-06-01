@@ -1,10 +1,16 @@
-name: Release Android Artifacts
+name: Release Mobile Artifacts
 
 on:
   push:
     tags:
       - 'v*.*.*'
   workflow_dispatch:
+    inputs:
+      build_signed_ios:
+        description: Build a signed iOS IPA using Apple signing secrets
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -50,6 +56,7 @@ jobs:
           mkdir -p dist
           cp build/app/outputs/flutter-apk/app-release.apk "dist/cashflow-manager-${{ github.ref_name }}-android.apk"
           cp build/app/outputs/bundle/release/app-release.aab "dist/cashflow-manager-${{ github.ref_name }}-android.aab"
+          (cd dist && sha256sum "cashflow-manager-${{ github.ref_name }}-android.apk" "cashflow-manager-${{ github.ref_name }}-android.aab" > SHA256SUMS.txt)
           cat > dist/release-notes.md <<EOF
           # CashFlow Manager ${RELEASE_VERSION}+1
 
@@ -57,15 +64,33 @@ jobs:
 
           ## Verified release gates
           - Flutter analyze and full test suite.
+          - Deterministic integration smoke flow through Android/iOS CI device lanes.
           - Android release APK and App Bundle build.
           - PIN privacy lock with opt-in biometrics and PIN fallback.
           - Local SQLite finance flows, export, backup/restore, and fake-data demo media.
 
           ## Platform notes
           - Android artifacts are attached to this release.
-          - iOS archive still requires macOS/Xcode and is not built by this Windows/Ubuntu Android workflow.
+          - iOS no-codesign validation runs on macOS in this workflow.
+          - Signed iOS IPA export is manual and requires Apple signing secrets.
           - No cloud sync is required for local-first use.
           EOF
+
+      - name: Generate release checksums
+        shell: bash
+        run: |
+          cd dist
+          sha256sum \
+            "cashflow-manager-${{ github.ref_name }}-android.apk" \
+            "cashflow-manager-${{ github.ref_name }}-android.aab" \
+            release-notes.md > checksums.sha256
+
+      - name: Generate release SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/sbom.spdx.json
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
@@ -81,6 +106,22 @@ jobs:
           path: dist/cashflow-manager-${{ github.ref_name }}-android.aab
           if-no-files-found: error
 
+      - name: Upload release metadata artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cashflow-manager-${{ github.ref_name }}-release-metadata
+          path: |
+            dist/checksums.sha256
+            dist/sbom.spdx.json
+          if-no-files-found: error
+
+      - name: Upload release checksums
+        uses: actions/upload-artifact@v4
+        with:
+          name: cashflow-manager-${{ github.ref_name }}-checksums
+          path: dist/SHA256SUMS.txt
+          if-no-files-found: error
+
       - name: Attach artifacts to GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
@@ -90,3 +131,124 @@ jobs:
           files: |
             dist/cashflow-manager-${{ github.ref_name }}-android.apk
             dist/cashflow-manager-${{ github.ref_name }}-android.aab
+            dist/SHA256SUMS.txt
+            dist/checksums.sha256
+            dist/sbom.spdx.json
+
+  ios-validation:
+    name: Validate iOS release source
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-pub
+
+      - name: Test
+        run: flutter test --no-pub -r expanded
+
+      - name: Select iPhone simulator
+        shell: bash
+        run: |
+          set -euo pipefail
+          xcrun simctl list devices available
+          SIMULATOR_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ && /Shutdown|Booted/ {print $2; exit}')"
+          if [ -z "$SIMULATOR_ID" ]; then
+            echo "::error::No available iPhone simulator found"
+            exit 1
+          fi
+          xcrun simctl boot "$SIMULATOR_ID" || true
+          xcrun simctl bootstatus "$SIMULATOR_ID" -b
+          echo "IOS_SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
+
+      - name: Run smoke flow on iOS simulator
+        run: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d "$IOS_SIMULATOR_ID" -r expanded
+
+      - name: Build iOS without codesigning
+        run: flutter build ios --release --no-codesign --no-pub
+
+  ios-signed:
+    name: Build signed iOS IPA
+    runs-on: macos-latest
+    needs: ios-validation
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_signed_ios }}
+    env:
+      IOS_CERTIFICATE_BASE64: ${{ secrets.IOS_CERTIFICATE_BASE64 }}
+      IOS_CERTIFICATE_PASSWORD: ${{ secrets.IOS_CERTIFICATE_PASSWORD }}
+      IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+      IOS_KEYCHAIN_PASSWORD: ${{ secrets.IOS_KEYCHAIN_PASSWORD }}
+      IOS_EXPORT_OPTIONS_PLIST_BASE64: ${{ secrets.IOS_EXPORT_OPTIONS_PLIST_BASE64 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Validate iOS signing secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=0
+          for name in \
+            IOS_CERTIFICATE_BASE64 \
+            IOS_CERTIFICATE_PASSWORD \
+            IOS_PROVISIONING_PROFILE_BASE64 \
+            IOS_KEYCHAIN_PASSWORD \
+            IOS_EXPORT_OPTIONS_PLIST_BASE64
+          do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::$name is required for signed iOS release builds"
+              missing=1
+            fi
+          done
+          exit "$missing"
+
+      - name: Install iOS signing assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          CERTIFICATE_PATH="$RUNNER_TEMP/ios_distribution.p12"
+          PROFILE_PATH="$RUNNER_TEMP/cashflow.mobileprovision"
+          KEYCHAIN_PATH="$RUNNER_TEMP/cashflow-signing.keychain-db"
+          EXPORT_OPTIONS_PATH="$RUNNER_TEMP/ExportOptions.plist"
+
+          echo -n "$IOS_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          echo -n "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE_PATH"
+          echo -n "$IOS_EXPORT_OPTIONS_PLIST_BASE64" | base64 --decode > "$EXPORT_OPTIONS_PATH"
+
+          security create-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$IOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$IOS_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/cashflow.mobileprovision"
+          echo "IOS_EXPORT_OPTIONS_PATH=$EXPORT_OPTIONS_PATH" >> "$GITHUB_ENV"
+
+      - name: Build signed IPA
+        run: flutter build ipa --release --export-options-plist="$IOS_EXPORT_OPTIONS_PATH" --no-pub
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cashflow-manager-${{ github.ref_name }}-ios-ipa
+          path: build/ios/ipa/*.ipa
+          if-no-files-found: error

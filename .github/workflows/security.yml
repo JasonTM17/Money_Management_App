@@ -1,0 +1,170 @@
+name: Security
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gitleaks:
+    name: Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run gitleaks with redaction
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            zricethezav/gitleaks:latest detect \
+            --source=/repo \
+            --redact \
+            --exit-code=1 \
+            --report-format=sarif \
+            --report-path=/repo/gitleaks.sarif
+
+      - name: Upload gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-sarif
+          path: gitleaks.sarif
+          if-no-files-found: ignore
+
+  dependencies:
+    name: Dependency and advisory checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: OpenAPI lint gate
+        run: npx --yes @redocly/cli@latest lint docs/openapi.yaml --skip-rule operation-operationId --skip-rule info-license --skip-rule operation-4xx-response
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+
+      - name: Install API dependencies
+        working-directory: api
+        run: npm ci
+
+      - name: Audit API dependencies
+        run: npm --prefix api audit --audit-level=moderate --json > npm-audit.json
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Capture Flutter outdated advisory review
+        run: flutter pub outdated --json > flutter-pub-outdated.json
+
+      - name: Upload dependency reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-security-reports
+          path: |
+            npm-audit.json
+            flutter-pub-outdated.json
+          if-no-files-found: ignore
+
+  trivy-source:
+    name: Trivy filesystem and SBOM
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem gate
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            aquasec/trivy:latest fs \
+            --exit-code 1 \
+            --severity CRITICAL,HIGH \
+            --format sarif \
+            --output /repo/trivy-fs.sarif \
+            /repo
+
+      - name: Generate source SBOM
+        if: always()
+        run: |
+          docker run --rm \
+            -v "$PWD:/repo" \
+            aquasec/trivy:latest fs \
+            --format cyclonedx \
+            --output /repo/cashflow-manager-source-sbom.cdx.json \
+            /repo
+
+      - name: Upload Trivy source artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-source-security
+          path: |
+            trivy-fs.sarif
+            cashflow-manager-source-sbom.cdx.json
+          if-no-files-found: ignore
+
+  trivy-images:
+    name: Docker image scan gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build --build-arg REVISION=${{ github.sha }} -f api/Dockerfile -t cashflow-manager-api:security .
+
+      - name: Build frontend artifact image
+        run: docker build --build-arg REVISION=${{ github.sha }} -f Dockerfile.frontend -t cashflow-manager-frontend:security .
+
+      - name: Scan API image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:/repo" \
+            aquasec/trivy:latest image \
+            --exit-code 1 \
+            --severity CRITICAL,HIGH \
+            --format sarif \
+            --output /repo/trivy-api-image.sarif \
+            cashflow-manager-api:security
+
+      - name: Scan frontend image
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD:/repo" \
+            aquasec/trivy:latest image \
+            --exit-code 1 \
+            --severity CRITICAL,HIGH \
+            --format sarif \
+            --output /repo/trivy-frontend-image.sarif \
+            cashflow-manager-frontend:security
+
+      - name: Upload image scan reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-security
+          path: |
+            trivy-api-image.sarif
+            trivy-frontend-image.sarif
+          if-no-files-found: ignore
