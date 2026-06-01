@@ -8,10 +8,27 @@
 
 # Claude/OMC private tooling and plans
 .claude/
+.codex/
 .omc/
+.kilo/
+.playwright-mcp/
 plans/
 CLAUDE.md
 CLAUDE.MD
+
+# Local finance artifacts
+*.sqlite
+*.sqlite-*
+*.db
+cashflow-manager-backup*.json
+cashflow-manager-report*.pdf
+cashflow-manager-report*.csv
+cashflow-manager-transactions*.csv
+
+# Node/API
+node_modules/
+api/node_modules/
+api/dist/
 
 # Flutter/Dart
 .dart_tool/
@@ -22,6 +39,7 @@ CLAUDE.MD
 .pub/
 build/
 coverage/
+dist/
 
 # Android/iOS generated artifacts
 android/.gradle/

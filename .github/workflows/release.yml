@@ -1,0 +1,92 @@
+name: Release Android Artifacts
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    name: Build Android release package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set release version
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "RELEASE_VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-pub
+
+      - name: Test
+        run: flutter test --no-pub -r expanded
+
+      - name: Build release APK
+        run: flutter build apk --release --no-pub
+
+      - name: Build release App Bundle
+        run: flutter build appbundle --release --no-pub
+
+      - name: Prepare release artifacts
+        shell: bash
+        run: |
+          mkdir -p dist
+          cp build/app/outputs/flutter-apk/app-release.apk "dist/cashflow-manager-${{ github.ref_name }}-android.apk"
+          cp build/app/outputs/bundle/release/app-release.aab "dist/cashflow-manager-${{ github.ref_name }}-android.aab"
+          cat > dist/release-notes.md <<EOF
+          # CashFlow Manager ${RELEASE_VERSION}+1
+
+          Offline-first Flutter personal finance manager for Android with Vietnamese, English, and Japanese localization.
+
+          ## Verified release gates
+          - Flutter analyze and full test suite.
+          - Android release APK and App Bundle build.
+          - PIN privacy lock with opt-in biometrics and PIN fallback.
+          - Local SQLite finance flows, export, backup/restore, and fake-data demo media.
+
+          ## Platform notes
+          - Android artifacts are attached to this release.
+          - iOS archive still requires macOS/Xcode and is not built by this Windows/Ubuntu Android workflow.
+          - No cloud sync is required for local-first use.
+          EOF
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cashflow-manager-${{ github.ref_name }}-android-apk
+          path: dist/cashflow-manager-${{ github.ref_name }}-android.apk
+          if-no-files-found: error
+
+      - name: Upload App Bundle artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cashflow-manager-${{ github.ref_name }}-android-aab
+          path: dist/cashflow-manager-${{ github.ref_name }}-android.aab
+          if-no-files-found: error
+
+      - name: Attach artifacts to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: CashFlow Manager ${{ env.RELEASE_VERSION }}+1
+          body_path: dist/release-notes.md
+          files: |
+            dist/cashflow-manager-${{ github.ref_name }}-android.apk
+            dist/cashflow-manager-${{ github.ref_name }}-android.aab
