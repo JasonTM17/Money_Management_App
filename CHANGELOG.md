@@ -16,6 +16,10 @@ All notable changes to CashFlow Manager are documented in this file.
 - GitHub Actions CI for Flutter, API, PostgreSQL migration/seed, Docker image builds, Android release artifacts, Docker Hub publishing, and GHCR package mirroring.
 - README screenshots and demo GIF generated from deterministic fake financial data.
 
+### Fixed
+
+- Fixed multilingual starter/demo text encoding so Vietnamese and Japanese UI copy no longer renders as mojibake.
+
 ### Deferred
 
 - Production cloud sync rollout; the 1.0 app remains offline-first with server foundations only.

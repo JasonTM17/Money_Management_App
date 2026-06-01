@@ -69,6 +69,8 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '409':
           $ref: '#/components/responses/Conflict'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /v1/auth/login:
     post:
       summary: Log in to a sync account
@@ -88,6 +90,8 @@ paths:
                 $ref: '#/components/schemas/AuthSessionResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /v1/auth/refresh:
     post:
       summary: Rotate a refresh token and issue a new access token
@@ -107,6 +111,8 @@ paths:
                 $ref: '#/components/schemas/AuthSessionResponse'
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /v1/auth/logout:
     post:
       summary: Revoke the current refresh token
@@ -121,6 +127,8 @@ paths:
           description: Logged out
         '401':
           $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /v1/me:
     get:
       summary: Get current sync account
@@ -195,6 +203,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Wallet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
   /v1/categories:
@@ -259,6 +269,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
   /v1/transactions:
@@ -490,7 +502,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
   /v1/sync/push:
     post:
-      summary: Push queued local mutations with revision conflict checks
+      summary: Push queued local mutations with all-or-none revision conflict checks
       requestBody:
         required: true
         content:
@@ -507,11 +519,27 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
-          description: One or more mutations used a stale baseRevision
+          description: One or more mutations used a stale baseRevision, missing server record, existing create target, or otherwise conflicted. Under v1 all-or-none semantics no mutation is applied when this response is returned.
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                syncConflict:
+                  value:
+                    code: sync_conflict
+                    message: One or more sync mutations conflict
+                    details:
+                      applied: []
+                      conflicts:
+                        - clientMutationId: m-1
+                          entityType: wallet
+                          entityId: 00000000-0000-4000-8000-000000000001
+                          server:
+                            id: 00000000-0000-4000-8000-000000000001
+                            revision: 2
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /v1/households:
     get:
       summary: List households the current user belongs to
@@ -714,6 +742,8 @@ paths:
           description: Purchase verified
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /v1/payments/sepay/orders:
     post:
       summary: Create a direct/off-store SePay order
@@ -732,9 +762,11 @@ paths:
                 $ref: '#/components/schemas/PaymentOrder'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /v1/payments/sepay/webhook:
     post:
-      summary: Receive SePay payment status webhook with HMAC signature
+      summary: Receive SePay payment status webhook with raw-body HMAC signature
       security: []
       parameters:
         - name: x-sepay-signature
@@ -742,6 +774,8 @@ paths:
           required: true
           schema:
             type: string
+            pattern: '^[A-Fa-f0-9]{64}$'
+          description: Hex HMAC-SHA256 over the exact raw JSON request body using SEPAY_WEBHOOK_SECRET.
       requestBody:
         required: true
         content:
@@ -750,11 +784,13 @@ paths:
               $ref: '#/components/schemas/SePayWebhookRequest'
       responses:
         '200':
-          description: Webhook accepted
+          description: Webhook accepted. Payment state transitions are idempotent; a paid order is never downgraded by later expired or cancelled webhook noise.
         '400':
           $ref: '#/components/responses/BadRequest'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+        '429':
+          $ref: '#/components/responses/RateLimited'
   /v1/ai/analysis:
     post:
       summary: Ask the n8n-backed financial analysis workflow for guidance
@@ -776,7 +812,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
         '503':
-          description: AI workflow is not configured, timed out, returned an invalid response, or is unavailable. Stable error codes include `ai_analysis_unconfigured`, `ai_analysis_timeout`, `ai_analysis_invalid_response`, and `ai_analysis_unavailable`.
+          description: AI workflow is not configured, misconfigured, timed out, returned an invalid response, or is unavailable. Stable error codes include `ai_analysis_unconfigured`, `ai_analysis_invalid_config`, `ai_analysis_timeout`, `ai_analysis_invalid_response`, and `ai_analysis_unavailable`.
           content:
             application/json:
               schema:
@@ -786,6 +822,10 @@ paths:
                   value:
                     code: ai_analysis_unconfigured
                     message: AI analysis workflow is not configured
+                invalidConfig:
+                  value:
+                    code: ai_analysis_invalid_config
+                    message: AI analysis workflow is misconfigured
                 timeout:
                   value:
                     code: ai_analysis_timeout
@@ -798,6 +838,8 @@ paths:
                   value:
                     code: ai_analysis_unavailable
                     message: AI analysis workflow is unavailable
+        '429':
+          $ref: '#/components/responses/RateLimited'
 components:
   securitySchemes:
     bearerAuth:
@@ -838,6 +880,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    RateLimited:
+      description: Too many requests for a protected route or identity.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            rateLimited:
+              value:
+                code: rate_limited
+                message: Too many requests
     Forbidden:
       description: Authenticated account lacks permission
       content:
@@ -1228,10 +1281,14 @@ components:
             $ref: '#/components/schemas/SyncEvent'
     SyncMutation:
       type: object
-      required: [clientMutationId, entityType, entityId, operation]
+      required: [clientMutationId, entityType, entityId, operation, payload]
+      additionalProperties: false
+      description: Entity-specific sync mutation. Create uses full entity input, update uses the matching patch input and requires `baseRevision`, and delete requires `baseRevision` with an empty payload. Unknown payload keys are rejected.
       properties:
         clientMutationId:
           type: string
+          minLength: 1
+          maxLength: 120
         entityType:
           $ref: '#/components/schemas/SyncEntityType'
         entityId:
@@ -1241,9 +1298,22 @@ components:
           $ref: '#/components/schemas/SyncOperation'
         baseRevision:
           type: [integer, 'null']
+          minimum: 0
+          description: Required for update and delete mutations; optional for create.
         payload:
-          type: object
-          additionalProperties: true
+          oneOf:
+            - $ref: '#/components/schemas/WalletInput'
+            - $ref: '#/components/schemas/WalletPatchInput'
+            - $ref: '#/components/schemas/CategoryInput'
+            - $ref: '#/components/schemas/CategoryPatchInput'
+            - $ref: '#/components/schemas/TransactionInput'
+            - $ref: '#/components/schemas/TransactionPatchInput'
+            - $ref: '#/components/schemas/BudgetInput'
+            - $ref: '#/components/schemas/BudgetPatchInput'
+            - $ref: '#/components/schemas/SavingGoalInput'
+            - $ref: '#/components/schemas/SavingGoalPatchInput'
+            - type: object
+              maxProperties: 0
     SyncPushRequest:
       type: object
       required: [mutations]
@@ -1454,6 +1524,8 @@ components:
           enum: [paid, expired, cancelled]
         amount:
           type: integer
+          minimum: 1
+          description: Optional echo of the order amount; rejected if it does not match the stored order.
         paidAt:
           type: string
           format: date-time

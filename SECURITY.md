@@ -24,15 +24,21 @@ CashFlow Manager protects local financial data with:
 - Failed PIN cooldown.
 - Lifecycle relock when the app leaves foreground.
 - Re-authentication before data reset and backup restore.
-- Backup restore preview and schema validation.
+- Encrypted backup schema v2 with passphrase-derived AES-GCM, plus legacy schema v1 JSON import compatibility.
+- Backup restore preview and schema validation before local data replacement.
 - CSV formula escaping before spreadsheet export.
 
 Backend and automation security expectations:
 
 - No direct Flutter-to-PostgreSQL access.
 - JWT/JWKS for authenticated backend routes.
-- HMAC signature verification for n8n webhook calls.
+- Per-route abuse limits for auth, sync push, AI analysis, payment verification, and SePay webhooks.
+- Timing-safe HMAC signature verification for n8n and SePay webhook calls over the raw JSON request body.
+- Refresh-token reuse detection that revokes outstanding sessions for the same account.
+- Release mobile sync disabled unless `CASHFLOW_SYNC_ENABLED=true` and `CASHFLOW_API_BASE_URL` is HTTPS; localhost HTTP is development-only.
+- n8n must remain private/internal in production behind TLS and a reverse proxy or private network boundary.
 - Secrets only in local `.env` files or deployment secret stores.
+- Release gates include dependency audit, secret scan, Trivy scan, checksum generation, and SBOM generation where CI has the required tools.
 - No API keys, keystores, local database files, private notes, or credentials in git.
 
 ## Out of Scope

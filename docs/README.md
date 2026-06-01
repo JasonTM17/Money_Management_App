@@ -9,6 +9,7 @@
 - [Main README](../README.md): product overview, screenshots, setup, test, release notes.
 - [Product requirements](PRODUCT_REQUIREMENTS.md): personas, MVP scope, acceptance notes.
 - [Technical design](TECHNICAL_DESIGN.md): Flutter/API/n8n architecture and runtime flow.
+- [System diagrams](system-diagrams.md): Mermaid.js v11 runtime, sync, automation, and release diagrams.
 - [Database schema](DATABASE_SCHEMA.md): local SQLite and backend data model notes.
 - [UI flow](UI_FLOW.md): primary app journeys and screen map.
 - [Test plan](TEST_PLAN.md): unit, widget, media, API, and release gates.
@@ -20,6 +21,7 @@
 - [README tiếng Việt](../README.vi.md): tổng quan sản phẩm, ảnh chụp, cài đặt, test và ghi chú release.
 - [Product requirements](PRODUCT_REQUIREMENTS.md): persona, phạm vi MVP, tiêu chí nghiệm thu.
 - [Technical design](TECHNICAL_DESIGN.md): kiến trúc Flutter/API/n8n và runtime flow.
+- [System diagrams](system-diagrams.md): Mermaid.js v11 cho runtime, sync, automation và release.
 - [Database schema](DATABASE_SCHEMA.md): SQLite local và mô hình dữ liệu backend.
 - [UI flow](UI_FLOW.md): các luồng chính trong app và bản đồ màn hình.
 - [Test plan](TEST_PLAN.md): unit, widget, media, API và release gates.
@@ -31,6 +33,7 @@
 - [日本語 README](../README.ja.md): 製品概要、スクリーンショット、セットアップ、テスト、リリースメモ。
 - [Product requirements](PRODUCT_REQUIREMENTS.md): ペルソナ、MVP scope、受け入れ条件。
 - [Technical design](TECHNICAL_DESIGN.md): Flutter/API/n8n architecture と runtime flow。
+- [System diagrams](system-diagrams.md): Mermaid.js v11 runtime, sync, automation, release diagrams。
 - [Database schema](DATABASE_SCHEMA.md): local SQLite と backend data model。
 - [UI flow](UI_FLOW.md): 主要アプリフローと screen map。
 - [Test plan](TEST_PLAN.md): unit/widget/media/API/release gates。

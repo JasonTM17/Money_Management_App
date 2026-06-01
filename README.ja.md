@@ -46,7 +46,7 @@ CashFlow Manager は Android/iOS 向け Flutter 製 offline-first 個人資産�
 - 貯蓄目標、進捗、月ごとの推奨貯蓄額。
 - 月次レポート、カテゴリ別支出、上位支出、予測、CSV/PDF 共有。
 - PBKDF2-HMAC-SHA256 で保護された PIN、任意で有効化する生体認証、失敗時 cooldown、アプリ離脱時の再ロック。
-- JSON バックアップ/復元、プレビュー、ファイル検証、破壊的操作前の再認証。
+- JSON バックアップ/復元、プレビュー、ファイル検証、passphrase 付き v2 暗号化、破壊的操作前の再認証。legacy v1 JSON import も維持します。
 
 ## アーキテクチャ
 
@@ -72,6 +72,7 @@ API contract: [`docs/openapi.yaml`](docs/openapi.yaml)
 ## 技術スタック
 
 - Flutter 3.44 / Dart 3.12
+- GitHub Actions: Android emulator smoke and iOS simulator/no-codesign validation
 - Riverpod, SQLite, `fl_chart`, `local_auth`, `flutter_secure_storage`
 - CSV, PDF, Printing, Share Plus, File Picker
 - Fastify, Prisma, PostgreSQL 16, Docker Compose
@@ -110,6 +111,7 @@ docker compose up --build -d api frontend
 ```bash
 flutter analyze
 flutter test --no-pub -r expanded
+flutter test --no-pub integration_test/cashflow_smoke_test.dart -d <device-id> -r expanded
 flutter test --no-pub scripts/capture_demo_media_test.dart -r expanded
 flutter build apk --debug
 ```
@@ -130,10 +132,10 @@ docs/                  # Product/technical/release docs and media
 
 ## リリースとパッケージ
 
-- Android release は Windows で APK/AAB を検証します。`v1.0.0` の標準 artifact は `dist/` 内の `cashflow-manager-v1.0.0-android.apk` と `cashflow-manager-v1.0.0-android.aab` です。
+- GitHub Release `v1.0.0` は `https://github.com/JasonTM17/Money_Management_App/releases/tag/v1.0.0` で公開済みです。APK `cashflow-manager-v1.0.0-android.apk` と App Bundle `cashflow-manager-v1.0.0-android.aab` を含みます。更新後の release workflow は次回の tagged release run で SBOM/checksum artifacts を attach します。
 - iOS archive には macOS/Xcode/Swift が必要で、Windows で archive 済みとは記載しません。
-- Docker publish は Docker Hub を維持し、GitHub Packages/GHCR にも mirror します: `ghcr.io/jasontm17/cashflow-manager-api` と `ghcr.io/jasontm17/cashflow-manager-frontend`。release tag では `latest`、git SHA、semver tag を使います。
-- GitHub About の homepage は、実際の公開 release/download ページができるまで `https://github.com/JasonTM17/Money_Management_App#readme` を使います。
+- Docker publish workflow は `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` と `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0` の public GHCR manifest を公開済みです。release build では `v1.0.0`、git SHA、`latest` tag も使います。Docker Hub secrets が未設定だったため、Docker Hub image はまだ public ではありません。
+- GitHub About の homepage は、実際の公開 release/download ページができるまで空欄にします。
 ## プライバシー
 
 金融データは local-first です。PIN は常に fallback として残り、生体認証はユーザーが任意で有効化します。Secrets、`.env*`、署名キー、ローカル DB、本物の backup、private agent folders、internal planning notes は commit しません。n8n/API の token は local env または deployment secrets で管理します。

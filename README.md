@@ -62,6 +62,7 @@ The Flutter app is useful without accounts, network access, PostgreSQL, or n8n. 
 - Lifecycle relock when the app leaves foreground.
 - Opt-in biometric unlock through `local_auth`, with PIN always available as fallback.
 - Re-authentication before destructive flows such as reset data and backup restore.
+- Encrypted backup schema v2 with passphrase-derived AES-GCM, while legacy plaintext JSON imports remain supported.
 - Backup restore preview with file-size and data-shape validation before replacement.
 - CSV export formula escaping to reduce spreadsheet injection risk.
 
@@ -70,7 +71,7 @@ The Flutter app is useful without accounts, network access, PostgreSQL, or n8n. 
 - Separate `api` service using Fastify, Prisma, PostgreSQL, JWT/JWKS, and OpenAPI.
 - Docker Compose stack for PostgreSQL, API, frontend artifact server, migrations, seed job, and optional n8n automation.
 - n8n workflow import/activation path with HMAC request verification before AI provider calls.
-- GitHub Actions CI for Flutter, API, PostgreSQL migration/seed, Docker image builds, Android release artifacts, and Docker Hub and GHCR publishing.
+- GitHub Actions CI for Flutter, Android emulator smoke, iOS simulator/no-codesign validation, API, PostgreSQL migration/seed, Docker image builds, Android release artifacts, and Docker Hub and GHCR publishing.
 
 ## Architecture
 
@@ -105,7 +106,7 @@ API contract: [`docs/openapi.yaml`](docs/openapi.yaml)
 - `csv`, `pdf`, `printing`, `share_plus`, `file_picker` for export and backup flows
 - Fastify + Prisma API for authenticated PostgreSQL-backed sync foundation and AI analysis proxy
 - Docker Compose with PostgreSQL 16, migration/seed jobs, API, frontend artifact server, and optional n8n automation
-- GitHub Actions CI for Flutter analyze/tests/builds, API Prisma/typecheck/tests/build, PostgreSQL migration/seed validation, Docker image builds, Android release artifacts, and Docker Hub and GHCR publishing
+- GitHub Actions CI for Flutter analyze/tests/builds, Android emulator smoke, iOS simulator/no-codesign validation, API Prisma/typecheck/tests/build, PostgreSQL migration/seed validation, Docker image builds, Android release artifacts, and Docker Hub and GHCR publishing
 
 ## Quick Start
 
@@ -210,11 +211,12 @@ flutter build appbundle --release
 
 Release signing requires standard Android keystore setup outside this repo. Do not commit keystores or passwords.
 
-Suggested GitHub Release artifacts:
+Published GitHub Release `v1.0.0`:
 
-- `cashflow-manager-v1.0.0-android.apk`
-- `cashflow-manager-v1.0.0-android.aab`
-- `sbom.spdx.json` after release security scanning is finalized
+- Release page: [CashFlow Manager 1.0.0+1](https://github.com/JasonTM17/Money_Management_App/releases/tag/v1.0.0)
+- APK: `cashflow-manager-v1.0.0-android.apk`
+- App Bundle: `cashflow-manager-v1.0.0-android.aab`
+- The updated release workflow is configured to generate SBOM and SHA256 checksum artifacts on the next tagged release run.
 
 ### iOS
 
@@ -222,10 +224,11 @@ The iOS structure exists under `ios/`. Build/archive requires macOS with Xcode a
 
 ```bash
 flutter pub get
-flutter build ios --release
+flutter test --no-pub integration_test/cashflow_smoke_test.dart -d <ios-simulator-id> -r expanded
+flutter build ios --release --no-codesign --no-pub
 ```
 
-Then archive through Xcode or Fastlane on a macOS runner.
+Then create the signed archive/IPA through Xcode Organizer, Fastlane, or the manual signed CI lane with Apple signing secrets.
 
 ### Docker images
 
@@ -236,13 +239,14 @@ The intended public container image names are:
 - GHCR: `ghcr.io/jasontm17/cashflow-manager-api`
 - GHCR: `ghcr.io/jasontm17/cashflow-manager-frontend`
 
-Image publishing should push `latest`, git SHA, and semver tags on release tag builds after CI/release gates pass.
+The Docker publish workflow has published public GHCR manifests for `1.0.0`; it also tags release builds as `v1.0.0`, git SHA, and `latest`. Docker Hub images are not public yet because Docker Hub secrets were not configured for the verified workflow run.
 
 ## Test
 
 ```bash
 flutter analyze
 flutter test --no-pub -r expanded
+flutter test --no-pub integration_test/cashflow_smoke_test.dart -d <device-id> -r expanded
 flutter test --no-pub scripts/capture_demo_media_test.dart -r expanded
 ```
 
@@ -254,6 +258,7 @@ Current coverage focus:
 - Saving goal monthly suggestion.
 - Empty export behavior and PDF payload generation.
 - Privacy lock setup/unlock/relock, biometric opt-in, PIN cooldown, destructive-flow re-auth, dashboard, transaction, wallet transfer, budget, goal, report, export, and backup widget flows.
+- Device/simulator smoke coverage for PIN setup, navigation, transaction entry, wallet transfer, budget warning, saving goal, report export preview, backup entry, and reset confirmation.
 - Demo screenshot generation from deterministic fake financial data.
 
 ## Project Structure
@@ -276,12 +281,12 @@ docs/                  # Product, technical, database, UI, test, release docs, m
 
 Use this when preparing the GitHub repository page:
 
-- About: `Offline-first Flutter personal finance manager with privacy lock, SQLite, Docker/PostgreSQL API, OpenAPI, and n8n HMAC automation.`
-- Website/homepage: `https://github.com/JasonTM17/Money_Management_App#readme` until a real public release/download page exists.
-- Topics: `dart`, `docker`, `fastify`, `flutter`, `n8n`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `sqlite`.
+- About: `Offline-first Flutter personal finance manager with PIN/opt-in biometrics, SQLite, Docker/PostgreSQL API, OpenAPI, and n8n HMAC automation.`
+- Website/homepage: leave empty until a real public release/download page exists.
+- Topics: `dart`, `docker`, `fastify`, `flutter`, `n8n`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `sqlite`, `android`, `offline-first`.
 - Pin screenshots/GIF from `docs/media/` in the README.
-- No GitHub Releases are published yet; publish only from signed release tags after CI, release signing, SBOM, and checksum gates pass.
-- Packages/containers are not published or visible yet; verify Docker Hub and GHCR only after release gates pass for the API and frontend images.
+- GitHub Release `v1.0.0` is published with APK/AAB artifacts; the updated release workflow is configured to attach SBOM and SHA256 checksum artifacts on the next tagged release run.
+- GHCR packages are public for `1.0.0`; Docker Hub packages are not public yet because Docker Hub secrets were not configured for the verified workflow run.
 - Do not publish secrets, signing assets, local databases, private automation files, or internal planning notes.
 
 ## Privacy Notes
