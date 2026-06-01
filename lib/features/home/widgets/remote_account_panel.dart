@@ -24,7 +24,11 @@ class RemoteAccountPanel extends ConsumerWidget {
         ),
         data: (state) => state.isSignedIn
             ? _SignedInPanel(state: state)
-            : _SignedOutPanel(onOpen: () => _showAuthSheet(context)),
+            : _SignedOutPanel(
+                enabled: state.syncAvailable,
+                messageKey: state.messageKey,
+                onOpen: () => _showAuthSheet(context),
+              ),
       ),
     );
   }
@@ -39,8 +43,14 @@ class RemoteAccountPanel extends ConsumerWidget {
 }
 
 class _SignedOutPanel extends StatelessWidget {
-  const _SignedOutPanel({required this.onOpen});
+  const _SignedOutPanel({
+    required this.enabled,
+    required this.messageKey,
+    required this.onOpen,
+  });
 
+  final bool enabled;
+  final String? messageKey;
   final VoidCallback onOpen;
 
   @override
@@ -50,14 +60,14 @@ class _SignedOutPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _StatusLine(
-          icon: Icons.cloud_queue,
+          icon: enabled ? Icons.cloud_queue : Icons.cloud_off,
           title: l10n.t('accountSync'),
-          subtitle: l10n.t('accountSyncSignedOut'),
+          subtitle: l10n.t(messageKey ?? 'accountSyncSignedOut'),
         ),
         const SizedBox(height: 12),
         FilledButton.icon(
           key: const ValueKey('remote-account-open-auth-button'),
-          onPressed: onOpen,
+          onPressed: enabled ? onOpen : null,
           icon: const Icon(Icons.login),
           label: Text(l10n.t('login')),
         ),

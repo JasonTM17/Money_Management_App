@@ -19,7 +19,10 @@ class AppLocalizations {
   String get languageCode => _supportedLanguage(locale.languageCode);
 
   String t(String key) =>
-      _values[languageCode]?[key] ?? _values['vi']![key] ?? key;
+      _values[languageCode]?[key] ??
+      _values['en']?[key] ??
+      _values['vi']![key] ??
+      key;
 
   String error(String? key) => key == null ? t('unknownError') : t(key);
 
@@ -190,6 +193,15 @@ const _values = {
     'amountInvalid': 'Số tiền không hợp lệ',
     'amountPositive': 'Số tiền phải lớn hơn 0',
     'backupCreated': 'Đã tạo file backup JSON.',
+    'exportEncryptedBackup': 'Export encrypted backup',
+    'backupPassphrase': 'Backup passphrase',
+    'backupPassphraseConfirm': 'Confirm backup passphrase',
+    'backupPassphraseMismatch': 'Backup passphrases do not match',
+    'backupPassphraseTooShort':
+        'Backup passphrase must be at least 8 characters',
+    'backupDecryptFailed': 'Could not decrypt backup. Check the passphrase.',
+    'backupEncryptedPassphraseRequired':
+        'Encrypted backup requires a passphrase',
     'backupExportFailed': 'Không xuất được backup trên thiết bị này.',
     'backupIntro':
         'Xuất file JSON offline hoặc khôi phục dữ liệu từ file backup CashFlow Manager.',
@@ -374,6 +386,9 @@ const _values = {
     'syncServerUnavailable': 'Máy chủ đồng bộ không khả dụng',
     'syncSessionUnavailable': 'Không đọc được phiên đồng bộ trên thiết bị này',
     'syncStatusSynced': 'Đã đồng bộ trạng thái tài khoản',
+    'syncReleaseDisabled': 'Sync is disabled in this release build.',
+    'syncHttpsRequired': 'Release sync requires an HTTPS API URL.',
+    'syncInvalidBaseUrl': 'Sync API URL is invalid.',
     'themeDark': 'Tối',
     'themeLight': 'Sáng',
     'walletCash': 'Tiền mặt',
@@ -400,6 +415,15 @@ const _values = {
     'amountInvalid': 'Invalid amount',
     'amountPositive': 'Amount must be greater than 0',
     'backupCreated': 'Backup JSON file created.',
+    'exportEncryptedBackup': 'Export encrypted backup',
+    'backupPassphrase': 'Backup passphrase',
+    'backupPassphraseConfirm': 'Confirm backup passphrase',
+    'backupPassphraseMismatch': 'Backup passphrases do not match',
+    'backupPassphraseTooShort':
+        'Backup passphrase must be at least 8 characters',
+    'backupDecryptFailed': 'Could not decrypt backup. Check the passphrase.',
+    'backupEncryptedPassphraseRequired':
+        'Encrypted backup requires a passphrase',
     'backupExportFailed': 'Could not export backup on this device.',
     'backupIntro':
         'Export an offline JSON file or restore data from a CashFlow Manager backup.',
@@ -582,8 +606,13 @@ const _values = {
     'syncAuthFailed': 'Could not sign in. Check email, password, or network.',
     'syncNow': 'Sync',
     'syncServerUnavailable': 'Sync server unavailable',
+    'syncDisabledInRelease':
+        'Sync is disabled in release builds until HTTPS API config is provided.',
     'syncSessionUnavailable': 'Could not read sync session on this device',
     'syncStatusSynced': 'Account status synced',
+    'syncReleaseDisabled': 'Sync is disabled in this release build.',
+    'syncHttpsRequired': 'Release sync requires an HTTPS API URL.',
+    'syncInvalidBaseUrl': 'Sync API URL is invalid.',
     'themeDark': 'Dark',
     'themeLight': 'Light',
     'walletCash': 'Cash',
@@ -610,6 +639,15 @@ const _values = {
     'amountInvalid': '金額が正しくありません',
     'amountPositive': '金額は0より大きくしてください',
     'backupCreated': 'バックアップJSONファイルを作成しました。',
+    'exportEncryptedBackup': 'Export encrypted backup',
+    'backupPassphrase': 'Backup passphrase',
+    'backupPassphraseConfirm': 'Confirm backup passphrase',
+    'backupPassphraseMismatch': 'Backup passphrases do not match',
+    'backupPassphraseTooShort':
+        'Backup passphrase must be at least 8 characters',
+    'backupDecryptFailed': 'Could not decrypt backup. Check the passphrase.',
+    'backupEncryptedPassphraseRequired':
+        'Encrypted backup requires a passphrase',
     'backupExportFailed': 'この端末でバックアップを出力できませんでした。',
     'backupIntro': 'オフラインJSONファイルを出力、またはCashFlow Managerバックアップから復元します。',
     'backupRestore': 'バックアップ / 復元',
@@ -783,6 +821,9 @@ const _values = {
     'syncServerUnavailable': '同期サーバーを利用できません',
     'syncSessionUnavailable': 'この端末の同期セッションを読み取れません',
     'syncStatusSynced': 'アカウント状態を同期しました',
+    'syncReleaseDisabled': 'Sync is disabled in this release build.',
+    'syncHttpsRequired': 'Release sync requires an HTTPS API URL.',
+    'syncInvalidBaseUrl': 'Sync API URL is invalid.',
     'themeDark': 'ダーク',
     'themeLight': 'ライト',
     'walletCash': '現金',

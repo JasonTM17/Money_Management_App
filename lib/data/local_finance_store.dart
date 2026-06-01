@@ -11,6 +11,8 @@ import '../core/finance_models.dart';
 import '../core/sync_models.dart';
 
 part 'local-finance-sync-metadata.dart';
+part 'local-finance-local-validation.dart';
+part 'local-finance-backup-restore.dart';
 
 class FinanceState {
   const FinanceState({
@@ -54,23 +56,13 @@ class LocalFinanceStore {
     _db = db;
     _migrate(db);
     _seed(db);
+    _repairMojibakeStarterText(db);
     return db;
   }
 
   Future<FinanceState> load() async {
     final db = await _open();
     return _stateFromDb(db);
-  }
-
-  Future<String> exportBackup() async {
-    final state = await load();
-    return const FinanceBackupService().encode(
-      wallets: state.wallets,
-      categories: state.categories,
-      transactions: state.transactions,
-      budgets: state.budgets,
-      goals: state.goals,
-    );
   }
 
   Future<void> resetData() async {
@@ -80,69 +72,6 @@ class LocalFinanceStore {
       _deleteAllData(db);
       _deleteAllSyncState(db);
       _seed(db);
-      db.execute('commit');
-    } on Object {
-      db.execute('rollback');
-      rethrow;
-    }
-  }
-
-  Future<void> restoreBackup(String input) async {
-    final backup = const FinanceBackupService().decode(input);
-    final db = await _open();
-    db.execute('begin immediate');
-    try {
-      _deleteAllData(db);
-      _deleteAllSyncState(db);
-      for (final wallet in backup.wallets) {
-        db.execute('insert into wallets values (?, ?, ?, ?)', [
-          wallet.id,
-          wallet.name,
-          wallet.type.name,
-          wallet.initialBalance,
-        ]);
-      }
-      for (final category in backup.categories) {
-        db.execute('insert into categories values (?, ?, ?, ?)', [
-          category.id,
-          category.name,
-          category.type.name,
-          category.colorHex,
-        ]);
-      }
-      for (final transaction in backup.transactions) {
-        db.execute(
-          'insert into transactions values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-          [
-            transaction.id,
-            transaction.walletId,
-            transaction.toWalletId,
-            transaction.categoryId,
-            transaction.type.name,
-            transaction.amount,
-            transaction.date.toIso8601String(),
-            transaction.note,
-            transaction.isRecurring ? 1 : 0,
-          ],
-        );
-      }
-      for (final budget in backup.budgets) {
-        db.execute('insert into budgets values (?, ?, ?, ?)', [
-          budget.id,
-          budget.categoryId,
-          budget.month.toIso8601String(),
-          budget.limitAmount,
-        ]);
-      }
-      for (final goal in backup.goals) {
-        db.execute('insert into saving_goals values (?, ?, ?, ?, ?)', [
-          goal.id,
-          goal.name,
-          goal.targetAmount,
-          goal.savedAmount,
-          goal.deadline.toIso8601String(),
-        ]);
-      }
       db.execute('commit');
     } on Object {
       db.execute('rollback');
@@ -163,6 +92,8 @@ class LocalFinanceStore {
       throw ArgumentError.value(amount, 'amount', 'Amount must be positive');
     }
     final db = await _open();
+    _assertWalletExists(db, walletId);
+    _assertCategoryExists(db, categoryId, expectedType: type);
     final id = _id('txn');
     final payload = _transactionPayload(
       walletId: walletId,
@@ -218,6 +149,8 @@ class LocalFinanceStore {
       throw ArgumentError.value(amount, 'amount', 'Amount must be positive');
     }
     final db = await _open();
+    _assertWalletExists(db, walletId);
+    _assertCategoryExists(db, categoryId, expectedType: type);
     final payload = _transactionPayload(
       walletId: walletId,
       toWalletId: null,
@@ -292,6 +225,13 @@ class LocalFinanceStore {
       throw ArgumentError.value(amount, 'amount', 'Amount must be positive');
     }
     final db = await _open();
+    _assertWalletExists(db, fromWalletId);
+    _assertWalletExists(db, toWalletId);
+    _assertCategoryExists(
+      db,
+      'transfer',
+      expectedType: TransactionType.transfer,
+    );
     final localId = _id('trf');
     db.execute('begin immediate');
     try {
@@ -350,6 +290,12 @@ class LocalFinanceStore {
       );
     }
     final db = await _open();
+    _assertBudgetMonthFirstDay(month);
+    _assertCategoryExists(
+      db,
+      categoryId,
+      expectedType: TransactionType.expense,
+    );
     final monthKey = DateTime(month.year, month.month).toIso8601String();
     final existing = db.select(
       'select id from budgets where category_id = ? and month = ? limit 1',
@@ -424,6 +370,12 @@ class LocalFinanceStore {
       );
     }
     final db = await _open();
+    _assertBudgetMonthFirstDay(month);
+    _assertCategoryExists(
+      db,
+      categoryId,
+      expectedType: TransactionType.expense,
+    );
     final monthKey = DateTime(month.year, month.month).toIso8601String();
     db.execute('begin immediate');
     try {
@@ -500,20 +452,10 @@ class LocalFinanceStore {
     if (name.trim().isEmpty) {
       throw ArgumentError('Goal name is required');
     }
-    if (targetAmount <= 0) {
-      throw ArgumentError.value(
-        targetAmount,
-        'targetAmount',
-        'Target must be positive',
-      );
-    }
-    if (savedAmount < 0 || savedAmount > targetAmount) {
-      throw ArgumentError.value(
-        savedAmount,
-        'savedAmount',
-        'Saved amount must be between zero and target',
-      );
-    }
+    _assertSavingGoalAmounts(
+      targetAmount: targetAmount,
+      savedAmount: savedAmount,
+    );
     final db = await _open();
     if (id == null) {
       final localId = _id('goal');
@@ -746,6 +688,131 @@ class LocalFinanceStore {
       DateTime(now.year, now.month + 6, 1).toIso8601String(),
     ]);
   }
+
+  void _repairMojibakeStarterText(Database db) {
+    void repairWallet(String id, String correct) {
+      for (final variant in _mojibakeVariants(correct)) {
+        db.execute('update wallets set name = ? where id = ? and name = ?', [
+          correct,
+          id,
+          variant,
+        ]);
+      }
+    }
+
+    void repairCategory(String id, String correct) {
+      for (final variant in _mojibakeVariants(correct)) {
+        db.execute('update categories set name = ? where id = ? and name = ?', [
+          correct,
+          id,
+          variant,
+        ]);
+      }
+    }
+
+    void repairTransactionNote({
+      required String walletId,
+      required String categoryId,
+      required String type,
+      required int amount,
+      required String correct,
+    }) {
+      for (final variant in _mojibakeVariants(correct)) {
+        db.execute(
+          'update transactions set note = ? where wallet_id = ? and category_id = ? and type = ? and amount = ? and note = ?',
+          [correct, walletId, categoryId, type, amount, variant],
+        );
+      }
+    }
+
+    void repairGoal(String id, String correct) {
+      for (final variant in _mojibakeVariants(correct)) {
+        db.execute(
+          'update saving_goals set name = ? where id = ? and name = ?',
+          [correct, id, variant],
+        );
+      }
+    }
+
+    repairWallet('cash', 'Tiền mặt');
+    repairWallet('bank', 'Ngân hàng');
+    repairWallet('ewallet', 'Ví điện tử');
+    repairCategory('salary', 'Lương');
+    repairCategory('food', 'Ăn uống');
+    repairCategory('transport', 'Di chuyển');
+    repairCategory('bill', 'Hóa đơn');
+    repairCategory('saving', 'Tiết kiệm');
+    repairCategory('transfer', 'Chuyển ví');
+    repairTransactionNote(
+      walletId: 'bank',
+      categoryId: 'salary',
+      type: 'income',
+      amount: 18000000,
+      correct: 'Lương tháng này',
+    );
+    repairTransactionNote(
+      walletId: 'cash',
+      categoryId: 'food',
+      type: 'expense',
+      amount: 180000,
+      correct: 'Cà phê và ăn trưa',
+    );
+    repairGoal('goal-emergency', 'Quỹ khẩn cấp');
+  }
+
+  Set<String> _mojibakeVariants(String value) {
+    final variants = <String>{};
+    void addEncodingVariants(String input) {
+      final latin1Variant = latin1.decode(
+        utf8.encode(input),
+        allowInvalid: true,
+      );
+      final windows1252Variant = _decodeWindows1252(utf8.encode(input));
+      variants
+        ..add(latin1Variant)
+        ..add(windows1252Variant);
+    }
+
+    addEncodingVariants(value);
+    for (final variant in variants.toList()) {
+      addEncodingVariants(variant);
+    }
+    return variants;
+  }
+
+  String _decodeWindows1252(List<int> bytes) =>
+      String.fromCharCodes(bytes.map((byte) => _windows1252CodePoint(byte)));
+
+  int _windows1252CodePoint(int byte) => switch (byte) {
+    0x80 => 0x20AC,
+    0x82 => 0x201A,
+    0x83 => 0x0192,
+    0x84 => 0x201E,
+    0x85 => 0x2026,
+    0x86 => 0x2020,
+    0x87 => 0x2021,
+    0x88 => 0x02C6,
+    0x89 => 0x2030,
+    0x8A => 0x0160,
+    0x8B => 0x2039,
+    0x8C => 0x0152,
+    0x8E => 0x017D,
+    0x91 => 0x2018,
+    0x92 => 0x2019,
+    0x93 => 0x201C,
+    0x94 => 0x201D,
+    0x95 => 0x2022,
+    0x96 => 0x2013,
+    0x97 => 0x2014,
+    0x98 => 0x02DC,
+    0x99 => 0x2122,
+    0x9A => 0x0161,
+    0x9B => 0x203A,
+    0x9C => 0x0153,
+    0x9E => 0x017E,
+    0x9F => 0x0178,
+    _ => byte,
+  };
 
   WalletAccount _walletFromRow(Row row) => WalletAccount(
     id: row['id'] as String,

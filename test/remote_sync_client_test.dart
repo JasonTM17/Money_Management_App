@@ -180,6 +180,55 @@ void main() {
     }
   });
 
+  test('throws typed API errors with envelope details', () async {
+    final server = await _TestServer.start((request) async {
+      expect(request.uri.path, '/v1/sync/push');
+      request.response
+        ..statusCode = HttpStatus.conflict
+        ..headers.contentType = ContentType.json
+        ..write(
+          jsonEncode({
+            'code': 'sync_conflict',
+            'message': 'One or more sync mutations conflict',
+            'details': {
+              'applied': <Object?>[],
+              'conflicts': [
+                {'clientMutationId': 'm-1'},
+              ],
+            },
+          }),
+        );
+      await request.response.close();
+    });
+
+    try {
+      final client = RemoteSyncClient(baseUri: server.baseUri);
+      await expectLater(
+        client.pushMutations(
+          accessToken: 'token',
+          mutations: [
+            RemoteSyncMutation(
+              clientMutationId: 'm-1',
+              entityType: 'wallet',
+              entityId: 'wallet-1',
+              operation: 'update',
+              baseRevision: 1,
+              payload: {'name': 'Cash'},
+            ),
+          ],
+        ),
+        throwsA(
+          isA<RemoteApiException>()
+              .having((error) => error.statusCode, 'statusCode', 409)
+              .having((error) => error.code, 'code', 'sync_conflict')
+              .having((error) => error.details?['applied'], 'applied', isEmpty),
+        ),
+      );
+    } finally {
+      await server.close();
+    }
+  });
+
   test(
     'pulls changes, pushes mutations, and reads entitlement state',
     () async {
