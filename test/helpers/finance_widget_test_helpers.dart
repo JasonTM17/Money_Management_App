@@ -79,12 +79,18 @@ Future<void> unlockWithPin(WidgetTester tester, String pin) async {
   await tester.pumpAndSettle();
 }
 
-Future<void> usePhoneSurface(WidgetTester tester) async {
-  await tester.binding.setSurfaceSize(const Size(390, 844));
+Future<void> usePhoneSurface(
+  WidgetTester tester, {
+  Size size = const Size(390, 844),
+  double textScaleFactor = 1,
+}) async {
+  await tester.binding.setSurfaceSize(size);
   tester.view.devicePixelRatio = 1;
+  tester.binding.platformDispatcher.textScaleFactorTestValue = textScaleFactor;
   addTearDown(() async {
     await tester.binding.setSurfaceSize(null);
     tester.view.resetDevicePixelRatio();
+    tester.binding.platformDispatcher.clearTextScaleFactorTestValue();
   });
 }
 
