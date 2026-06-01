@@ -1,0 +1,79 @@
+{
+  "name": "CashFlow AI Analysis",
+  "active": true,
+  "versionId": "8f4f8c90-13b1-4f61-8e7d-7ce9c3dd9e39",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "cashflow-ai-analysis",
+        "responseMode": "lastNode",
+        "options": {
+          "rawBody": true
+        }
+      },
+      "id": "cashflow-analysis-webhook",
+      "name": "CashFlow Analysis Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "cashflow-ai-analysis",
+      "position": [
+        260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst item = $input.first();\nconst payload = item.json ?? {};\nconst body = payload.body ?? {};\nconst headers = payload.headers ?? {};\nconst rawBodyBase64 = item.binary?.data?.data;\nconst signature = String(headers['x-cashflow-signature-sha256'] ?? headers['X-Cashflow-Signature-Sha256'] ?? '');\nconst secret = $env.N8N_CHATBOT_WEBHOOK_SECRET;\n\nif (!secret || !/^[a-f0-9]{64}$/i.test(signature)) {\n  throw new Error('Unauthorized webhook request');\n}\n\nconst rawBody = typeof rawBodyBase64 === 'string'\n  ? Buffer.from(rawBodyBase64, 'base64')\n  : Buffer.from(JSON.stringify(body));\nconst expected = crypto.createHmac('sha256', secret).update(rawBody).digest('hex');\nconst receivedBuffer = Buffer.from(signature, 'hex');\nconst expectedBuffer = Buffer.from(expected, 'hex');\n\nif (receivedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) {\n  throw new Error('Unauthorized webhook request');\n}\n\nreturn [{ json: body }];"
+      },
+      "id": "cashflow-analysis-verify-signature",
+      "name": "Verify CashFlow Signature",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        520,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const http = require('http');\nconst https = require('https');\nconst { URL } = require('url');\n\nconst body = $input.first().json;\nconst locale = ['vi', 'en', 'ja'].includes(body.locale) ? body.locale : 'vi';\nconst question = String(body.question ?? '').trim();\nconst endpoint = $env.N8N_AI_CHAT_COMPLETIONS_URL;\nconst apiKey = $env.N8N_AI_API_KEY;\nconst model = $env.N8N_AI_MODEL;\n\nif (!question) {\n  throw new Error('CashFlow question is required');\n}\n\nif (!endpoint || !apiKey || !model) {\n  throw new Error('AI provider is not configured');\n}\n\nconst languageNames = { vi: 'Vietnamese', en: 'English', ja: 'Japanese' };\nconst systemPrompt = [\n  'You are CashFlow Manager financial coach for an offline-first personal finance app.',\n  `Write in ${languageNames[locale]}.`,\n  'You only know the user question and locale provided in this request. Do not claim access to bank accounts, transactions, wallets, files, external services, or hidden app data.',\n  'Give practical budgeting, cashflow, savings, and expense-tracking guidance. Keep it conservative, educational, and non-judgmental.',\n  'Do not provide legal, tax, lending, insurance, securities, crypto, or guaranteed investment advice. Suggest consulting a qualified professional for high-stakes decisions.',\n  'If the question asks for unavailable personal data analysis, explain the limitation and suggest what information the user can review inside CashFlow Manager.',\n  'Return JSON only. The JSON object must have answer:string and suggestions:string[]. answer should be 2-4 concise sentences. suggestions should contain 3-5 short actionable next steps.'\n].join(' ');\n\nconst payload = {\n  model,\n  temperature: 0.2,\n  response_format: { type: 'json_object' },\n  messages: [\n    {\n      role: 'system',\n      content: systemPrompt\n    },\n    {\n      role: 'user',\n      content: JSON.stringify({ question, locale })\n    }\n  ]\n};\n\nconst requestJson = JSON.stringify(payload);\nconst url = new URL(endpoint);\nconst client = url.protocol === 'https:' ? https : http;\nconst data = await new Promise((resolve, reject) => {\n  const request = client.request(url, {\n    method: 'POST',\n    headers: {\n      authorization: `Bearer ${apiKey}`,\n      'content-type': 'application/json',\n      'content-length': Buffer.byteLength(requestJson)\n    },\n    timeout: 10000\n  }, (response) => {\n    let responseBody = '';\n    response.setEncoding('utf8');\n    response.on('data', (chunk) => { responseBody += chunk; });\n    response.on('end', () => {\n      if (response.statusCode < 200 || response.statusCode >= 300) {\n        reject(new Error('AI provider request failed'));\n        return;\n      }\n      try {\n        resolve(JSON.parse(responseBody));\n      } catch {\n        reject(new Error('AI provider returned invalid JSON'));\n      }\n    });\n  });\n  request.on('timeout', () => request.destroy(new Error('AI provider request timed out')));\n  request.on('error', reject);\n  request.write(requestJson);\n  request.end();\n});\n\nconst content = data?.choices?.[0]?.message?.content;\nlet parsed;\ntry {\n  parsed = typeof content === 'string' ? JSON.parse(content) : content;\n} catch {\n  throw new Error('AI provider returned non-JSON content');\n}\n\nif (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {\n  throw new Error('AI provider returned an invalid response');\n}\n\nconst answer = typeof parsed.answer === 'string' ? parsed.answer.trim() : '';\nconst rawSuggestions = parsed.suggestions;\n\nif (!Array.isArray(rawSuggestions)) {\n  throw new Error('AI provider returned an invalid response');\n}\n\nconst suggestions = rawSuggestions.map((item) => (typeof item === 'string' ? item.trim() : ''));\n\nif (!answer || suggestions.length < 3 || suggestions.length > 5 || suggestions.some((item) => !item)) {\n  throw new Error('AI provider returned an invalid response');\n}\n\nreturn [{ json: { answer, suggestions } }];"
+      },
+      "id": "cashflow-analysis-ai-provider",
+      "name": "Ask AI Provider",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        780,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "CashFlow Analysis Webhook": {
+      "main": [
+        [
+          {
+            "node": "Verify CashFlow Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify CashFlow Signature": {
+      "main": [
+        [
+          {
+            "node": "Ask AI Provider",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

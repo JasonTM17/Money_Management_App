@@ -1,0 +1,185 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cashflow_manager}
+      POSTGRES_USER: ${POSTGRES_USER:-cashflow_app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me-local-only}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - cashflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://cashflow_app:change-me-local-only@postgres:5432/cashflow_manager?schema=public}
+      API_PORT: ${API_PORT:-3000}
+      NODE_ENV: ${NODE_ENV:-development}
+      N8N_CHATBOT_WEBHOOK_URL: ${N8N_CHATBOT_WEBHOOK_URL:-}
+      N8N_CHATBOT_WEBHOOK_SECRET: ${N8N_CHATBOT_WEBHOOK_SECRET:-}
+    ports:
+      - "${API_HOST_PORT:-3000}:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:3000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_HOST_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/cashflow-manager.apk || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  migrate:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: tools
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://cashflow_app:change-me-local-only@postgres:5432/cashflow_manager?schema=public}
+      NODE_ENV: development
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run prisma:deploy
+
+  seed:
+    profiles: ["tools"]
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+      target: tools
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://cashflow_app:change-me-local-only@postgres:5432/cashflow_manager?schema=public}
+      NODE_ENV: development
+      PRISMA_SEED_COMMAND: node dist/prisma/seed.js
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run db:seed
+
+  n8n-postgres:
+    profiles: ["automation"]
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${N8N_POSTGRES_DB:-cashflow_n8n}
+      POSTGRES_USER: ${N8N_POSTGRES_USER:-n8n_app}
+      POSTGRES_PASSWORD: ${N8N_POSTGRES_PASSWORD:-change-me-n8n-local-only}
+    volumes:
+      - cashflow_n8n_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    profiles: ["automation"]
+    image: n8nio/n8n:1.121.3
+    restart: unless-stopped
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n-postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_POSTGRES_DB:-cashflow_n8n}
+      DB_POSTGRESDB_USER: ${N8N_POSTGRES_USER:-n8n_app}
+      DB_POSTGRESDB_PASSWORD: ${N8N_POSTGRES_PASSWORD:-change-me-n8n-local-only}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_HOST: localhost
+      WEBHOOK_URL: http://localhost:${N8N_HOST_PORT:-5678}/
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      N8N_GIT_NODE_DISABLE_BARE_REPOS: "true"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-replace-with-local-n8n-encryption-key}
+      N8N_CHATBOT_WEBHOOK_SECRET: ${N8N_CHATBOT_WEBHOOK_SECRET:-}
+      N8N_AI_CHAT_COMPLETIONS_URL: ${N8N_AI_CHAT_COMPLETIONS_URL:-}
+      N8N_AI_API_KEY: ${N8N_AI_API_KEY:-}
+      N8N_AI_MODEL: ${N8N_AI_MODEL:-}
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto,http,https,url
+    ports:
+      - "${N8N_HOST_PORT:-5678}:5678"
+    depends_on:
+      n8n-postgres:
+        condition: service_healthy
+    volumes:
+      - cashflow_n8n_data:/home/node/.n8n
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:5678/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  n8n-import:
+    profiles: ["automation"]
+    image: n8nio/n8n:1.121.3
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n-postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_POSTGRES_DB:-cashflow_n8n}
+      DB_POSTGRESDB_USER: ${N8N_POSTGRES_USER:-n8n_app}
+      DB_POSTGRESDB_PASSWORD: ${N8N_POSTGRES_PASSWORD:-change-me-n8n-local-only}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-replace-with-local-n8n-encryption-key}
+      N8N_CHATBOT_WEBHOOK_SECRET: ${N8N_CHATBOT_WEBHOOK_SECRET:-}
+      N8N_AI_CHAT_COMPLETIONS_URL: ${N8N_AI_CHAT_COMPLETIONS_URL:-}
+      N8N_AI_API_KEY: ${N8N_AI_API_KEY:-}
+      N8N_AI_MODEL: ${N8N_AI_MODEL:-}
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto,http,https,url
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+    depends_on:
+      n8n-postgres:
+        condition: service_healthy
+    volumes:
+      - ./infra/n8n/workflows:/workflows:ro
+    command: import:workflow --input=/workflows/cashflow-ai-analysis.json
+
+  n8n-activate:
+    profiles: ["automation"]
+    image: n8nio/n8n:1.121.3
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: n8n-postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: ${N8N_POSTGRES_DB:-cashflow_n8n}
+      DB_POSTGRESDB_USER: ${N8N_POSTGRES_USER:-n8n_app}
+      DB_POSTGRESDB_PASSWORD: ${N8N_POSTGRES_PASSWORD:-change-me-n8n-local-only}
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-replace-with-local-n8n-encryption-key}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+    depends_on:
+      n8n-postgres:
+        condition: service_healthy
+    command: update:workflow --all --active=true
+
+volumes:
+  cashflow_postgres_data:
+  cashflow_n8n_postgres_data:
+  cashflow_n8n_data:

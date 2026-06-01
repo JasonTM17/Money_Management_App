@@ -1,0 +1,18 @@
+# syntax=docker/dockerfile:1
+
+FROM ghcr.io/cirruslabs/flutter:stable AS builder
+WORKDIR /app
+COPY pubspec.yaml pubspec.lock ./
+RUN flutter pub get
+COPY . .
+RUN flutter build apk --release
+
+FROM nginxinc/nginx-unprivileged:1.27-alpine AS runtime
+ARG REVISION=local
+LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Money_Management_App"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.revision="$REVISION"
+COPY --from=builder /app/build/app/outputs/flutter-apk/app-release.apk /usr/share/nginx/html/cashflow-manager.apk
+USER 101:101
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD wget -q --spider http://127.0.0.1:8080/cashflow-manager.apk || exit 1

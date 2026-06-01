@@ -1,0 +1,335 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum WalletType {
+  cash
+  bank
+  eWallet
+  creditCard
+}
+
+enum FinanceRecordType {
+  income
+  expense
+  transfer
+}
+
+enum SyncEntityType {
+  wallet
+  category
+  transaction
+  budget
+  savingGoal
+  household
+  sharedBudget
+  entitlement
+}
+
+enum SyncOperation {
+  create
+  update
+  delete
+}
+
+enum HouseholdRole {
+  owner
+  member
+}
+
+enum HouseholdInviteStatus {
+  pending
+  accepted
+  revoked
+  expired
+}
+
+enum EntitlementProvider {
+  apple
+  google
+  sepay
+  manual
+}
+
+enum EntitlementStatus {
+  pending
+  active
+  expired
+  revoked
+}
+
+enum PaymentOrderStatus {
+  pending
+  paid
+  expired
+  cancelled
+}
+
+model User {
+  id             String        @id @default(uuid()) @db.Uuid
+  email          String        @unique
+  passwordHash   String        @map("password_hash")
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt      DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  refreshTokens  RefreshToken[]
+  wallets        Wallet[]
+  categories     Category[]
+  transactions   Transaction[]
+  budgets        Budget[]
+  savingGoals    SavingGoal[]
+  syncEvents      SyncEvent[]
+  clientMutations ClientMutation[]
+  householdMemberships HouseholdMember[]
+  sentHouseholdInvites HouseholdInvite[]
+  householdInvites HouseholdInvite[] @relation("Invitee")
+  entitlements   Entitlement[]
+  paymentOrders  PaymentOrder[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model Wallet {
+  id              String        @id @default(uuid()) @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  name            String
+  type            WalletType
+  initialBalance  BigInt        @map("initial_balance")
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  revision        BigInt        @default(1)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions    Transaction[] @relation("SourceWallet")
+  incomingTransfers Transaction[] @relation("TargetWallet")
+
+  @@index([userId, deletedAt])
+  @@map("wallets")
+}
+
+model Category {
+  id           String            @id @default(uuid()) @db.Uuid
+  userId       String            @map("user_id") @db.Uuid
+  name         String
+  type         FinanceRecordType
+  colorHex     Int               @map("color_hex")
+  createdAt    DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt    DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  revision     BigInt            @default(1)
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@index([userId, deletedAt])
+  @@map("categories")
+}
+
+model Transaction {
+  id              String            @id @default(uuid()) @db.Uuid
+  userId          String            @map("user_id") @db.Uuid
+  walletId        String            @map("wallet_id") @db.Uuid
+  toWalletId      String?           @map("to_wallet_id") @db.Uuid
+  categoryId      String            @map("category_id") @db.Uuid
+  transferGroupId String?           @map("transfer_group_id") @db.Uuid
+  type            FinanceRecordType
+  amount          BigInt
+  date            DateTime          @db.Timestamptz(6)
+  note            String            @default("")
+  isRecurring     Boolean           @default(false) @map("is_recurring")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt       DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  revision        BigInt            @default(1)
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  wallet          Wallet            @relation("SourceWallet", fields: [walletId], references: [id], onDelete: Restrict)
+  toWallet        Wallet?           @relation("TargetWallet", fields: [toWalletId], references: [id], onDelete: Restrict)
+  category        Category          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@index([userId, date])
+  @@index([userId, deletedAt])
+  @@map("transactions")
+}
+
+model Budget {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  categoryId  String    @map("category_id") @db.Uuid
+  month       DateTime  @db.Date
+  limitAmount BigInt    @map("limit_amount")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+  revision    BigInt    @default(1)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+
+  @@unique([userId, categoryId, month])
+  @@index([userId, deletedAt])
+  @@map("budgets")
+}
+
+model SavingGoal {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  name         String
+  targetAmount BigInt    @map("target_amount")
+  savedAmount  BigInt    @map("saved_amount")
+  deadline     DateTime  @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt    DateTime? @map("deleted_at") @db.Timestamptz(6)
+  revision     BigInt    @default(1)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deletedAt])
+  @@map("saving_goals")
+}
+
+model SyncEvent {
+  id         String         @id @default(uuid()) @db.Uuid
+  userId     String         @map("user_id") @db.Uuid
+  entityType SyncEntityType @map("entity_type")
+  entityId   String         @map("entity_id") @db.Uuid
+  operation  SyncOperation
+  revision   BigInt
+  payload    Json?
+  occurredAt DateTime       @default(now()) @map("occurred_at") @db.Timestamptz(6)
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, occurredAt])
+  @@index([userId, entityType, entityId])
+  @@map("sync_events")
+}
+
+model ClientMutation {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  clientMutationId String   @map("client_mutation_id")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, clientMutationId])
+  @@map("client_mutations")
+}
+
+model Household {
+  id          String            @id @default(uuid()) @db.Uuid
+  name        String
+  createdAt   DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime          @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime?         @map("deleted_at") @db.Timestamptz(6)
+  revision    BigInt            @default(1)
+  members     HouseholdMember[]
+  invites     HouseholdInvite[]
+  sharedBudgets SharedBudget[]
+
+  @@map("households")
+}
+
+model HouseholdMember {
+  id          String        @id @default(uuid()) @db.Uuid
+  householdId String        @map("household_id") @db.Uuid
+  userId      String        @map("user_id") @db.Uuid
+  role        HouseholdRole
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  deletedAt   DateTime?     @map("deleted_at") @db.Timestamptz(6)
+  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@index([userId, deletedAt])
+  @@map("household_members")
+}
+
+model HouseholdInvite {
+  id          String                @id @default(uuid()) @db.Uuid
+  householdId String                @map("household_id") @db.Uuid
+  inviterId   String                @map("inviter_id") @db.Uuid
+  inviteeEmail String               @map("invitee_email")
+  inviteeId   String?               @map("invitee_id") @db.Uuid
+  status      HouseholdInviteStatus @default(pending)
+  tokenHash   String                @map("token_hash")
+  expiresAt   DateTime              @map("expires_at") @db.Timestamptz(6)
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  acceptedAt  DateTime?             @map("accepted_at") @db.Timestamptz(6)
+  household   Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  inviter     User                  @relation(fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee     User?                 @relation("Invitee", fields: [inviteeId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, status])
+  @@index([inviteeEmail, status])
+  @@map("household_invites")
+}
+
+model SharedBudget {
+  id          String    @id @default(uuid()) @db.Uuid
+  householdId String    @map("household_id") @db.Uuid
+  categoryId  String?   @map("category_id") @db.Uuid
+  name        String
+  month       DateTime  @db.Date
+  limitAmount BigInt    @map("limit_amount")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  deletedAt   DateTime? @map("deleted_at") @db.Timestamptz(6)
+  revision    BigInt    @default(1)
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId, deletedAt])
+  @@map("shared_budgets")
+}
+
+model Entitlement {
+  id                     String              @id @default(uuid()) @db.Uuid
+  userId                 String              @map("user_id") @db.Uuid
+  plan                   String
+  provider               EntitlementProvider
+  providerSubscriptionId String?             @map("provider_subscription_id")
+  status                 EntitlementStatus
+  currentPeriodEnd       DateTime?           @map("current_period_end") @db.Timestamptz(6)
+  createdAt              DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+  user                   User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@unique([provider, providerSubscriptionId])
+  @@map("entitlements")
+}
+
+model PaymentOrder {
+  id                String             @id @default(uuid()) @db.Uuid
+  userId            String             @map("user_id") @db.Uuid
+  provider          EntitlementProvider
+  amount            BigInt
+  currency          String
+  status            PaymentOrderStatus @default(pending)
+  providerOrderId   String?            @map("provider_order_id")
+  idempotencyKey    String             @map("idempotency_key")
+  checkoutUrl       String?            @map("checkout_url")
+  metadata          Json?
+  createdAt         DateTime           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime           @updatedAt @map("updated_at") @db.Timestamptz(6)
+  paidAt            DateTime?          @map("paid_at") @db.Timestamptz(6)
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey])
+  @@index([provider, providerOrderId])
+  @@map("payment_orders")
+}

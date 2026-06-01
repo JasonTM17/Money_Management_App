@@ -1,0 +1,1459 @@
+openapi: 3.1.0
+info:
+  title: CashFlow Manager API
+  version: 0.1.0
+  description: Production sync API contract for the offline-first CashFlow Manager Flutter app.
+servers:
+  - url: http://localhost:3000
+    description: Local Docker API
+security:
+  - bearerAuth: []
+paths:
+  /.well-known/jwks.json:
+    get:
+      summary: Public EdDSA signing keys for bearer token verification
+      security: []
+      responses:
+        '200':
+          description: JSON Web Key Set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JwksResponse'
+  /healthz:
+    get:
+      summary: Process health check
+      security: []
+      responses:
+        '200':
+          description: API process is running
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /readyz:
+    get:
+      summary: Dependency readiness check
+      security: []
+      responses:
+        '200':
+          description: API and database are ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: API process is running but a dependency is unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/auth/register:
+    post:
+      summary: Register a sync account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegisterRequest'
+      responses:
+        '201':
+          description: Account created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/auth/login:
+    post:
+      summary: Log in to a sync account
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginRequest'
+      responses:
+        '200':
+          description: Login succeeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/auth/refresh:
+    post:
+      summary: Rotate a refresh token and issue a new access token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '200':
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthSessionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/auth/logout:
+    post:
+      summary: Revoke the current refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+      responses:
+        '204':
+          description: Logged out
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/me:
+    get:
+      summary: Get current sync account
+      responses:
+        '200':
+          description: Current account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/wallets:
+    get:
+      summary: List wallets
+      responses:
+        '200':
+          description: Wallet list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Wallet'
+    post:
+      summary: Create a wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletInput'
+      responses:
+        '201':
+          description: Wallet created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/wallets/{id}:
+    patch:
+      summary: Update a wallet
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WalletPatchInput'
+      responses:
+        '200':
+          description: Wallet updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Soft-delete a wallet
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Wallet tombstone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/categories:
+    get:
+      summary: List categories
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+    post:
+      summary: Create a category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryInput'
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/categories/{id}:
+    patch:
+      summary: Update a category
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryPatchInput'
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Soft-delete a category
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Category tombstone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/transactions:
+    get:
+      summary: List transactions
+      parameters:
+        - name: month
+          in: query
+          schema:
+            type: string
+            format: date
+          description: First day of the month to filter by.
+      responses:
+        '200':
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FinanceTransaction'
+    post:
+      summary: Create a transaction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionInput'
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceTransaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/transactions/{id}:
+    patch:
+      summary: Update a transaction
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionPatchInput'
+      responses:
+        '200':
+          description: Transaction updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceTransaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Soft-delete a transaction
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Transaction tombstone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinanceTransaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/budgets:
+    get:
+      summary: List budgets
+      responses:
+        '200':
+          description: Budget list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Budget'
+    post:
+      summary: Create a budget
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetInput'
+      responses:
+        '201':
+          description: Budget created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/budgets/{id}:
+    patch:
+      summary: Update a budget
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BudgetPatchInput'
+      responses:
+        '200':
+          description: Budget updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Soft-delete a budget
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Budget tombstone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Budget'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/saving-goals:
+    get:
+      summary: List saving goals
+      responses:
+        '200':
+          description: Saving goal list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SavingGoal'
+    post:
+      summary: Create a saving goal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavingGoalInput'
+      responses:
+        '201':
+          description: Saving goal created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingGoal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/saving-goals/{id}:
+    patch:
+      summary: Update a saving goal
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavingGoalPatchInput'
+      responses:
+        '200':
+          description: Saving goal updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingGoal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Soft-delete a saving goal
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Saving goal tombstone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SavingGoal'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/sync/bootstrap:
+    get:
+      summary: Fetch all server finance data for first sync
+      responses:
+        '200':
+          description: Bootstrap payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncBootstrapResponse'
+  /v1/sync/changes:
+    get:
+      summary: Fetch server changes after a sync cursor
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Ordered server sync events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncChangesResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/sync/push:
+    post:
+      summary: Push queued local mutations with revision conflict checks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncPushRequest'
+      responses:
+        '200':
+          description: Mutations applied without conflicts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncPushResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: One or more mutations used a stale baseRevision
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /v1/households:
+    get:
+      summary: List households the current user belongs to
+      responses:
+        '200':
+          description: Household memberships
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HouseholdMembershipView'
+    post:
+      summary: Create a household and owner membership
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HouseholdInput'
+      responses:
+        '201':
+          description: Household created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Household'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/households/{id}/invites:
+    post:
+      summary: Create an owner-only household invite
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HouseholdInviteInput'
+      responses:
+        '201':
+          description: Invite created; token is returned once for local delivery.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HouseholdInvite'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/household-invites:
+    get:
+      summary: List pending household invites for the current account email
+      responses:
+        '200':
+          description: Pending invites
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/HouseholdInvite'
+  /v1/household-invites/{inviteId}/accept:
+    post:
+      summary: Accept a household invite with its one-time token
+      parameters:
+        - name: inviteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AcceptInviteRequest'
+      responses:
+        '200':
+          description: Membership created or restored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HouseholdMember'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/households/{householdId}/members/{memberId}:
+    delete:
+      summary: Owner-only soft removal of a household member
+      parameters:
+        - $ref: '#/components/parameters/HouseholdIdPath'
+        - name: memberId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Member removed
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/households/{id}/shared-budgets:
+    get:
+      summary: List shared budgets in a household
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      responses:
+        '200':
+          description: Shared budget list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SharedBudget'
+    post:
+      summary: Owner-only create shared budget
+      parameters:
+        - $ref: '#/components/parameters/IdPath'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharedBudgetInput'
+      responses:
+        '201':
+          description: Shared budget created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedBudget'
+  /v1/households/{householdId}/shared-budgets/{budgetId}:
+    patch:
+      summary: Owner-only update shared budget
+      parameters:
+        - $ref: '#/components/parameters/HouseholdIdPath'
+        - name: budgetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SharedBudgetPatchInput'
+      responses:
+        '200':
+          description: Shared budget updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedBudget'
+    delete:
+      summary: Owner-only soft-delete shared budget
+      parameters:
+        - $ref: '#/components/parameters/HouseholdIdPath'
+        - name: budgetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Shared budget tombstone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SharedBudget'
+  /v1/entitlements/me:
+    get:
+      summary: Get current premium entitlement state
+      responses:
+        '200':
+          description: Entitlement state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EntitlementState'
+  /v1/iap/verify:
+    post:
+      summary: Verify an App Store or Play Store purchase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IapVerifyRequest'
+      responses:
+        '200':
+          description: Purchase verified
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/payments/sepay/orders:
+    post:
+      summary: Create a direct/off-store SePay order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SePayOrderRequest'
+      responses:
+        '201':
+          description: Payment order created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentOrder'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/payments/sepay/webhook:
+    post:
+      summary: Receive SePay payment status webhook with HMAC signature
+      security: []
+      parameters:
+        - name: x-sepay-signature
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SePayWebhookRequest'
+      responses:
+        '200':
+          description: Webhook accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /v1/ai/analysis:
+    post:
+      summary: Ask the n8n-backed financial analysis workflow for guidance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiAnalysisRequest'
+      responses:
+        '200':
+          description: AI analysis response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiAnalysisResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          description: AI workflow is not configured, timed out, returned an invalid response, or is unavailable. Stable error codes include `ai_analysis_unconfigured`, `ai_analysis_timeout`, `ai_analysis_invalid_response`, and `ai_analysis_unavailable`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unconfigured:
+                  value:
+                    code: ai_analysis_unconfigured
+                    message: AI analysis workflow is not configured
+                timeout:
+                  value:
+                    code: ai_analysis_timeout
+                    message: AI analysis workflow timed out
+                invalidResponse:
+                  value:
+                    code: ai_analysis_invalid_response
+                    message: AI analysis workflow returned an invalid response
+                unavailable:
+                  value:
+                    code: ai_analysis_unavailable
+                    message: AI analysis workflow is unavailable
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    HouseholdIdPath:
+      name: householdId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Authentication required or invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Authenticated account lacks permission
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ServiceUnavailable:
+      description: Optional provider is disabled or unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    JwksResponse:
+      type: object
+      required: [keys]
+      properties:
+        keys:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok]
+    ErrorResponse:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          examples: [invalid_amount]
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+    AuthRegisterRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+    AuthLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken:
+          type: string
+    AiAnalysisRequest:
+      type: object
+      required: [question]
+      properties:
+        question:
+          type: string
+          minLength: 1
+          maxLength: 800
+        locale:
+          type: string
+          enum: [vi, en, ja]
+          default: vi
+    AiAnalysisResponse:
+      type: object
+      required: [answer, suggestions]
+      properties:
+        answer:
+          type: string
+          minLength: 1
+        suggestions:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+    AuthSessionResponse:
+      type: object
+      required: [user, accessToken, refreshToken, expiresIn]
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+    User:
+      type: object
+      required: [id, email, createdAt, updatedAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    SyncMetadata:
+      type: object
+      required: [id, createdAt, updatedAt, revision]
+      properties:
+        id:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        deletedAt:
+          type: [string, 'null']
+          format: date-time
+        revision:
+          type: integer
+          minimum: 1
+    WalletType:
+      type: string
+      enum: [cash, bank, eWallet, creditCard]
+    TransactionType:
+      type: string
+      enum: [income, expense, transfer]
+    Wallet:
+      allOf:
+        - $ref: '#/components/schemas/SyncMetadata'
+        - $ref: '#/components/schemas/WalletInput'
+    WalletInput:
+      type: object
+      required: [name, type, initialBalance]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/WalletType'
+        initialBalance:
+          type: integer
+          minimum: 0
+    WalletPatchInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/WalletType'
+        initialBalance:
+          type: integer
+          minimum: 0
+    Category:
+      allOf:
+        - $ref: '#/components/schemas/SyncMetadata'
+        - $ref: '#/components/schemas/CategoryInput'
+    CategoryInput:
+      type: object
+      required: [name, type, colorHex]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        colorHex:
+          type: integer
+    CategoryPatchInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        colorHex:
+          type: integer
+    FinanceTransaction:
+      allOf:
+        - $ref: '#/components/schemas/SyncMetadata'
+        - $ref: '#/components/schemas/TransactionInput'
+    TransactionInput:
+      type: object
+      required: [walletId, categoryId, type, amount, date, note, isRecurring]
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        toWalletId:
+          type: [string, 'null']
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        amount:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date-time
+        note:
+          type: string
+        isRecurring:
+          type: boolean
+    TransactionPatchInput:
+      type: object
+      minProperties: 1
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        toWalletId:
+          type: [string, 'null']
+          format: uuid
+        categoryId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/TransactionType'
+        amount:
+          type: integer
+          minimum: 1
+        date:
+          type: string
+          format: date-time
+        note:
+          type: string
+        isRecurring:
+          type: boolean
+    Budget:
+      allOf:
+        - $ref: '#/components/schemas/SyncMetadata'
+        - $ref: '#/components/schemas/BudgetInput'
+    BudgetInput:
+      type: object
+      required: [categoryId, month, limitAmount]
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        month:
+          type: string
+          format: date
+        limitAmount:
+          type: integer
+          minimum: 1
+    BudgetPatchInput:
+      type: object
+      minProperties: 1
+      properties:
+        categoryId:
+          type: string
+          format: uuid
+        month:
+          type: string
+          format: date
+        limitAmount:
+          type: integer
+          minimum: 1
+    SavingGoal:
+      allOf:
+        - $ref: '#/components/schemas/SyncMetadata'
+        - $ref: '#/components/schemas/SavingGoalInput'
+    SavingGoalInput:
+      type: object
+      required: [name, targetAmount, savedAmount, deadline]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        targetAmount:
+          type: integer
+          minimum: 1
+        savedAmount:
+          type: integer
+          minimum: 0
+        deadline:
+          type: string
+          format: date
+    SavingGoalPatchInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        targetAmount:
+          type: integer
+          minimum: 1
+        savedAmount:
+          type: integer
+          minimum: 0
+        deadline:
+          type: string
+          format: date
+    SyncBootstrapResponse:
+      type: object
+      required: [cursor, wallets, categories, transactions, budgets, savingGoals]
+      properties:
+        cursor:
+          type: string
+        wallets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Wallet'
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinanceTransaction'
+        budgets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Budget'
+        savingGoals:
+          type: array
+          items:
+            $ref: '#/components/schemas/SavingGoal'
+    SyncEntityType:
+      type: string
+      enum: [wallet, category, transaction, budget, savingGoal]
+    SyncOperation:
+      type: string
+      enum: [create, update, delete]
+    SyncEvent:
+      type: object
+      required: [id, entityType, entityId, operation, revision, occurredAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        entityType:
+          $ref: '#/components/schemas/SyncEntityType'
+        entityId:
+          type: string
+          format: uuid
+        operation:
+          $ref: '#/components/schemas/SyncOperation'
+        revision:
+          type: integer
+        payload:
+          type: object
+          additionalProperties: true
+        occurredAt:
+          type: string
+          format: date-time
+    SyncChangesResponse:
+      type: object
+      required: [cursor, changes]
+      properties:
+        cursor:
+          type: string
+          format: date-time
+        changes:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncEvent'
+    SyncMutation:
+      type: object
+      required: [clientMutationId, entityType, entityId, operation]
+      properties:
+        clientMutationId:
+          type: string
+        entityType:
+          $ref: '#/components/schemas/SyncEntityType'
+        entityId:
+          type: string
+          format: uuid
+        operation:
+          $ref: '#/components/schemas/SyncOperation'
+        baseRevision:
+          type: [integer, 'null']
+        payload:
+          type: object
+          additionalProperties: true
+    SyncPushRequest:
+      type: object
+      required: [mutations]
+      properties:
+        mutations:
+          type: array
+          maxItems: 100
+          items:
+            $ref: '#/components/schemas/SyncMutation'
+    SyncPushResponse:
+      type: object
+      required: [applied, conflicts]
+      properties:
+        applied:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        conflicts:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+    HouseholdInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          minLength: 1
+    Household:
+      allOf:
+        - $ref: '#/components/schemas/SyncMetadata'
+        - $ref: '#/components/schemas/HouseholdInput'
+    HouseholdMember:
+      type: object
+      required: [id, householdId, userId, role, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        householdId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        role:
+          type: string
+          enum: [owner, member]
+        createdAt:
+          type: string
+          format: date-time
+    HouseholdMembershipView:
+      type: object
+      required: [role, household]
+      properties:
+        role:
+          type: string
+          enum: [owner, member]
+        household:
+          $ref: '#/components/schemas/Household'
+    HouseholdInviteInput:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+        expiresInDays:
+          type: integer
+          minimum: 1
+          maximum: 30
+    HouseholdInvite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        householdId:
+          type: string
+          format: uuid
+        inviteeEmail:
+          type: string
+          format: email
+        status:
+          type: string
+          enum: [pending, accepted, revoked, expired]
+        token:
+          type: string
+          description: Returned only by invite creation.
+    AcceptInviteRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    SharedBudget:
+      allOf:
+        - $ref: '#/components/schemas/SyncMetadata'
+        - $ref: '#/components/schemas/SharedBudgetInput'
+    SharedBudgetInput:
+      type: object
+      required: [name, month, limitAmount]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+        month:
+          type: string
+          format: date
+        limitAmount:
+          type: integer
+          minimum: 1
+    SharedBudgetPatchInput:
+      type: object
+      minProperties: 1
+      properties:
+        name:
+          type: string
+          minLength: 1
+        categoryId:
+          type: [string, 'null']
+          format: uuid
+        month:
+          type: string
+          format: date
+        limitAmount:
+          type: integer
+          minimum: 1
+    EntitlementState:
+      type: object
+      required: [premium, entitlements, lockedFeatures]
+      properties:
+        premium:
+          type: boolean
+        entitlements:
+          type: array
+          items:
+            type: object
+            additionalProperties: true
+        lockedFeatures:
+          type: array
+          items:
+            type: string
+    IapVerifyRequest:
+      type: object
+      required: [provider, productId, purchaseToken]
+      properties:
+        provider:
+          type: string
+          enum: [apple, google]
+        productId:
+          type: string
+        purchaseToken:
+          type: string
+        providerSubscriptionId:
+          type: string
+    SePayOrderRequest:
+      type: object
+      required: [amount, idempotencyKey]
+      properties:
+        plan:
+          type: string
+          default: premium_monthly
+        amount:
+          type: integer
+          minimum: 1
+        currency:
+          type: string
+          enum: [VND]
+        idempotencyKey:
+          type: string
+    PaymentOrder:
+      type: object
+      required: [id, amount, currency, status, idempotencyKey, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending, paid, expired, cancelled]
+        providerOrderId:
+          type: [string, 'null']
+        idempotencyKey:
+          type: string
+        checkoutUrl:
+          type: [string, 'null']
+        createdAt:
+          type: string
+          format: date-time
+    SePayWebhookRequest:
+      type: object
+      required: [providerOrderId, status]
+      properties:
+        providerOrderId:
+          type: string
+        status:
+          type: string
+          enum: [paid, expired, cancelled]
+        amount:
+          type: integer
+        paidAt:
+          type: string
+          format: date-time

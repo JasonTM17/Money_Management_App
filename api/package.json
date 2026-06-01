@@ -1,0 +1,41 @@
+{
+  "name": "cashflow-manager-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/src/main.js",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --config vitest.config.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed"
+  },
+  "dependencies": {
+    "@fastify/cors": "11.2.0",
+    "@fastify/helmet": "13.0.2",
+    "@prisma/adapter-pg": "7.8.0",
+    "@prisma/client": "7.8.0",
+    "dotenv": "17.2.3",
+    "fastify": "5.8.5",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@emnapi/core": "1.10.0",
+    "@emnapi/runtime": "1.10.0",
+    "@types/node": "25.9.1",
+    "prisma": "7.8.0",
+    "tsx": "4.22.3",
+    "typescript": "6.0.3",
+    "vitest": "4.1.7"
+  },
+  "overrides": {
+    "@hono/node-server": "1.19.13"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  }
+}
