@@ -18,6 +18,9 @@ const envSchema = z
     ACCESS_TOKEN_KID: z.string().default('local-development-key'),
     ACCESS_TOKEN_ISSUER: z.string().default('cashflow-manager-api'),
     ACCESS_TOKEN_AUDIENCE: z.string().default('cashflow-manager-mobile'),
+    N8N_CHATBOT_WEBHOOK_URL: z.string().url().optional(),
+    N8N_CHATBOT_WEBHOOK_SECRET: z.string().optional(),
+    N8N_CHATBOT_ALLOWED_HOSTS: z.string().optional(),
     IAP_VERIFICATION_MODE: z.enum(['disabled', 'mock']).default('disabled'),
     SEPAY_ENABLED: z
       .enum(['true', 'false'])
@@ -41,6 +44,19 @@ const envSchema = z
         path: ['ACCESS_TOKEN_PUBLIC_KEY_PEM'],
         message: 'ACCESS_TOKEN_PUBLIC_KEY_PEM is required in production',
       });
+    }
+    if (env.N8N_CHATBOT_WEBHOOK_URL) {
+      const parsed = new URL(env.N8N_CHATBOT_WEBHOOK_URL);
+      if (parsed.protocol !== 'https:') {
+        context.addIssue({
+          code: 'custom',
+          path: ['N8N_CHATBOT_WEBHOOK_URL'],
+          message: 'N8N_CHATBOT_WEBHOOK_URL must use https in production',
+        });
+      }
+      if (!env.N8N_CHATBOT_WEBHOOK_SECRET) {
+        context.addIssue({ code: 'custom', path: ['N8N_CHATBOT_WEBHOOK_SECRET'], message: 'N8N_CHATBOT_WEBHOOK_SECRET is required when AI webhook is configured' });
+      }
     }
   });
 

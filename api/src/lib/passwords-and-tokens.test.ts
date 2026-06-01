@@ -5,6 +5,17 @@ import {
 } from './passwords-and-tokens.js';
 import { createAccessToken, getPublicJwks, verifyAccessToken } from './session-tokens.js';
 
+function snapshotEnv(keys: string[]) {
+  const snapshot = new Map(keys.map((key) => [key, process.env[key]]));
+  return () => {
+    for (const key of keys) {
+      const value = snapshot.get(key);
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  };
+}
+
 describe('password hashing', () => {
   it('verifies matching passwords and rejects non-matching passwords', async () => {
     const hash = await hashPassword('correct-password');
@@ -44,6 +55,35 @@ describe('access tokens', () => {
     const [header, body] = token.split('.');
 
     expect(() => verifyAccessToken(`${header}.${body}.tampered`)).toThrow(
+      'Invalid access token',
+    );
+  });
+
+  it('rejects tokens minted for a different audience', () => {
+    const restoreEnv = snapshotEnv(['ACCESS_TOKEN_AUDIENCE']);
+    process.env.ACCESS_TOKEN_AUDIENCE = 'cashflow-manager-mobile';
+    const token = createAccessToken({
+      sub: '59c80c94-4baf-42ab-a047-8d809f2dac32',
+      email: 'demo@cashflow.local',
+    });
+    process.env.ACCESS_TOKEN_AUDIENCE = 'cashflow-manager-admin';
+
+    try {
+      expect(() => verifyAccessToken(token)).toThrow('Invalid access token');
+    } finally {
+      restoreEnv();
+    }
+  });
+
+  it('rejects malformed token payload shape', () => {
+    const token = createAccessToken({
+      sub: '59c80c94-4baf-42ab-a047-8d809f2dac32',
+      email: 'demo@cashflow.local',
+    });
+    const [header, _body, signature] = token.split('.');
+    const malformedBody = Buffer.from(JSON.stringify({ exp: 'soon' })).toString('base64url');
+
+    expect(() => verifyAccessToken(`${header}.${malformedBody}.${signature}`)).toThrow(
       'Invalid access token',
     );
   });

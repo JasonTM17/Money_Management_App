@@ -26,8 +26,20 @@ export async function recordSyncEvent(
   operation: SyncOperation,
   record: SyncRecord,
 ) {
+  await recordSyncEventWithPrisma(app.prisma, userId, entityType, operation, record);
+}
+
+type SyncEventWriter = Pick<FastifyInstance['prisma'], 'syncEvent'>;
+
+export async function recordSyncEventWithPrisma(
+  prisma: SyncEventWriter,
+  userId: string,
+  entityType: SyncEntityType,
+  operation: SyncOperation,
+  record: SyncRecord,
+) {
   const payload = serializeBigInts(record);
-  await app.prisma.syncEvent.create({
+  await prisma.syncEvent.create({
     data: {
       userId,
       entityType,

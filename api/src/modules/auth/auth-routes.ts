@@ -7,6 +7,7 @@ import {
   hashPassword,
   verifyPassword,
 } from '../../lib/passwords-and-tokens.js';
+import { InMemoryRateLimiter, rateLimitKey } from '../../lib/rate-limiter.js';
 import {
   accessTokenExpiresIn,
   createAccessToken,
@@ -24,8 +25,15 @@ const refreshSchema = z.object({
 });
 
 export async function registerAuthRoutes(app: FastifyInstance) {
+  const authLimiter = new InMemoryRateLimiter({
+    windowMs: 60_000,
+    maxAttempts: 20,
+    message: 'Too many authentication attempts',
+  });
+
   app.post('/v1/auth/register', async (request, reply) => {
     const input = parseBody(authSchema, request.body);
+    authLimiter.check(rateLimitKey(request, 'auth-register', input.email));
     const existingUser = await app.prisma.user.findUnique({
       where: { email: input.email },
     });
@@ -44,10 +52,11 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   app.post('/v1/auth/login', async (request) => {
     const input = parseBody(authSchema, request.body);
+    authLimiter.check(rateLimitKey(request, 'auth-login', input.email));
     const user = await app.prisma.user.findUnique({
       where: { email: input.email },
     });
-    if (!user || !(await verifyPassword(input.password, user.passwordHash))) {
+    if (!user || user.deletedAt || !(await verifyPassword(input.password, user.passwordHash))) {
       throw unauthorized('Invalid email or password');
     }
     return createSession(app, user);
@@ -55,16 +64,22 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   app.post('/v1/auth/refresh', async (request) => {
     const input = parseBody(refreshSchema, request.body);
+    authLimiter.check(rateLimitKey(request, 'auth-refresh'));
     const tokenHash = await hashOpaqueToken(input.refreshToken);
     const refreshToken = await app.prisma.refreshToken.findFirst({
-      where: {
-        tokenHash,
-        revokedAt: null,
-        expiresAt: { gt: new Date() },
-      },
+      where: { tokenHash },
       include: { user: true },
     });
-    if (!refreshToken) throw unauthorized('Invalid refresh token');
+    if (!refreshToken || refreshToken.expiresAt <= new Date() || refreshToken.user.deletedAt) {
+      throw unauthorized('Invalid refresh token');
+    }
+    if (refreshToken.revokedAt) {
+      await app.prisma.refreshToken.updateMany({
+        where: { userId: refreshToken.userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      throw unauthorized('Invalid refresh token');
+    }
 
     await app.prisma.refreshToken.update({
       where: { id: refreshToken.id },
@@ -75,6 +90,7 @@ export async function registerAuthRoutes(app: FastifyInstance) {
 
   app.post('/v1/auth/logout', async (request, reply) => {
     const input = parseBody(refreshSchema, request.body);
+    authLimiter.check(rateLimitKey(request, 'auth-logout'));
     const tokenHash = await hashOpaqueToken(input.refreshToken);
     await app.prisma.refreshToken.updateMany({
       where: { tokenHash, revokedAt: null },

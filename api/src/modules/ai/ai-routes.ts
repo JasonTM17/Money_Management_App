@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { ApiError, serviceUnavailable } from '../../lib/api-error.js';
+import { InMemoryRateLimiter, rateLimitKey } from '../../lib/rate-limiter.js';
 import { parseBody } from '../../lib/validation.js';
 import { requireAuth } from '../auth/auth-context.js';
 
@@ -11,8 +12,15 @@ const analysisRequestSchema = z.object({
 });
 
 export async function registerAiRoutes(app: FastifyInstance) {
+  const aiLimiter = new InMemoryRateLimiter({
+    windowMs: 60_000,
+    maxAttempts: 20,
+    message: 'Too many AI analysis requests',
+  });
+
   app.post('/v1/ai/analysis', async (request) => {
-    requireAuth(request);
+    const auth = requireAuth(request);
+    aiLimiter.check(rateLimitKey(request, 'ai-analysis', auth.sub));
     const input = parseBody(analysisRequestSchema, request.body);
     const webhookUrl = process.env.N8N_CHATBOT_WEBHOOK_URL;
     const webhookSecret = process.env.N8N_CHATBOT_WEBHOOK_SECRET;
@@ -22,6 +30,7 @@ export async function registerAiRoutes(app: FastifyInstance) {
         'AI analysis workflow is not configured',
       );
     }
+    assertAllowedWebhookUrl(webhookUrl);
 
     const body = JSON.stringify({
       question: input.question,
@@ -83,4 +92,24 @@ export async function registerAiRoutes(app: FastifyInstance) {
       clearTimeout(timeout);
     }
   });
+}
+
+export function assertAllowedWebhookUrl(webhookUrl: string) {
+  let parsed: URL;
+  try {
+    parsed = new URL(webhookUrl);
+  } catch {
+    throw serviceUnavailable('ai_analysis_invalid_config', 'AI analysis workflow is misconfigured');
+  }
+  if (process.env.NODE_ENV !== 'production') return;
+  const allowedHosts = (process.env.N8N_CHATBOT_ALLOWED_HOSTS ?? '')
+    .split(',')
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (
+    parsed.protocol !== 'https:' ||
+    (allowedHosts.length > 0 && !allowedHosts.includes(parsed.hostname.toLowerCase()))
+  ) {
+    throw serviceUnavailable('ai_analysis_invalid_config', 'AI analysis workflow is misconfigured');
+  }
 }

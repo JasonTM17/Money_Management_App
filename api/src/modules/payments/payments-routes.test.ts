@@ -1,6 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
+import { resolveSePayOrderUpdate } from './payments-routes.js';
 import { createAccessToken } from '../../lib/session-tokens.js';
 
 function snapshotEnv(keys: string[]) {
@@ -78,6 +79,46 @@ describe('payment route boundaries', () => {
 
       expect(response.statusCode).toBe(503);
       expect(response.json()).toMatchObject({ code: 'sepay_disabled' });
+    } finally {
+      restoreEnv();
+      await app.close();
+    }
+  });
+
+
+  it('prevents paid SePay orders from being downgraded by later webhook noise', () => {
+    const update = resolveSePayOrderUpdate(
+      { status: 'paid', amount: 99000n, paidAt: new Date('2026-06-01T00:00:00.000Z') },
+      { providerOrderId: 'sepay_test', status: 'expired', amount: 99000 },
+    );
+
+    expect(update).toBeNull();
+  });
+
+  it('rejects SePay webhook amount mismatches before updating orders', () => {
+    expect(() =>
+      resolveSePayOrderUpdate(
+        { status: 'pending', amount: 99000n, paidAt: null },
+        { providerOrderId: 'sepay_test', status: 'paid', amount: 100000 },
+      ),
+    ).toThrowError(/Webhook amount/);
+  });
+
+  it('rejects malformed SePay webhook signatures before parsing orders', async () => {
+    const restoreEnv = snapshotEnv(['SEPAY_WEBHOOK_SECRET']);
+    process.env.SEPAY_WEBHOOK_SECRET = 'test-sepay-secret';
+    const app = buildApp();
+
+    try {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/v1/payments/sepay/webhook',
+        headers: { 'x-sepay-signature': 'short' },
+        payload: { providerOrderId: 'sepay_test', status: 'paid' },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({ code: 'invalid_sepay_signature' });
     } finally {
       restoreEnv();
       await app.close();
