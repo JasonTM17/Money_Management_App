@@ -139,13 +139,13 @@ class AppTheme {
         );
     final textTheme = baseTextTheme.copyWith(
       headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
       ),
       titleMedium: baseTextTheme.titleMedium?.copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
       bodyLarge: baseTextTheme.bodyLarge?.copyWith(height: 1.45),
       bodyMedium: baseTextTheme.bodyMedium?.copyWith(height: 1.45),
@@ -153,7 +153,7 @@ class AppTheme {
         fontWeight: FontWeight.w700,
       ),
       labelMedium: baseTextTheme.labelMedium?.copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
     );
 
@@ -177,7 +177,7 @@ class AppTheme {
         titleSpacing: 20,
         titleTextStyle: textTheme.titleLarge?.copyWith(
           color: scheme.onSurface,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
       ),
       cardTheme: CardThemeData(
@@ -216,7 +216,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(controlRadius),
           ),
           textStyle: textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -228,7 +228,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(controlRadius),
           ),
           textStyle: textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -236,7 +236,7 @@ class AppTheme {
         style: TextButton.styleFrom(
           minimumSize: const Size(48, 48),
           textStyle: textTheme.labelLarge?.copyWith(
-            fontWeight: FontWeight.w800,
+            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -248,7 +248,7 @@ class AppTheme {
           minimumSize: WidgetStateProperty.all(const Size(0, 48)),
           visualDensity: VisualDensity.comfortable,
           textStyle: WidgetStateProperty.all(
-            textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+            textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
           side: WidgetStateProperty.resolveWith(
             (states) => BorderSide(
@@ -313,7 +313,7 @@ class AppTheme {
         ),
         titleTextStyle: textTheme.bodyLarge?.copyWith(
           color: scheme.onSurface,
-          fontWeight: FontWeight.w800,
+          fontWeight: FontWeight.w700,
         ),
         subtitleTextStyle: textTheme.bodyMedium?.copyWith(
           color: scheme.onSurfaceVariant,
@@ -323,7 +323,7 @@ class AppTheme {
         height: bottomNavigationHeight,
         backgroundColor: isDark ? surfaceSlate : Colors.white,
         elevation: 0,
-        indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+        indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.18 : 0.10),
         indicatorShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(999),
         ),
@@ -331,9 +331,9 @@ class AppTheme {
           final selected = states.contains(WidgetState.selected);
           return textTheme.labelSmall?.copyWith(
             color: selected ? scheme.primary : scheme.onSurfaceVariant,
-            fontSize: 11,
+            fontSize: 10.5,
             height: 1.05,
-            fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
           );
         }),
       ),

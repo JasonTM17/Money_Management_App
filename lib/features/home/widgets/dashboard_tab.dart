@@ -86,23 +86,9 @@ class HeroBalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final netPositive = summary.netCashflow >= 0;
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF0B2D22), Color(0xFF106B37), Color(0xFF16A34A)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border.all(color: Colors.white24),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.seed.withValues(alpha: 0.20),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
+    final colorScheme = Theme.of(context).colorScheme;
+    return SoftPanel(
+      tint: colorScheme.primary,
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -113,12 +99,12 @@ class HeroBalanceCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
+                  color: colorScheme.primary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.account_balance_wallet,
-                  color: Colors.white,
+                  color: colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -128,8 +114,8 @@ class HeroBalanceCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.84),
-                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
@@ -143,18 +129,25 @@ class HeroBalanceCard extends StatelessWidget {
               Money(summary.totalBalance).formatVnd(),
               maxLines: 1,
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w900,
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
           const SizedBox(height: 14),
-          StatusPill(
-            label: context.l10n.netCashflow(
-              Money(summary.netCashflow).formatVnd(),
+          LayoutBuilder(
+            builder: (context, constraints) => ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+              child: StatusPill(
+                label: context.l10n.netCashflow(
+                  Money(summary.netCashflow).formatVnd(),
+                ),
+                color: netPositive
+                    ? colorScheme.primary
+                    : AppTheme.warningAmber,
+                icon: netPositive ? Icons.trending_up : Icons.trending_down,
+              ),
             ),
-            color: netPositive ? Colors.white : AppTheme.warningAmber,
-            icon: netPositive ? Icons.trending_up : Icons.trending_down,
           ),
         ],
       ),
@@ -217,7 +210,7 @@ class ChartCard extends StatelessWidget {
                                   color: Theme.of(
                                     context,
                                   ).colorScheme.onSurfaceVariant,
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                 ),
                           );
                         },
@@ -237,7 +230,7 @@ class ChartCard extends StatelessWidget {
                             child: Text(
                               label,
                               style: Theme.of(context).textTheme.labelMedium
-                                  ?.copyWith(fontWeight: FontWeight.w800),
+                                  ?.copyWith(fontWeight: FontWeight.w700),
                             ),
                           );
                         },
@@ -303,17 +296,29 @@ class _ChartLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.labelMedium),
-      ],
+    return ConstrainedBox(
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width - 84,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

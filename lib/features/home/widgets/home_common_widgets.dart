@@ -46,30 +46,33 @@ class SoftPanel extends StatelessWidget {
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
     final accent = tint ?? colorScheme.primary;
+    final panelColor = isDark ? AppTheme.cardSlate : AppTheme.lightPanel;
+    final baseBorder = isDark
+        ? Colors.white.withValues(alpha: 0.07)
+        : colorScheme.outlineVariant.withValues(alpha: 0.78);
+    final borderColor = tint == null
+        ? baseBorder
+        : Color.alphaBlend(
+            accent.withValues(alpha: isDark ? 0.14 : 0.10),
+            baseBorder,
+          );
+    final backgroundColor = tint == null
+        ? panelColor
+        : Color.alphaBlend(
+            accent.withValues(alpha: isDark ? 0.022 : 0.018),
+            panelColor,
+          );
     final decoration = BoxDecoration(
       borderRadius: BorderRadius.circular(AppTheme.cardRadius),
-      gradient: LinearGradient(
-        colors: [
-          accent.withValues(alpha: isDark ? 0.13 : 0.08),
-          colorScheme.surfaceContainerHighest.withValues(
-            alpha: isDark ? 0.62 : 0.88,
-          ),
-        ],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-      border: Border.all(
-        color: isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : colorScheme.outlineVariant.withValues(alpha: 0.34),
-      ),
+      color: backgroundColor,
+      border: Border.all(color: borderColor),
       boxShadow: isDark
           ? null
           : [
               BoxShadow(
-                color: accent.withValues(alpha: 0.045),
-                blurRadius: 24,
-                offset: const Offset(0, 14),
+                color: Colors.black.withValues(alpha: 0.035),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
               ),
             ],
     );
@@ -77,8 +80,30 @@ class SoftPanel extends StatelessWidget {
       duration: const Duration(milliseconds: 180),
       curve: Curves.easeOutCubic,
       decoration: decoration,
-      padding: padding,
-      child: child,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        child: Stack(
+          children: [
+            if (tint != null)
+              Positioned(
+                left: 0,
+                top: 14,
+                bottom: 14,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: isDark ? 0.68 : 0.58),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: const SizedBox(width: 3),
+                ),
+              ),
+            Material(
+              type: MaterialType.transparency,
+              child: Padding(padding: padding, child: child),
+            ),
+          ],
+        ),
+      ),
     );
     if (onTap == null) return content;
     return Material(
@@ -124,7 +149,7 @@ class MetricCard extends StatelessWidget {
       tint: color,
       padding: const EdgeInsets.all(14),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 106),
+        constraints: const BoxConstraints(minHeight: 98),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -133,7 +158,7 @@ class MetricCard extends StatelessWidget {
               width: 38,
               height: 38,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.14),
+                color: color.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 21),
@@ -145,7 +170,7 @@ class MetricCard extends StatelessWidget {
                   title,
                   style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 const SizedBox(height: 5),
@@ -154,7 +179,8 @@ class MetricCard extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w900,
+                    color: color,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ],
@@ -181,7 +207,7 @@ class PanelTitle extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         style: Theme.of(
           context,
-        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -211,7 +237,7 @@ class AppSectionHeader extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: Theme.of(
             context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         if (subtitle != null) ...[
           const SizedBox(height: 4),
@@ -269,17 +295,19 @@ class SectionActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.icon(
+    return OutlinedButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 18),
       label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
-      style: FilledButton.styleFrom(
+      style: OutlinedButton.styleFrom(
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 14),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.controlRadius),
+        ),
         textStyle: Theme.of(
           context,
-        ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+        ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -329,7 +357,7 @@ class SheetTitle extends StatelessWidget {
             title,
             style: Theme.of(
               context,
-            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -414,7 +442,7 @@ class InlineInfoCard extends StatelessWidget {
                   title,
                   style: Theme.of(
                     context,
-                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w800),
+                  ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 3),
@@ -468,7 +496,7 @@ class StatusPill extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                 color: color,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -506,7 +534,7 @@ class TransactionTile extends StatelessWidget {
     final prefix = isIncome
         ? '+'
         : isTransfer
-        ? '? '
+        ? ''
         : '-';
     final title = transaction.note.isEmpty
         ? categoryLabel ?? transaction.categoryId
@@ -521,10 +549,10 @@ class TransactionTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.14),
+                color: color.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
               child: Icon(
@@ -550,34 +578,38 @@ class TransactionTile extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(fontWeight: FontWeight.w900),
+                              ?.copyWith(fontWeight: FontWeight.w700),
                         ),
                       ),
-                      if (onDelete != null) ...[
-                        const SizedBox(width: 6),
-                        IconButton(
-                          tooltip: context.l10n.t('deleteTransaction'),
-                          icon: const Icon(Icons.delete_outline),
-                          onPressed: onDelete,
+                      const SizedBox(width: 10),
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 122),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Text(
+                                '$prefix${Money(transaction.amount).formatVnd()}',
+                                maxLines: 1,
+                                textAlign: TextAlign.end,
+                                style: TextStyle(
+                                  color: color,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            if (onDelete != null)
+                              IconButton(
+                                tooltip: context.l10n.t('deleteTransaction'),
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: onDelete,
+                              ),
+                          ],
                         ),
-                      ],
+                      ),
                     ],
-                  ),
-                  const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        '$prefix${Money(transaction.amount).formatVnd()}',
-                        maxLines: 1,
-                        textAlign: TextAlign.end,
-                        style: TextStyle(
-                          color: color,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
                   ),
                   const SizedBox(height: 8),
                   Wrap(
@@ -673,7 +705,7 @@ class SectionTitle extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: Theme.of(
                 context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -769,7 +801,7 @@ class CompactListRow extends StatelessWidget {
                     Text(
                       title,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     if (subtitle != null) ...[
