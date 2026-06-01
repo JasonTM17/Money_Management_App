@@ -7,6 +7,11 @@ void main() {
   test('parseVndAmount rejects empty zero and negative values', () {
     expect(() => parseVndAmount(''), throwsFormatException);
     expect(() => parseVndAmount('0'), throwsFormatException);
+    expect(() => parseVndAmount('-100000'), throwsFormatException);
+    expect(() => parseVndAmount('-100.000 ₫'), throwsFormatException);
+    expect(() => parseVndAmount('−100.000 ₫'), throwsFormatException);
+    expect(() => parseVndAmount('100-200'), throwsFormatException);
+    expect(() => parseVndAmount('100k'), throwsFormatException);
     expect(parseVndAmount('1.250.000 ₫'), 1250000);
   });
 
@@ -192,5 +197,101 @@ void main() {
     );
 
     expect(forecast, 1800000);
+  });
+
+  test('forecast clamps recurring day to shorter months', () {
+    final forecast = const FinanceCalculator().forecastEndBalance(
+      currentBalance: 1000000,
+      recurringTransactions: [
+        FinanceTransaction(
+          id: 'month-end-bill',
+          walletId: 'cash',
+          categoryId: 'bill',
+          type: TransactionType.expense,
+          amount: 100000,
+          date: DateTime(2026, 1, 31),
+          note: '',
+          isRecurring: true,
+        ),
+      ],
+      now: DateTime(2026, 2, 1),
+      until: DateTime(2026, 3, 31),
+    );
+
+    expect(forecast, 800000);
+  });
+
+  test('monthlyCashflowTrend returns ordered recent month summaries', () {
+    final trends = const FinanceCalculator().monthlyCashflowTrend(
+      transactions: [
+        FinanceTransaction(
+          id: 'april-income',
+          walletId: 'bank',
+          categoryId: 'salary',
+          type: TransactionType.income,
+          amount: 2000000,
+          date: DateTime(2026, 4, 2),
+          note: '',
+        ),
+        FinanceTransaction(
+          id: 'may-expense',
+          walletId: 'cash',
+          categoryId: 'food',
+          type: TransactionType.expense,
+          amount: 350000,
+          date: DateTime(2026, 5, 12),
+          note: '',
+        ),
+        FinanceTransaction(
+          id: 'may-transfer',
+          walletId: 'bank',
+          toWalletId: 'cash',
+          categoryId: 'transfer',
+          type: TransactionType.transfer,
+          amount: 100000,
+          date: DateTime(2026, 5, 13),
+          note: '',
+        ),
+      ],
+      endingMonth: DateTime(2026, 5),
+      monthCount: 3,
+    );
+
+    expect(trends.map((item) => item.month.month), [3, 4, 5]);
+    expect(trends[1].income, 2000000);
+    expect(trends[2].expense, 350000);
+    expect(trends[2].netCashflow, -350000);
+  });
+
+  test('upcomingRecurringBills clamps dates and marks forecast inclusion', () {
+    final bills = const FinanceCalculator().upcomingRecurringBills(
+      transactions: [
+        FinanceTransaction(
+          id: 'month-end-bill',
+          walletId: 'cash',
+          categoryId: 'bill',
+          type: TransactionType.expense,
+          amount: 100000,
+          date: DateTime(2026, 1, 31),
+          note: '',
+          isRecurring: true,
+        ),
+        FinanceTransaction(
+          id: 'non-recurring',
+          walletId: 'cash',
+          categoryId: 'bill',
+          type: TransactionType.expense,
+          amount: 100000,
+          date: DateTime(2026, 2, 15),
+          note: '',
+        ),
+      ],
+      now: DateTime(2026, 2, 1),
+      withinDays: 31,
+    );
+
+    expect(bills, hasLength(1));
+    expect(bills.single.dueDate, DateTime(2026, 2, 28));
+    expect(bills.single.includedInForecast, isTrue);
   });
 }
