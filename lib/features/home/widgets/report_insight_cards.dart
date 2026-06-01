@@ -24,7 +24,7 @@ class CategoryPieCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppSectionHeader(title: l10n.t('expenseCategoryChart')),
+          PanelTitle(l10n.t('expenseCategoryChart')),
           if (data.isEmpty)
             EmptyState(
               icon: Icons.pie_chart_outline,
@@ -50,7 +50,7 @@ class CategoryPieCard extends StatelessWidget {
                         PieChartSectionData(
                           value: item.amount.toDouble(),
                           color: Color(item.category.colorHex),
-                          title: '${item.percent}%',
+                          title: item.percent >= 8 ? '${item.percent}%' : '',
                           radius: 58,
                           titleStyle: const TextStyle(
                             color: Colors.white,
@@ -63,22 +63,69 @@ class CategoryPieCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final item in data)
-                  Chip(
-                    avatar: CircleAvatar(
-                      backgroundColor: Color(item.category.colorHex),
-                    ),
-                    label: Text(
-                      '${item.category.name}: ${Money(item.amount).formatVnd()}',
-                    ),
+            ...data
+                .take(5)
+                .map(
+                  (item) => _ExpenseLegendRow(
+                    item: item,
+                    total: data.fold(0, (sum, value) => sum + value.amount),
                   ),
-              ],
-            ),
+                ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ExpenseLegendRow extends StatelessWidget {
+  const _ExpenseLegendRow({required this.item, required this.total});
+
+  final _CategoryExpense item;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Color(item.category.colorHex);
+    final share = total == 0 ? 0.0 : (item.amount / total).clamp(0.0, 1.0);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '${item.category.name}: ${Money(item.amount).formatVnd()}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '${item.percent}%',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(value: share, color: color),
+          ),
         ],
       ),
     );
@@ -101,7 +148,7 @@ class TopCategoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppSectionHeader(title: l10n.t('topExpenseCategories')),
+          PanelTitle(l10n.t('topExpenseCategories')),
           if (data.isEmpty)
             EmptyState(
               icon: Icons.leaderboard_outlined,
@@ -115,9 +162,15 @@ class TopCategoryCard extends StatelessWidget {
                 title: item.category.name,
                 color: color,
                 subtitle: '${item.percent}% ${l10n.t('expense')}',
-                trailing: Text(
-                  Money(item.amount).formatVnd(),
-                  style: TextStyle(color: color, fontWeight: FontWeight.w900),
+                trailing: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 132),
+                  child: Text(
+                    Money(item.amount).formatVnd(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: TextStyle(color: color, fontWeight: FontWeight.w900),
+                  ),
                 ),
               );
             }),

@@ -99,3 +99,30 @@ class DashboardSummary {
   final int netCashflow;
   final List<String> budgetAlerts;
 }
+
+class MonthlyCashflowTrend {
+  const MonthlyCashflowTrend({
+    required this.month,
+    required this.income,
+    required this.expense,
+  });
+
+  final DateTime month;
+  final int income;
+  final int expense;
+
+  int get netCashflow => income - expense;
+  bool get hasActivity => income != 0 || expense != 0;
+}
+
+class UpcomingRecurringBill {
+  const UpcomingRecurringBill({
+    required this.transaction,
+    required this.dueDate,
+    required this.includedInForecast,
+  });
+
+  final FinanceTransaction transaction;
+  final DateTime dueDate;
+  final bool includedInForecast;
+}

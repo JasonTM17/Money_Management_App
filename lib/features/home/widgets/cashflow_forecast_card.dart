@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../app/app_localizations.dart';
 import '../../../app/app_theme.dart';
 import '../../../core/finance_calculator.dart';
-import '../../../core/finance_models.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
 import 'home_common_widgets.dart';
@@ -34,16 +33,10 @@ class CashflowForecastCard extends StatelessWidget {
       until: DateTime(now.year, now.month + 2, 0),
       now: now,
     );
-    final recurringBills =
-        state.transactions
-            .where(
-              (item) =>
-                  item.isRecurring && item.type == TransactionType.expense,
-            )
-            .map((item) => _UpcomingBill(item, _nextOccurrence(item, now)))
-            .where((item) => item.date.difference(now).inDays <= 31)
-            .toList()
-          ..sort((a, b) => a.date.compareTo(b.date));
+    final recurringBills = calculator.upcomingRecurringBills(
+      transactions: state.transactions,
+      now: now,
+    );
     return SoftPanel(
       tint: AppTheme.seed,
       padding: const EdgeInsets.all(18),
@@ -108,7 +101,9 @@ class CashflowForecastCard extends StatelessWidget {
                     title: item.transaction.note.isEmpty
                         ? item.transaction.categoryId
                         : item.transaction.note,
-                    subtitle: l10n.dueDate(item.date),
+                    subtitle: item.includedInForecast
+                        ? '${l10n.dueDate(item.dueDate)} · ${l10n.t('includedInForecast')}'
+                        : l10n.dueDate(item.dueDate),
                     trailing: Text(
                       Money(item.transaction.amount).formatVnd(),
                       style: const TextStyle(
@@ -143,7 +138,7 @@ class _ForecastTile extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.16)),
       ),
       child: Row(
@@ -164,10 +159,9 @@ class _ForecastTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.2,
-                  ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
                 ),
               ],
             ),
@@ -176,25 +170,4 @@ class _ForecastTile extends StatelessWidget {
       ),
     );
   }
-}
-
-class _UpcomingBill {
-  const _UpcomingBill(this.transaction, this.date);
-
-  final FinanceTransaction transaction;
-  final DateTime date;
-}
-
-DateTime _nextOccurrence(FinanceTransaction transaction, DateTime now) {
-  final currentMonthDay = transaction.date.day.clamp(
-    1,
-    DateTime(now.year, now.month + 1, 0).day,
-  );
-  final currentMonth = DateTime(now.year, now.month, currentMonthDay);
-  if (currentMonth.isAfter(now)) return currentMonth;
-  final nextMonthDay = transaction.date.day.clamp(
-    1,
-    DateTime(now.year, now.month + 2, 0).day,
-  );
-  return DateTime(now.year, now.month + 1, nextMonthDay);
 }

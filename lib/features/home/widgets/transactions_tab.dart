@@ -95,7 +95,7 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
                 controller: _search,
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search),
-                  labelText: l10n.t('searchTransactions'),
+                  hintText: l10n.t('searchTransactions'),
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -117,86 +117,101 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
                     setState(() => _filter = value.first),
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  SizedBox(
-                    width: 180,
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: walletFilterValue,
-                      isExpanded: true,
-                      decoration: InputDecoration(labelText: l10n.t('wallets')),
-                      items: [
-                        DropdownMenuItem(
-                          value: null,
-                          child: Text(l10n.t('allWallets')),
-                        ),
-                        ...widget.state.wallets.map(
-                          (wallet) => DropdownMenuItem(
-                            value: wallet.id,
-                            child: Text(wallet.name),
-                          ),
-                        ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _walletFilterId = value),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 180,
-                    child: DropdownButtonFormField<String?>(
-                      initialValue: categoryFilterValue,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: l10n.t('category'),
-                      ),
-                      items: [
-                        DropdownMenuItem(
-                          value: null,
-                          child: Text(l10n.t('allCategories')),
-                        ),
-                        ...widget.state.categories
-                            .where(
-                              (category) =>
-                                  category.type != TransactionType.transfer,
-                            )
-                            .map(
-                              (category) => DropdownMenuItem(
-                                value: category.id,
-                                child: Text(category.name),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final fieldWidth = constraints.maxWidth >= 560
+                      ? (constraints.maxWidth - 20) / 3
+                      : constraints.maxWidth >= 300
+                      ? (constraints.maxWidth - 10) / 2
+                      : constraints.maxWidth;
+                  return Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: [
+                      SizedBox(
+                        width: fieldWidth,
+                        child: _FilterField(
+                          label: l10n.t('wallets'),
+                          child: DropdownButtonFormField<String?>(
+                            initialValue: walletFilterValue,
+                            isExpanded: true,
+                            decoration: const InputDecoration(),
+                            items: [
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text(l10n.t('allWallets')),
                               ),
-                            ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _categoryFilterId = value),
-                    ),
-                  ),
-                  SizedBox(
-                    width: 180,
-                    child: DropdownButtonFormField<DateTime?>(
-                      initialValue: monthFilterValue,
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        labelText: l10n.t('monthFilter'),
-                      ),
-                      items: [
-                        DropdownMenuItem(
-                          value: null,
-                          child: Text(l10n.t('allMonths')),
-                        ),
-                        ...monthOptions.map(
-                          (month) => DropdownMenuItem(
-                            value: month,
-                            child: Text(l10n.monthYear(month)),
+                              ...widget.state.wallets.map(
+                                (wallet) => DropdownMenuItem(
+                                  value: wallet.id,
+                                  child: Text(wallet.name),
+                                ),
+                              ),
+                            ],
+                            onChanged: (value) =>
+                                setState(() => _walletFilterId = value),
                           ),
                         ),
-                      ],
-                      onChanged: (value) =>
-                          setState(() => _monthFilter = value),
-                    ),
-                  ),
-                ],
+                      ),
+                      SizedBox(
+                        width: fieldWidth,
+                        child: _FilterField(
+                          label: l10n.t('category'),
+                          child: DropdownButtonFormField<String?>(
+                            initialValue: categoryFilterValue,
+                            isExpanded: true,
+                            decoration: const InputDecoration(),
+                            items: [
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text(l10n.t('allCategories')),
+                              ),
+                              ...widget.state.categories
+                                  .where(
+                                    (category) =>
+                                        category.type !=
+                                        TransactionType.transfer,
+                                  )
+                                  .map(
+                                    (category) => DropdownMenuItem(
+                                      value: category.id,
+                                      child: Text(category.name),
+                                    ),
+                                  ),
+                            ],
+                            onChanged: (value) =>
+                                setState(() => _categoryFilterId = value),
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: fieldWidth,
+                        child: _FilterField(
+                          label: l10n.t('monthFilter'),
+                          child: DropdownButtonFormField<DateTime?>(
+                            initialValue: monthFilterValue,
+                            isExpanded: true,
+                            decoration: const InputDecoration(),
+                            items: [
+                              DropdownMenuItem(
+                                value: null,
+                                child: Text(l10n.t('allMonths')),
+                              ),
+                              ...monthOptions.map(
+                                (month) => DropdownMenuItem(
+                                  value: month,
+                                  child: Text(l10n.monthYear(month)),
+                                ),
+                              ),
+                            ],
+                            onChanged: (value) =>
+                                setState(() => _monthFilter = value),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -288,5 +303,34 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
     await ref
         .read(financeControllerProvider.notifier)
         .deleteTransaction(transaction.id);
+  }
+}
+
+class _FilterField extends StatelessWidget {
+  const _FilterField({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 2, bottom: 6),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        child,
+      ],
+    );
   }
 }

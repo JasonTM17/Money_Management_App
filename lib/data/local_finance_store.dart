@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -5,6 +8,9 @@ import 'package:sqlite3/sqlite3.dart';
 import '../core/finance_backup_service.dart';
 import '../core/finance_calculator.dart';
 import '../core/finance_models.dart';
+import '../core/sync_models.dart';
+
+part 'local-finance-sync-metadata.dart';
 
 class FinanceState {
   const FinanceState({
@@ -27,13 +33,24 @@ class FinanceState {
 }
 
 class LocalFinanceStore {
+  // Public name keeps tests and callers readable while storing internally.
+  // ignore: prefer_initializing_formals
+  LocalFinanceStore({String? databasePath}) : _databasePath = databasePath;
+
   Database? _db;
+  final String? _databasePath;
   final _calculator = const FinanceCalculator();
 
   Future<Database> _open() async {
     if (_db case final db?) return db;
-    final dir = await getApplicationDocumentsDirectory();
-    final db = sqlite3.open(p.join(dir.path, 'cashflow_manager.sqlite'));
+    final databasePath = _databasePath;
+    final path =
+        databasePath ??
+        p.join(
+          (await getApplicationDocumentsDirectory()).path,
+          'cashflow_manager.sqlite',
+        );
+    final db = sqlite3.open(path);
     _db = db;
     _migrate(db);
     _seed(db);
@@ -56,16 +73,27 @@ class LocalFinanceStore {
     );
   }
 
+  Future<void> resetData() async {
+    final db = await _open();
+    db.execute('begin immediate');
+    try {
+      _deleteAllData(db);
+      _deleteAllSyncState(db);
+      _seed(db);
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
+  }
+
   Future<void> restoreBackup(String input) async {
     final backup = const FinanceBackupService().decode(input);
     final db = await _open();
     db.execute('begin immediate');
     try {
-      db.execute('delete from transactions');
-      db.execute('delete from budgets');
-      db.execute('delete from saving_goals');
-      db.execute('delete from categories');
-      db.execute('delete from wallets');
+      _deleteAllData(db);
+      _deleteAllSyncState(db);
       for (final wallet in backup.wallets) {
         db.execute('insert into wallets values (?, ?, ?, ?)', [
           wallet.id,
@@ -135,19 +163,45 @@ class LocalFinanceStore {
       throw ArgumentError.value(amount, 'amount', 'Amount must be positive');
     }
     final db = await _open();
-    db.execute(
-      'insert into transactions values (?, ?, null, ?, ?, ?, ?, ?, ?)',
-      [
-        _id('txn'),
-        walletId,
-        categoryId,
-        type.name,
-        amount,
-        date.toIso8601String(),
-        note,
-        isRecurring ? 1 : 0,
-      ],
+    final id = _id('txn');
+    final payload = _transactionPayload(
+      walletId: walletId,
+      toWalletId: null,
+      categoryId: categoryId,
+      type: type,
+      amount: amount,
+      date: date,
+      note: note,
+      isRecurring: isRecurring,
     );
+    db.execute('begin immediate');
+    try {
+      db.execute(
+        'insert into transactions values (?, ?, null, ?, ?, ?, ?, ?, ?)',
+        [
+          id,
+          walletId,
+          categoryId,
+          type.name,
+          amount,
+          date.toIso8601String(),
+          note,
+          isRecurring ? 1 : 0,
+        ],
+      );
+      _markLocalCreate(db, entityType: _syncEntityTransaction, localId: id);
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntityTransaction,
+        localId: id,
+        operation: _syncOperationCreate,
+        payload: payload,
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   Future<void> updateTransaction({
@@ -164,24 +218,64 @@ class LocalFinanceStore {
       throw ArgumentError.value(amount, 'amount', 'Amount must be positive');
     }
     final db = await _open();
-    db.execute(
-      'update transactions set wallet_id = ?, to_wallet_id = null, category_id = ?, type = ?, amount = ?, date = ?, note = ?, is_recurring = ? where id = ?',
-      [
-        walletId,
-        categoryId,
-        type.name,
-        amount,
-        date.toIso8601String(),
-        note,
-        isRecurring ? 1 : 0,
-        id,
-      ],
+    final payload = _transactionPayload(
+      walletId: walletId,
+      toWalletId: null,
+      categoryId: categoryId,
+      type: type,
+      amount: amount,
+      date: date,
+      note: note,
+      isRecurring: isRecurring,
     );
+    db.execute('begin immediate');
+    try {
+      db.execute(
+        'update transactions set wallet_id = ?, to_wallet_id = null, category_id = ?, type = ?, amount = ?, date = ?, note = ?, is_recurring = ? where id = ?',
+        [
+          walletId,
+          categoryId,
+          type.name,
+          amount,
+          date.toIso8601String(),
+          note,
+          isRecurring ? 1 : 0,
+          id,
+        ],
+      );
+      _markLocalUpdate(db, entityType: _syncEntityTransaction, localId: id);
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntityTransaction,
+        localId: id,
+        operation: _syncOperationUpdate,
+        payload: payload,
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   Future<void> deleteTransaction(String id) async {
     final db = await _open();
-    db.execute('delete from transactions where id = ?', [id]);
+    db.execute('begin immediate');
+    try {
+      db.execute('delete from transactions where id = ?', [id]);
+      _markLocalDelete(db, entityType: _syncEntityTransaction, localId: id);
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntityTransaction,
+        localId: id,
+        operation: _syncOperationDelete,
+        payload: const {},
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   Future<void> transfer({
@@ -198,12 +292,13 @@ class LocalFinanceStore {
       throw ArgumentError.value(amount, 'amount', 'Amount must be positive');
     }
     final db = await _open();
+    final localId = _id('trf');
     db.execute('begin immediate');
     try {
       db.execute(
         'insert into transactions values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         [
-          _id('trf'),
+          localId,
           fromWalletId,
           toWalletId,
           'transfer',
@@ -213,6 +308,27 @@ class LocalFinanceStore {
           note,
           0,
         ],
+      );
+      _markLocalCreate(
+        db,
+        entityType: _syncEntityTransaction,
+        localId: localId,
+      );
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntityTransaction,
+        localId: localId,
+        operation: _syncOperationCreate,
+        payload: _transactionPayload(
+          walletId: fromWalletId,
+          toWalletId: toWalletId,
+          categoryId: 'transfer',
+          type: TransactionType.transfer,
+          amount: amount,
+          date: date,
+          note: note,
+          isRecurring: false,
+        ),
       );
       db.execute('commit');
     } on Object {
@@ -240,18 +356,58 @@ class LocalFinanceStore {
       [categoryId, monthKey],
     );
     if (existing.isEmpty) {
-      db.execute('insert into budgets values (?, ?, ?, ?)', [
-        _id('budget'),
-        categoryId,
-        monthKey,
-        limitAmount,
-      ]);
+      final id = _id('budget');
+      db.execute('begin immediate');
+      try {
+        db.execute('insert into budgets values (?, ?, ?, ?)', [
+          id,
+          categoryId,
+          monthKey,
+          limitAmount,
+        ]);
+        _markLocalCreate(db, entityType: _syncEntityBudget, localId: id);
+        _enqueueLocalMutation(
+          db,
+          entityType: _syncEntityBudget,
+          localId: id,
+          operation: _syncOperationCreate,
+          payload: _budgetPayload(
+            categoryId: categoryId,
+            month: DateTime(month.year, month.month),
+            limitAmount: limitAmount,
+          ),
+        );
+        db.execute('commit');
+      } on Object {
+        db.execute('rollback');
+        rethrow;
+      }
       return;
     }
-    db.execute('update budgets set limit_amount = ? where id = ?', [
-      limitAmount,
-      existing.first['id'],
-    ]);
+    final id = existing.first['id'] as String;
+    db.execute('begin immediate');
+    try {
+      db.execute('update budgets set limit_amount = ? where id = ?', [
+        limitAmount,
+        id,
+      ]);
+      _markLocalUpdate(db, entityType: _syncEntityBudget, localId: id);
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntityBudget,
+        localId: id,
+        operation: _syncOperationUpdate,
+        payload: _budgetPayload(
+          categoryId: categoryId,
+          month: DateTime(month.year, month.month),
+          limitAmount: limitAmount,
+        ),
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   Future<void> updateBudget({
@@ -269,20 +425,69 @@ class LocalFinanceStore {
     }
     final db = await _open();
     final monthKey = DateTime(month.year, month.month).toIso8601String();
-    db.execute(
-      'update budgets set category_id = ?, month = ?, limit_amount = ? where id = ?',
-      [categoryId, monthKey, limitAmount, id],
-    );
+    db.execute('begin immediate');
+    try {
+      db.execute(
+        'update budgets set category_id = ?, month = ?, limit_amount = ? where id = ?',
+        [categoryId, monthKey, limitAmount, id],
+      );
+      _markLocalUpdate(db, entityType: _syncEntityBudget, localId: id);
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntityBudget,
+        localId: id,
+        operation: _syncOperationUpdate,
+        payload: _budgetPayload(
+          categoryId: categoryId,
+          month: DateTime(month.year, month.month),
+          limitAmount: limitAmount,
+        ),
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   Future<void> deleteBudget(String id) async {
     final db = await _open();
-    db.execute('delete from budgets where id = ?', [id]);
+    db.execute('begin immediate');
+    try {
+      db.execute('delete from budgets where id = ?', [id]);
+      _markLocalDelete(db, entityType: _syncEntityBudget, localId: id);
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntityBudget,
+        localId: id,
+        operation: _syncOperationDelete,
+        payload: const {},
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   Future<void> deleteGoal(String id) async {
     final db = await _open();
-    db.execute('delete from saving_goals where id = ?', [id]);
+    db.execute('begin immediate');
+    try {
+      db.execute('delete from saving_goals where id = ?', [id]);
+      _markLocalDelete(db, entityType: _syncEntitySavingGoal, localId: id);
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntitySavingGoal,
+        localId: id,
+        operation: _syncOperationDelete,
+        payload: const {},
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   Future<void> saveGoal({
@@ -311,19 +516,70 @@ class LocalFinanceStore {
     }
     final db = await _open();
     if (id == null) {
-      db.execute('insert into saving_goals values (?, ?, ?, ?, ?)', [
-        _id('goal'),
-        name.trim(),
-        targetAmount,
-        savedAmount,
-        deadline.toIso8601String(),
-      ]);
+      final localId = _id('goal');
+      db.execute('begin immediate');
+      try {
+        db.execute('insert into saving_goals values (?, ?, ?, ?, ?)', [
+          localId,
+          name.trim(),
+          targetAmount,
+          savedAmount,
+          deadline.toIso8601String(),
+        ]);
+        _markLocalCreate(
+          db,
+          entityType: _syncEntitySavingGoal,
+          localId: localId,
+        );
+        _enqueueLocalMutation(
+          db,
+          entityType: _syncEntitySavingGoal,
+          localId: localId,
+          operation: _syncOperationCreate,
+          payload: _savingGoalPayload(
+            name: name.trim(),
+            targetAmount: targetAmount,
+            savedAmount: savedAmount,
+            deadline: deadline,
+          ),
+        );
+        db.execute('commit');
+      } on Object {
+        db.execute('rollback');
+        rethrow;
+      }
       return;
     }
-    db.execute(
-      'update saving_goals set name = ?, target_amount = ?, saved_amount = ?, deadline = ? where id = ?',
-      [name.trim(), targetAmount, savedAmount, deadline.toIso8601String(), id],
-    );
+    db.execute('begin immediate');
+    try {
+      db.execute(
+        'update saving_goals set name = ?, target_amount = ?, saved_amount = ?, deadline = ? where id = ?',
+        [
+          name.trim(),
+          targetAmount,
+          savedAmount,
+          deadline.toIso8601String(),
+          id,
+        ],
+      );
+      _markLocalUpdate(db, entityType: _syncEntitySavingGoal, localId: id);
+      _enqueueLocalMutation(
+        db,
+        entityType: _syncEntitySavingGoal,
+        localId: id,
+        operation: _syncOperationUpdate,
+        payload: _savingGoalPayload(
+          name: name.trim(),
+          targetAmount: targetAmount,
+          savedAmount: savedAmount,
+          deadline: deadline,
+        ),
+      );
+      db.execute('commit');
+    } on Object {
+      db.execute('rollback');
+      rethrow;
+    }
   }
 
   FinanceState _stateFromDb(Database db) {
@@ -382,6 +638,7 @@ class LocalFinanceStore {
     db.execute(
       'create table if not exists saving_goals(id text primary key, name text not null, target_amount integer not null, saved_amount integer not null, deadline text not null)',
     );
+    _migrateSyncTables(db);
     final transactionColumns = db
         .select('pragma table_info(transactions)')
         .map((row) => row['name'] as String)
@@ -401,6 +658,7 @@ class LocalFinanceStore {
       'create index if not exists idx_transactions_category_date on transactions(category_id, date)',
     );
     _cleanInvalidRows(db);
+    _ensureSyncMetadataForExistingRows(db);
     db.execute(
       'create unique index if not exists idx_budgets_category_month on budgets(category_id, month)',
     );
@@ -428,6 +686,14 @@ class LocalFinanceStore {
     db.execute(
       "delete from transactions where type = 'transfer' and (to_wallet_id is null or to_wallet_id not in (select id from wallets) or to_wallet_id = wallet_id)",
     );
+  }
+
+  void _deleteAllData(Database db) {
+    db.execute('delete from transactions');
+    db.execute('delete from budgets');
+    db.execute('delete from saving_goals');
+    db.execute('delete from categories');
+    db.execute('delete from wallets');
   }
 
   void _seed(Database db) {

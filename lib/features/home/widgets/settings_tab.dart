@@ -10,6 +10,8 @@ import '../../../app/app_theme.dart';
 import '../finance_controller.dart';
 import 'backup_restore_sheet.dart';
 import 'home_common_widgets.dart';
+import 'privacy_security_panel.dart';
+import 'remote_account_panel.dart';
 
 class SettingsTab extends ConsumerWidget {
   const SettingsTab({super.key, required this.state});
@@ -41,12 +43,7 @@ class SettingsTab extends ConsumerWidget {
           color: Colors.teal,
         ),
         AppSectionHeader(title: l10n.t('settings')),
-        InlineInfoCard(
-          icon: Icons.lock_person,
-          title: l10n.t('privacyLock'),
-          subtitle: l10n.t('privacyLockSubtitle'),
-          trailing: Chip(label: Text(l10n.t('privacyLockEnabled'))),
-        ),
+        const PrivacySecurityPanel(),
         const SizedBox(height: 10),
         SoftPanel(
           padding: const EdgeInsets.all(12),
@@ -65,18 +62,30 @@ class SettingsTab extends ConsumerWidget {
                 segments: [
                   ButtonSegment(
                     value: ThemeMode.system,
-                    icon: const Icon(Icons.brightness_auto),
-                    label: Text(l10n.t('systemTheme')),
+                    label: Text(
+                      l10n.t('systemTheme'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   ButtonSegment(
                     value: ThemeMode.light,
-                    icon: const Icon(Icons.light_mode),
-                    label: Text(l10n.t('themeLight')),
+                    label: Text(
+                      l10n.t('themeLight'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   ButtonSegment(
                     value: ThemeMode.dark,
-                    icon: const Icon(Icons.dark_mode),
-                    label: Text(l10n.t('themeDark')),
+                    label: Text(
+                      l10n.t('themeDark'),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ],
                 selected: {themeMode},
@@ -111,15 +120,27 @@ class SettingsTab extends ConsumerWidget {
                 segments: [
                   ButtonSegment(
                     value: const Locale('vi'),
-                    label: Text(l10n.t('languageVietnamese')),
+                    label: Text(
+                      l10n.t('languageVietnamese'),
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   ButtonSegment(
                     value: const Locale('en'),
-                    label: Text(l10n.t('languageEnglish')),
+                    label: Text(
+                      l10n.t('languageEnglish'),
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                   ButtonSegment(
                     value: const Locale('ja'),
-                    label: Text(l10n.t('languageJapanese')),
+                    label: Text(
+                      l10n.t('languageJapanese'),
+                      maxLines: 2,
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ],
                 selected: {locale},
@@ -130,6 +151,8 @@ class SettingsTab extends ConsumerWidget {
             ],
           ),
         ),
+        const SizedBox(height: 10),
+        const RemoteAccountPanel(),
         const SizedBox(height: 10),
         InlineInfoCard(
           key: const ValueKey('backup-restore-card'),

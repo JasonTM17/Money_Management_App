@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/app_localizations.dart';
+import '../../app/app_theme.dart';
 import '../../data/local_finance_store.dart';
 import 'finance_controller.dart';
 import 'home_widgets.dart';
@@ -27,38 +28,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final l10n = context.l10n;
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final compactNavigation = MediaQuery.sizeOf(context).width < 430;
     return Scaffold(
-      extendBody: true,
       backgroundColor: colorScheme.surface,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         title: Row(
           children: [
-            Container(
-              width: 34,
-              height: 34,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF16A34A), Color(0xFF3B82F6)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF16A34A).withValues(alpha: 0.24),
-                    blurRadius: 14,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+            Semantics(
+              label: 'CashFlow Manager logo',
+              image: true,
+              child: Image.asset(
+                'assets/brand/cashflow-logo-mark.png',
+                width: 44,
+                height: 44,
+                filterQuality: FilterQuality.high,
               ),
-              child: const Icon(Icons.savings, color: Colors.white, size: 20),
             ),
             const SizedBox(width: 10),
-            const Text('CashFlow Manager'),
+            const Expanded(
+              child: Text(
+                'CashFlow Manager',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         actions: [
+          IconButton(
+            key: const ValueKey('add-transaction-action-button'),
+            tooltip: l10n.t('addTransaction'),
+            onPressed: () => _showAddTransaction(context),
+            icon: const Icon(Icons.add_circle_outline),
+          ),
           IconButton(
             key: const ValueKey('settings-action-button'),
             tooltip: l10n.t('settings'),
@@ -88,59 +91,52 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text(l10n.t('loadDataFailed'))),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddTransaction(context),
-        icon: const Icon(Icons.add),
-        label: Text(l10n.t('addTransaction')),
-      ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
-            boxShadow: isDark
-                ? null
-                : [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 28,
-                      offset: const Offset(0, 14),
-                    ),
-                  ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: NavigationBar(
-              selectedIndex: _index,
-              onDestinationSelected: (value) => setState(() => _index = value),
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.dashboard_outlined),
-                  selectedIcon: const Icon(Icons.dashboard),
-                  label: l10n.t('dashboard'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.receipt_long_outlined),
-                  selectedIcon: const Icon(Icons.receipt_long),
-                  label: l10n.t('transactions'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.account_balance_wallet_outlined),
-                  selectedIcon: const Icon(Icons.account_balance_wallet),
-                  label: l10n.t('wallets'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.savings_outlined),
-                  selectedIcon: const Icon(Icons.savings),
-                  label: l10n.t('budgets'),
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.pie_chart_outline),
-                  selectedIcon: const Icon(Icons.pie_chart),
-                  label: l10n.t('reports'),
-                ),
-              ],
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isDark ? AppTheme.surfaceSlate : Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: colorScheme.outlineVariant.withValues(
+                alpha: isDark ? 0.24 : 0.72,
+              ),
             ),
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: (value) => setState(() => _index = value),
+            labelBehavior: compactNavigation
+                ? NavigationDestinationLabelBehavior.onlyShowSelected
+                : NavigationDestinationLabelBehavior.alwaysShow,
+            destinations: [
+              NavigationDestination(
+                icon: const Icon(Icons.dashboard_outlined),
+                selectedIcon: const Icon(Icons.dashboard),
+                label: l10n.t('dashboard'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.receipt_long_outlined),
+                selectedIcon: const Icon(Icons.receipt_long),
+                label: l10n.t('transactions'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.account_balance_wallet_outlined),
+                selectedIcon: const Icon(Icons.account_balance_wallet),
+                label: l10n.t('wallets'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.savings_outlined),
+                selectedIcon: const Icon(Icons.savings),
+                label: l10n.t('budgets'),
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.pie_chart_outline),
+                selectedIcon: const Icon(Icons.pie_chart),
+                label: l10n.t('reports'),
+              ),
+            ],
           ),
         ),
       ),

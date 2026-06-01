@@ -14,10 +14,12 @@ class AppScrollView extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: EdgeInsets.fromLTRB(
-        18,
+        20,
         12,
-        18,
-        MediaQuery.of(context).padding.bottom + 176,
+        20,
+        MediaQuery.of(context).padding.bottom +
+            AppTheme.bottomNavigationHeight +
+            24,
       ),
       children: children,
     );
@@ -45,7 +47,7 @@ class SoftPanel extends StatelessWidget {
     final isDark = theme.brightness == Brightness.dark;
     final accent = tint ?? colorScheme.primary;
     final decoration = BoxDecoration(
-      borderRadius: BorderRadius.circular(26),
+      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       gradient: LinearGradient(
         colors: [
           accent.withValues(alpha: isDark ? 0.13 : 0.08),
@@ -82,7 +84,7 @@ class SoftPanel extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         onTap: onTap,
         child: content,
       ),
@@ -120,16 +122,16 @@ class MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SoftPanel(
       tint: color,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 128),
+        constraints: const BoxConstraints(minHeight: 106),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.14),
                 shape: BoxShape.circle,
@@ -153,13 +155,33 @@ class MetricCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w900,
-                    letterSpacing: -0.3,
                   ),
                 ),
               ],
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class PanelTitle extends StatelessWidget {
+  const PanelTitle(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        text,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(
+          context,
+        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
       ),
     );
   }
@@ -180,40 +202,54 @@ class AppSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Padding(
-      padding: const EdgeInsets.only(top: 18, bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.4,
-                  ),
-                ),
-                if (subtitle != null) ...[
-                  const SizedBox(height: 3),
-                  Text(
-                    subtitle!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ],
+    final titleBlock = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 4),
+          Text(
+            subtitle!,
+            maxLines: 3,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurfaceVariant,
             ),
           ),
-          if (action != null) ...[const SizedBox(width: 12), action!],
         ],
+      ],
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 18, bottom: 10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final useStackedAction = action != null && constraints.maxWidth < 380;
+          if (useStackedAction) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                titleBlock,
+                const SizedBox(height: 10),
+                Align(alignment: Alignment.centerLeft, child: action!),
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: titleBlock),
+              if (action != null) ...[const SizedBox(width: 12), action!],
+            ],
+          );
+        },
       ),
     );
   }
@@ -236,7 +272,7 @@ class SectionActionButton extends StatelessWidget {
     return FilledButton.icon(
       onPressed: onPressed,
       icon: Icon(icon, size: 18),
-      label: Text(label),
+      label: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
       style: FilledButton.styleFrom(
         minimumSize: const Size(48, 48),
         padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -291,10 +327,9 @@ class SheetTitle extends StatelessWidget {
         Expanded(
           child: Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w900,
-              letterSpacing: -0.3,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
           ),
         ),
       ],
@@ -471,79 +506,100 @@ class TransactionTile extends StatelessWidget {
     final prefix = isIncome
         ? '+'
         : isTransfer
-        ? '↔ '
+        ? '? '
         : '-';
+    final title = transaction.note.isEmpty
+        ? categoryLabel ?? transaction.categoryId
+        : transaction.note;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: SoftPanel(
         tint: color,
-        padding: EdgeInsets.zero,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
         onTap: onTap,
-        child: ListTile(
-          minVerticalPadding: 12,
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 14,
-            vertical: 7,
-          ),
-          leading: Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isIncome
-                  ? Icons.arrow_downward
-                  : isTransfer
-                  ? Icons.swap_horiz
-                  : Icons.arrow_upward,
-              color: color,
-            ),
-          ),
-          title: Text(
-            transaction.note.isEmpty
-                ? categoryLabel ?? transaction.categoryId
-                : transaction.note,
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 7),
-            child: Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                _MetaChip(label: categoryLabel ?? transaction.categoryId),
-                if (walletLabel != null) _MetaChip(label: walletLabel!),
-                _MetaChip(label: context.l10n.shortDate(transaction.date)),
-                if (transaction.isRecurring)
-                  _MetaChip(
-                    label: context.l10n.t('recurringTransaction'),
-                    icon: Icons.repeat,
-                  ),
-              ],
-            ),
-          ),
-          trailing: Wrap(
-            spacing: 2,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              Text(
-                '$prefix${Money(transaction.amount).formatVnd()}',
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.2,
-                ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.14),
+                shape: BoxShape.circle,
               ),
-              if (onDelete != null)
-                IconButton(
-                  tooltip: context.l10n.t('deleteTransaction'),
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: onDelete,
-                ),
-            ],
-          ),
+              child: Icon(
+                isIncome
+                    ? Icons.arrow_downward
+                    : isTransfer
+                    ? Icons.swap_horiz
+                    : Icons.arrow_upward,
+                color: color,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ),
+                      if (onDelete != null) ...[
+                        const SizedBox(width: 6),
+                        IconButton(
+                          tooltip: context.l10n.t('deleteTransaction'),
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: onDelete,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '$prefix${Money(transaction.amount).formatVnd()}',
+                        maxLines: 1,
+                        textAlign: TextAlign.end,
+                        style: TextStyle(
+                          color: color,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      _MetaChip(label: categoryLabel ?? transaction.categoryId),
+                      if (walletLabel != null) _MetaChip(label: walletLabel!),
+                      _MetaChip(
+                        label: context.l10n.shortDate(transaction.date),
+                      ),
+                      if (transaction.isRecurring)
+                        _MetaChip(
+                          label: context.l10n.t('recurringTransaction'),
+                          icon: Icons.repeat,
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -690,7 +746,7 @@ class CompactListRow extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
@@ -751,3 +807,25 @@ String localizedWalletTypeLabel(BuildContext context, WalletType type) =>
       WalletType.eWallet => context.l10n.t('walletEWallet'),
       WalletType.creditCard => context.l10n.t('walletCreditCard'),
     };
+
+String compactVndLabel(num value) {
+  final sign = value < 0 ? '-' : '';
+  final amount = value.abs();
+  if (amount >= 1000000000) {
+    return '$sign${_compactNumber(amount / 1000000000)}B';
+  }
+  if (amount >= 1000000) {
+    return '$sign${_compactNumber(amount / 1000000)}M';
+  }
+  if (amount >= 1000) {
+    return '$sign${_compactNumber(amount / 1000)}K';
+  }
+  return '$sign${amount.round()}';
+}
+
+String _compactNumber(num value) {
+  final text = value >= 10
+      ? value.toStringAsFixed(0)
+      : value.toStringAsFixed(1);
+  return text.replaceFirst(RegExp(r'\.0$'), '');
+}

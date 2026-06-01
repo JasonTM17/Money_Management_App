@@ -18,6 +18,22 @@ class FinanceBackupData {
   final List<SavingGoal> goals;
 }
 
+class FinanceBackupPreview {
+  const FinanceBackupPreview({
+    required this.walletCount,
+    required this.transactionCount,
+    required this.budgetCount,
+    required this.goalCount,
+    this.exportedAt,
+  });
+
+  final int walletCount;
+  final int transactionCount;
+  final int budgetCount;
+  final int goalCount;
+  final DateTime? exportedAt;
+}
+
 class FinanceBackupService {
   const FinanceBackupService();
 
@@ -40,14 +56,19 @@ class FinanceBackupService {
     });
   }
 
+  FinanceBackupPreview preview(String input) {
+    final root = _root(input);
+    return FinanceBackupPreview(
+      walletCount: _list(root, 'wallets').length,
+      transactionCount: _list(root, 'transactions').length,
+      budgetCount: _list(root, 'budgets').length,
+      goalCount: _list(root, 'goals').length,
+      exportedAt: _optionalDateTime(root['exportedAt']),
+    );
+  }
+
   FinanceBackupData decode(String input) {
-    final root = jsonDecode(input);
-    if (root is! Map<String, Object?>) {
-      throw const FormatException('File backup không hợp lệ');
-    }
-    if (root['app'] != 'cashflow_manager' || root['schemaVersion'] != 1) {
-      throw const FormatException('Phiên bản backup không được hỗ trợ');
-    }
+    final root = _root(input);
     final wallets = _list(root, 'wallets').map(_walletFromJson).toList();
     final categories = _list(
       root,
@@ -60,16 +81,16 @@ class FinanceBackupService {
     final budgets = _list(root, 'budgets').map(_budgetFromJson).toList();
     final goals = _list(root, 'goals').map(_goalFromJson).toList();
     if (wallets.isEmpty) {
-      throw const FormatException('Backup phải có ít nhất một ví');
+      throw const FormatException('backupWalletRequired');
     }
     if (categories.isEmpty) {
-      throw const FormatException('Backup phải có ít nhất một danh mục');
+      throw const FormatException('backupCategoryRequired');
     }
-    _validateIds(wallets.map((item) => item.id), 'ví');
-    _validateIds(categories.map((item) => item.id), 'danh mục');
-    _validateIds(transactions.map((item) => item.id), 'giao dịch');
-    _validateIds(budgets.map((item) => item.id), 'ngân sách');
-    _validateIds(goals.map((item) => item.id), 'mục tiêu');
+    _validateIds(wallets.map((item) => item.id));
+    _validateIds(categories.map((item) => item.id));
+    _validateIds(transactions.map((item) => item.id));
+    _validateIds(budgets.map((item) => item.id));
+    _validateIds(goals.map((item) => item.id));
     _validateReferences(
       wallets: wallets,
       categories: categories,
@@ -131,7 +152,7 @@ class FinanceBackupService {
     return WalletAccount(
       id: _string(item, 'id'),
       name: _string(item, 'name'),
-      type: WalletType.values.byName(_string(item, 'type')),
+      type: _walletType(item, 'type'),
       initialBalance: _nonNegativeInt(item, 'initialBalance'),
     );
   }
@@ -141,7 +162,7 @@ class FinanceBackupService {
     return FinanceCategory(
       id: _string(item, 'id'),
       name: _string(item, 'name'),
-      type: TransactionType.values.byName(_string(item, 'type')),
+      type: _transactionType(item, 'type'),
       colorHex: _nonNegativeInt(item, 'colorHex'),
     );
   }
@@ -155,9 +176,9 @@ class FinanceBackupService {
           ? null
           : _string(item, 'toWalletId'),
       categoryId: _string(item, 'categoryId'),
-      type: TransactionType.values.byName(_string(item, 'type')),
+      type: _transactionType(item, 'type'),
       amount: _positiveInt(item, 'amount'),
-      date: DateTime.parse(_string(item, 'date')),
+      date: _dateTime(item, 'date'),
       note: _string(item, 'note'),
       isRecurring: _bool(item, 'isRecurring'),
     );
@@ -168,7 +189,7 @@ class FinanceBackupService {
     return Budget(
       id: _string(item, 'id'),
       categoryId: _string(item, 'categoryId'),
-      month: DateTime.parse(_string(item, 'month')),
+      month: _dateTime(item, 'month'),
       limitAmount: _positiveInt(item, 'limitAmount'),
     );
   }
@@ -178,56 +199,99 @@ class FinanceBackupService {
     final targetAmount = _positiveInt(item, 'targetAmount');
     final savedAmount = _nonNegativeInt(item, 'savedAmount');
     if (savedAmount > targetAmount) {
-      throw const FormatException('Số tiền đã tiết kiệm vượt mục tiêu');
+      throw const FormatException('goalSavedExceedsTarget');
     }
     return SavingGoal(
       id: _string(item, 'id'),
       name: _string(item, 'name'),
       targetAmount: targetAmount,
       savedAmount: savedAmount,
-      deadline: DateTime.parse(_string(item, 'deadline')),
+      deadline: _dateTime(item, 'deadline'),
     );
+  }
+
+  Map<String, Object?> _root(String input) {
+    final root = jsonDecode(input);
+    if (root is! Map<String, Object?>) {
+      throw const FormatException('backupInvalidFile');
+    }
+    if (root['app'] != 'cashflow_manager' || root['schemaVersion'] != 1) {
+      throw const FormatException('backupUnsupportedVersion');
+    }
+    _optionalDateTime(root['exportedAt']);
+    return root;
+  }
+
+  DateTime? _optionalDateTime(Object? value) {
+    if (value == null) return null;
+    if (value is String && value.trim().isNotEmpty) {
+      final parsed = DateTime.tryParse(value);
+      if (parsed != null) return parsed;
+    }
+    throw const FormatException('backupInvalidExportTime');
   }
 
   List<Object?> _list(Map<String, Object?> root, String key) {
     final value = root[key];
     if (value is List) return value.cast<Object?>();
-    throw FormatException('Thiếu dữ liệu $key');
+    throw const FormatException('backupMissingData');
   }
 
   Map<String, Object?> _map(Object? value) {
     if (value is Map<String, Object?>) return value;
-    throw const FormatException('Dòng dữ liệu backup không hợp lệ');
+    throw const FormatException('backupInvalidRow');
   }
 
   String _string(Map<String, Object?> item, String key) {
     final value = item[key];
     if (value is String && value.trim().isNotEmpty) return value;
-    throw FormatException('Thiếu trường $key');
+    throw const FormatException('backupMissingField');
   }
 
   int _positiveInt(Map<String, Object?> item, String key) {
     final value = item[key];
     if (value is int && value > 0) return value;
-    throw FormatException('$key phải lớn hơn 0');
+    throw const FormatException('backupPositiveNumberRequired');
   }
 
   int _nonNegativeInt(Map<String, Object?> item, String key) {
     final value = item[key];
     if (value is int && value >= 0) return value;
-    throw FormatException('$key không được âm');
+    throw const FormatException('backupNonNegativeNumberRequired');
   }
 
   bool _bool(Map<String, Object?> item, String key) {
     final value = item[key];
     if (value is bool) return value;
-    throw FormatException('Thiếu trường $key');
+    throw const FormatException('backupMissingField');
   }
 
-  void _validateIds(Iterable<String> ids, String label) {
+  WalletType _walletType(Map<String, Object?> item, String key) {
+    try {
+      return WalletType.values.byName(_string(item, key));
+    } on ArgumentError {
+      throw const FormatException('backupInvalidType');
+    }
+  }
+
+  TransactionType _transactionType(Map<String, Object?> item, String key) {
+    try {
+      return TransactionType.values.byName(_string(item, key));
+    } on ArgumentError {
+      throw const FormatException('backupInvalidType');
+    }
+  }
+
+  DateTime _dateTime(Map<String, Object?> item, String key) {
+    final parsed = DateTime.tryParse(_string(item, key));
+    if (parsed != null) return parsed;
+    throw const FormatException('backupInvalidDate');
+  }
+
+  void _validateIds(Iterable<String> ids) {
     final seen = <String>{};
     for (final id in ids) {
-      if (!seen.add(id)) throw FormatException('Trùng mã $label: $id');
+      if (!seen.add(id)) throw const FormatException('backupDuplicateId');
     }
   }
 
@@ -241,27 +305,19 @@ class FinanceBackupService {
     final categoryIds = categories.map((item) => item.id).toSet();
     for (final transaction in transactions) {
       if (!walletIds.contains(transaction.walletId)) {
-        throw FormatException(
-          'Giao dịch tham chiếu ví không tồn tại: ${transaction.walletId}',
-        );
+        throw const FormatException('backupMissingWalletReference');
       }
       final targetId = transaction.toWalletId;
       if (targetId != null && !walletIds.contains(targetId)) {
-        throw FormatException(
-          'Giao dịch tham chiếu ví nhận không tồn tại: $targetId',
-        );
+        throw const FormatException('backupMissingTargetWalletReference');
       }
       if (!categoryIds.contains(transaction.categoryId)) {
-        throw FormatException(
-          'Giao dịch tham chiếu danh mục không tồn tại: ${transaction.categoryId}',
-        );
+        throw const FormatException('backupMissingCategoryReference');
       }
     }
     for (final budget in budgets) {
       if (!categoryIds.contains(budget.categoryId)) {
-        throw FormatException(
-          'Ngân sách tham chiếu danh mục không tồn tại: ${budget.categoryId}',
-        );
+        throw const FormatException('backupMissingCategoryReference');
       }
     }
   }

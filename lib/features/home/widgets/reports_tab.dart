@@ -10,6 +10,7 @@ import '../../../data/local_finance_store.dart';
 import 'cashflow_forecast_card.dart';
 import 'dashboard_tab.dart';
 import 'home_common_widgets.dart';
+import 'monthly_trend_card.dart';
 import 'report_insight_cards.dart';
 
 class ReportsTab extends StatefulWidget {
@@ -49,16 +50,36 @@ class _ReportsTabState extends State<ReportsTab> {
       labels: l10n.exportReportLabels,
     );
     final csv = exportService.transactionsToCsv(monthlyTransactions);
+    final currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
     return AppScrollView(
       children: [
-        AppSectionHeader(title: l10n.t('reportMonth')),
+        AppSectionHeader(
+          title: l10n.t('reportMonth'),
+          action: SectionActionButton(
+            key: const ValueKey('report-export-action'),
+            label: l10n.t('exportCsvPdf'),
+            icon: Icons.file_download,
+            onPressed: () => _showExportSheet(
+              context,
+              exportService,
+              report,
+              csv,
+              reportState.summary,
+              monthlyTransactions,
+            ),
+          ),
+        ),
         _MonthSelector(
           month: _selectedMonth,
           onPrevious: () => _changeMonth(-1),
-          onNext: () => _changeMonth(1),
+          onNext: _selectedMonth.isBefore(currentMonth)
+              ? () => _changeMonth(1)
+              : null,
         ),
         const SizedBox(height: 12),
         ChartCard(state: reportState),
+        const SizedBox(height: 12),
+        MonthlyTrendCard(state: widget.state, endingMonth: _selectedMonth),
         const SizedBox(height: 12),
         CategoryPieCard(state: reportState, month: _selectedMonth),
         const SizedBox(height: 12),
@@ -82,19 +103,6 @@ class _ReportsTabState extends State<ReportsTab> {
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
           ),
-        ),
-        const SizedBox(height: 12),
-        FilledButton.icon(
-          onPressed: () => _showExportSheet(
-            context,
-            exportService,
-            report,
-            csv,
-            reportState.summary,
-            monthlyTransactions,
-          ),
-          icon: const Icon(Icons.file_download),
-          label: Text(l10n.t('exportCsvPdf')),
         ),
       ],
     );
@@ -210,7 +218,7 @@ class _MonthSelector extends StatelessWidget {
 
   final DateTime month;
   final VoidCallback onPrevious;
-  final VoidCallback onNext;
+  final VoidCallback? onNext;
 
   @override
   Widget build(BuildContext context) {

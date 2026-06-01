@@ -72,6 +72,75 @@ class FinanceCalculator {
     );
   }
 
+  List<MonthlyCashflowTrend> monthlyCashflowTrend({
+    required List<FinanceTransaction> transactions,
+    required DateTime endingMonth,
+    int monthCount = 4,
+  }) {
+    final safeMonthCount = monthCount.clamp(1, 12).toInt();
+    return List.generate(safeMonthCount, (index) {
+      final month = DateTime(
+        endingMonth.year,
+        endingMonth.month - safeMonthCount + index + 1,
+      );
+      final monthItems = transactions.where(
+        (item) =>
+            item.date.year == month.year && item.date.month == month.month,
+      );
+      final income = monthItems
+          .where((item) => item.type == TransactionType.income)
+          .fold(0, (sum, item) => sum + item.amount);
+      final expense = monthItems
+          .where((item) => item.type == TransactionType.expense)
+          .fold(0, (sum, item) => sum + item.amount);
+      return MonthlyCashflowTrend(
+        month: DateTime(month.year, month.month),
+        income: income,
+        expense: expense,
+      );
+    });
+  }
+
+  List<UpcomingRecurringBill> upcomingRecurringBills({
+    required List<FinanceTransaction> transactions,
+    required DateTime now,
+    int withinDays = 31,
+  }) {
+    final forecastUntil = DateTime(now.year, now.month + 2, 0);
+    return transactions
+        .where(
+          (item) => item.isRecurring && item.type == TransactionType.expense,
+        )
+        .map((item) {
+          final dueDate = nextRecurringOccurrence(item, now);
+          return UpcomingRecurringBill(
+            transaction: item,
+            dueDate: dueDate,
+            includedInForecast: !dueDate.isAfter(forecastUntil),
+          );
+        })
+        .where((item) => item.dueDate.difference(now).inDays <= withinDays)
+        .toList()
+      ..sort((a, b) => a.dueDate.compareTo(b.dueDate));
+  }
+
+  DateTime nextRecurringOccurrence(
+    FinanceTransaction transaction,
+    DateTime now,
+  ) {
+    final currentMonthDay = transaction.date.day.clamp(
+      1,
+      DateTime(now.year, now.month + 1, 0).day,
+    );
+    final currentMonth = DateTime(now.year, now.month, currentMonthDay);
+    if (currentMonth.isAfter(now)) return currentMonth;
+    final nextMonthDay = transaction.date.day.clamp(
+      1,
+      DateTime(now.year, now.month + 2, 0).day,
+    );
+    return DateTime(now.year, now.month + 1, nextMonthDay);
+  }
+
   int requiredMonthlySaving(SavingGoal goal, DateTime now) {
     final remaining = goal.targetAmount - goal.savedAmount;
     if (remaining <= 0) return 0;

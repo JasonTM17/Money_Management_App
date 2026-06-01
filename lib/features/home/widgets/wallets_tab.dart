@@ -236,7 +236,6 @@ class _WalletCard extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: color,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: -0.3,
                 ),
               ),
             ),

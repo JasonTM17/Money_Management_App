@@ -18,13 +18,19 @@ class Money {
 }
 
 int parseVndAmount(String input) {
+  if (RegExp(r'[\-‐-―−]').hasMatch(input)) {
+    throw const FormatException('amountPositive');
+  }
+  if (RegExp(r'[^0-9\s.,₫]').hasMatch(input)) {
+    throw const FormatException('amountInvalid');
+  }
   final normalized = input.replaceAll(RegExp(r'[^0-9]'), '');
   if (normalized.isEmpty) {
-    throw const FormatException('Số tiền không hợp lệ');
+    throw const FormatException('amountInvalid');
   }
   final value = int.parse(normalized);
   if (value <= 0) {
-    throw const FormatException('Số tiền phải lớn hơn 0');
+    throw const FormatException('amountPositive');
   }
   return value;
 }

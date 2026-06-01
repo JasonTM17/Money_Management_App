@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/finance_backup_service.dart';
 import '../../core/finance_models.dart';
 import '../../core/money.dart';
 import '../../data/local_finance_store.dart';
@@ -25,6 +26,7 @@ class FinanceController extends AsyncNotifier<FinanceState> {
     required String walletId,
     required String categoryId,
     required TransactionType type,
+    required DateTime date,
     bool isRecurring = false,
   }) async {
     try {
@@ -34,7 +36,7 @@ class FinanceController extends AsyncNotifier<FinanceState> {
         walletId: walletId,
         categoryId: categoryId,
         amount: amount,
-        date: DateTime.now(),
+        date: date,
         note: note.trim(),
         isRecurring: isRecurring,
       );
@@ -42,8 +44,8 @@ class FinanceController extends AsyncNotifier<FinanceState> {
       return null;
     } on FormatException catch (error) {
       return error.message;
-    } on Object catch (error) {
-      return error.toString();
+    } on Object {
+      return 'unknownError';
     }
   }
 
@@ -54,6 +56,7 @@ class FinanceController extends AsyncNotifier<FinanceState> {
     required String walletId,
     required String categoryId,
     required TransactionType type,
+    required DateTime date,
     bool isRecurring = false,
   }) async {
     try {
@@ -64,7 +67,7 @@ class FinanceController extends AsyncNotifier<FinanceState> {
         walletId: walletId,
         categoryId: categoryId,
         amount: amount,
-        date: transaction.date,
+        date: date,
         note: note.trim(),
         isRecurring: isRecurring,
       );
@@ -72,8 +75,8 @@ class FinanceController extends AsyncNotifier<FinanceState> {
       return null;
     } on FormatException catch (error) {
       return error.message;
-    } on Object catch (error) {
-      return error.toString();
+    } on Object {
+      return 'unknownError';
     }
   }
 
@@ -96,12 +99,15 @@ class FinanceController extends AsyncNotifier<FinanceState> {
       return null;
     } on FormatException catch (error) {
       return error.message;
-    } on Object catch (error) {
-      return error.toString();
+    } on Object {
+      return 'unknownError';
     }
   }
 
   Future<String> exportBackup() => _store.exportBackup();
+
+  FinanceBackupPreview previewBackup(String input) =>
+      const FinanceBackupService().preview(input);
 
   Future<String?> restoreBackup(String input) async {
     try {
@@ -110,8 +116,8 @@ class FinanceController extends AsyncNotifier<FinanceState> {
       return null;
     } on FormatException catch (error) {
       return error.message;
-    } on Object catch (error) {
-      return error.toString();
+    } on Object {
+      return 'unknownError';
     }
   }
 
@@ -141,8 +147,8 @@ class FinanceController extends AsyncNotifier<FinanceState> {
       return null;
     } on FormatException catch (error) {
       return error.message;
-    } on Object catch (error) {
-      return error.toString();
+    } on Object {
+      return 'unknownError';
     }
   }
 
@@ -177,8 +183,18 @@ class FinanceController extends AsyncNotifier<FinanceState> {
       return null;
     } on FormatException catch (error) {
       return error.message;
-    } on Object catch (error) {
-      return error.toString();
+    } on Object {
+      return 'unknownError';
+    }
+  }
+
+  Future<String?> resetData() async {
+    try {
+      await _store.resetData();
+      state = AsyncData(await _store.load());
+      return null;
+    } on Object {
+      return 'unknownError';
     }
   }
 

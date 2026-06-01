@@ -101,13 +101,15 @@ class BudgetsTab extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Row(
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 4,
+                    alignment: WrapAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          '${Money(spent).formatVnd()} / ${Money(budget.limitAmount).formatVnd()}',
-                          style: Theme.of(context).textTheme.bodyMedium
-                              ?.copyWith(fontWeight: FontWeight.w800),
+                      Text(
+                        '${Money(spent).formatVnd()} / ${Money(budget.limitAmount).formatVnd()}',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       Text(

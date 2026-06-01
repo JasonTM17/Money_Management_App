@@ -1,5 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../../app/app_localizations.dart';
 import '../../../app/app_theme.dart';
@@ -27,7 +28,7 @@ class DashboardTab extends StatelessWidget {
         const SizedBox(height: 14),
         LayoutBuilder(
           builder: (context, constraints) {
-            final cardWidth = constraints.maxWidth >= 520
+            final cardWidth = constraints.maxWidth >= 330
                 ? (constraints.maxWidth - 12) / 2
                 : constraints.maxWidth;
             return Wrap(
@@ -84,95 +85,76 @@ class HeroBalanceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final netPositive = summary.netCashflow >= 0;
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
         gradient: const LinearGradient(
-          colors: [Color(0xFF063E2E), Color(0xFF16A34A), Color(0xFF62DF7D)],
+          colors: [Color(0xFF0B2D22), Color(0xFF106B37), Color(0xFF16A34A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
+        border: Border.all(color: Colors.white24),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.seed.withValues(alpha: 0.28),
-            blurRadius: 30,
-            offset: const Offset(0, 18),
+            color: AppTheme.seed.withValues(alpha: 0.20),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(22),
-      child: Stack(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Positioned(
-            right: -30,
-            top: -38,
-            child: Container(
-              width: 132,
-              height: 132,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 26,
-            bottom: -50,
-            child: Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Row(
-                children: [
-                  Container(
-                    width: 42,
-                    height: 42,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.16),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.wallet, color: Colors.white),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      context.l10n.t('totalBalance'),
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.84),
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                Money(summary.totalBalance).formatVnd(),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.account_balance_wallet,
                   color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.8,
                 ),
               ),
-              const SizedBox(height: 14),
-              StatusPill(
-                label: context.l10n.netCashflow(
-                  Money(summary.netCashflow).formatVnd(),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  context.l10n.t('totalBalance'),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.84),
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-                color: Colors.white,
-                icon: summary.netCashflow >= 0
-                    ? Icons.trending_up
-                    : Icons.trending_down,
               ),
             ],
+          ),
+          const SizedBox(height: 18),
+          FittedBox(
+            alignment: Alignment.centerLeft,
+            fit: BoxFit.scaleDown,
+            child: Text(
+              Money(summary.totalBalance).formatVnd(),
+              maxLines: 1,
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          StatusPill(
+            label: context.l10n.netCashflow(
+              Money(summary.netCashflow).formatVnd(),
+            ),
+            color: netPositive ? Colors.white : AppTheme.warningAmber,
+            icon: netPositive ? Icons.trending_up : Icons.trending_down,
           ),
         ],
       ),
@@ -187,13 +169,18 @@ class ChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final maxAmount = math.max(
+      state.summary.monthIncome,
+      state.summary.monthExpense,
+    );
+    final chartMaxY = math.max(1, maxAmount).toDouble() * 1.18;
     return SoftPanel(
       tint: AppTheme.incomeBlue,
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppSectionHeader(title: context.l10n.t('cashflowThisMonth')),
+          PanelTitle(context.l10n.t('cashflowThisMonth')),
           Semantics(
             label: context.l10n.incomeExpenseChartSemantics(
               Money(state.summary.monthIncome).formatVnd(),
@@ -203,6 +190,7 @@ class ChartCard extends StatelessWidget {
               height: 180,
               child: BarChart(
                 BarChartData(
+                  maxY: chartMaxY,
                   alignment: BarChartAlignment.spaceAround,
                   borderData: FlBorderData(show: false),
                   gridData: FlGridData(
@@ -215,7 +203,26 @@ class ChartCard extends StatelessWidget {
                     ),
                   ),
                   titlesData: FlTitlesData(
-                    leftTitles: const AxisTitles(),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 42,
+                        interval: chartMaxY / 2,
+                        getTitlesWidget: (value, meta) {
+                          if (value <= 0) return const SizedBox.shrink();
+                          return Text(
+                            compactVndLabel(value),
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          );
+                        },
+                      ),
+                    ),
                     topTitles: const AxisTitles(),
                     rightTitles: const AxisTitles(),
                     bottomTitles: AxisTitles(
