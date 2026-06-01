@@ -36,14 +36,14 @@
 - [ ] Verify the frontend artifact server serves `cashflow-manager.apk` from the frontend host port.
 - [ ] Verify `.github/workflows/ci.yml` covers Flutter, API, PostgreSQL migration/seed, Docker Compose config, and image builds.
 - [ ] Verify `.github/workflows/release.yml` uploads Android APK/AAB artifacts from tag or manual runs.
-- [ ] Verify `.github/workflows/docker-publish.yml` grants `packages: write`, uses `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` only for Docker Hub, and uses `GITHUB_TOKEN` for GHCR.
+- [ ] Verify `.github/workflows/docker-publish.yml` grants `packages: write`, always publishes GHCR with `GITHUB_TOKEN`, and publishes Docker Hub only when `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` are configured.
 - [ ] Run `gh repo view JasonTM17/Money_Management_App --json description,homepageUrl,repositoryTopics,isPrivate,url` and verify the repo is public at `https://github.com/JasonTM17/Money_Management_App`.
 - [ ] Verify GitHub About description is exactly `Offline-first Flutter personal finance manager with privacy lock, SQLite, Docker/PostgreSQL API, OpenAPI, and n8n HMAC automation.`.
 - [ ] Verify GitHub homepage is `https://github.com/JasonTM17/Money_Management_App#readme` until a real public release/download page exists.
 - [ ] Verify GitHub topics are exactly `dart`, `docker`, `fastify`, `flutter`, `n8n`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `sqlite`.
 - [ ] Run `gh release list --repo JasonTM17/Money_Management_App --limit 10`; no GitHub Releases are published yet, so docs must not claim downloadable release artifacts are live before the first signed release.
 - [ ] Publish GitHub Release `CashFlow Manager 1.0.0+1` from tag `v1.0.0` only after release gates pass; attach APK/AAB artifacts and release notes. Add SBOM/checksums when the security scanning lane is finalized.
-- [ ] Verify Packages/containers only after Docker publish succeeds: Docker Hub images `nguyenson1710/cashflow-manager-api`, `nguyenson1710/cashflow-manager-frontend` and GHCR images `ghcr.io/jasontm17/cashflow-manager-api`, `ghcr.io/jasontm17/cashflow-manager-frontend` must have `latest`, git SHA, and semver tags on release builds. Before publish, document packages as unpublished/not visible.
+- [ ] Verify Packages/containers only after Docker publish succeeds: GHCR images `ghcr.io/jasontm17/cashflow-manager-api`, `ghcr.io/jasontm17/cashflow-manager-frontend` must have `latest`, git SHA, and semver tags on release builds. Docker Hub images `nguyenson1710/cashflow-manager-api` and `nguyenson1710/cashflow-manager-frontend` should mirror the same tags when Docker Hub secrets are configured. Before publish, document packages as unpublished/not visible.
 - [ ] Verify GHCR package visibility after Docker publish in GitHub Packages UI or with `gh api /users/JasonTM17/packages?package_type=container` when auth permits.
 - [ ] Launch the app locally on an Android device or emulator after release gates pass so the user can manually test the main flows.
 - [ ] Commit README/docs updates together with referenced public artifacts such as `api/`, `docs/openapi.yaml`, `docs/media/`, `infra/`, Docker files, and workflow files.
