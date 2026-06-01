@@ -45,7 +45,7 @@
 - [ ] Verify `/healthz`, `/readyz`, and `/.well-known/jwks.json` from the API host port.
 - [ ] Verify the frontend artifact server serves `cashflow-manager.apk` from the frontend host port.
 - [ ] Verify `.github/workflows/ci.yml` covers Flutter, API, PostgreSQL migration/seed, Docker Compose config, and image builds.
-- [ ] Verify `.github/workflows/ci.yml` covers Android emulator smoke plus iOS simulator smoke/no-codesign build.
+- [ ] Verify `.github/workflows/ci.yml` and `.github/workflows/release.yml` cover Android emulator smoke plus iOS simulator smoke/no-codesign build before tagged release artifacts are attached.
 - [ ] Verify `.github/workflows/release.yml` uploads Android APK/AAB artifacts from tag or manual runs and supports manual signed iOS IPA builds with fail-fast secret validation.
 - [ ] Verify `.github/workflows/docker-publish.yml` grants `packages: write`, always publishes GHCR with `GITHUB_TOKEN`, and publishes Docker Hub only when `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` are configured.
 - [ ] Run `gh repo view JasonTM17/Money_Management_App --json description,homepageUrl,repositoryTopics,isPrivate,url` and verify the repo is public at `https://github.com/JasonTM17/Money_Management_App`.

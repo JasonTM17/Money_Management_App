@@ -44,6 +44,15 @@ jobs:
       - name: Test
         run: flutter test --no-pub -r expanded
 
+      - name: Run smoke flow on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: medium_phone
+          script: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded
+
       - name: Build release APK
         run: flutter build apk --release --no-pub
 
