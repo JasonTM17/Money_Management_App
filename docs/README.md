@@ -13,6 +13,7 @@
 - [Database schema](DATABASE_SCHEMA.md): local SQLite and backend data model notes.
 - [UI flow](UI_FLOW.md): primary app journeys and screen map.
 - [Test plan](TEST_PLAN.md): unit, widget, media, API, and release gates.
+- [QA report](QA_REPORT.md): verified Android emulator results plus iOS/real-device blockers.
 - [Release checklist](RELEASE_CHECKLIST.md): Android/iOS/Docker/release validation.
 - [OpenAPI contract](openapi.yaml): backend API source of truth.
 
@@ -25,6 +26,7 @@
 - [Database schema](DATABASE_SCHEMA.md): SQLite local và mô hình dữ liệu backend.
 - [UI flow](UI_FLOW.md): các luồng chính trong app và bản đồ màn hình.
 - [Test plan](TEST_PLAN.md): unit, widget, media, API và release gates.
+- [QA report](QA_REPORT.md): Android emulator evidence plus iOS/real-device blockers.
 - [Release checklist](RELEASE_CHECKLIST.md): checklist Android/iOS/Docker/release.
 - [OpenAPI contract](openapi.yaml): nguồn sự thật cho backend API.
 
@@ -37,6 +39,7 @@
 - [Database schema](DATABASE_SCHEMA.md): local SQLite と backend data model。
 - [UI flow](UI_FLOW.md): 主要アプリフローと screen map。
 - [Test plan](TEST_PLAN.md): unit/widget/media/API/release gates。
+- [QA report](QA_REPORT.md): Android emulator evidence plus iOS/real-device blockers.
 - [Release checklist](RELEASE_CHECKLIST.md): Android/iOS/Docker/release checklist。
 - [OpenAPI contract](openapi.yaml): backend API source of truth。
 
