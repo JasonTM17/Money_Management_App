@@ -135,7 +135,7 @@ class _BackupRestoreSheetState extends ConsumerState<BackupRestoreSheet> {
       _message = null;
     });
     try {
-      final result = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
         withData: true,
