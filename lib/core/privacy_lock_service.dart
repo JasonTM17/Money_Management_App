@@ -102,7 +102,7 @@ class PrivacyLockService {
     if (!await canUseBiometrics) return false;
     return _localAuth.authenticate(
       localizedReason: localizedReason,
-      options: const AuthenticationOptions(biometricOnly: true),
+      biometricOnly: true,
     );
   }
 

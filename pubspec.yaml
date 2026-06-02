@@ -18,7 +18,7 @@ dependencies:
   sqlite3_flutter_libs: ^0.5.40
   path: ^1.9.1
   path_provider: ^2.1.5
-  local_auth: ^2.3.0
+  local_auth: ^3.0.1
   flutter_secure_storage: ^10.0.0
   csv: ^8.0.0
   crypto: ^3.0.6
