@@ -20,7 +20,7 @@ dependencies:
   path_provider: ^2.1.5
   local_auth: ^2.3.0
   flutter_secure_storage: ^10.0.0
-  csv: ^6.0.0
+  csv: ^8.0.0
   crypto: ^3.0.6
   pdf: ^3.11.3
   printing: ^5.14.2

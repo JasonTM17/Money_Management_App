@@ -85,7 +85,7 @@ class ExportService {
   const ExportService();
 
   String transactionsToCsv(List<FinanceTransaction> transactions) {
-    final rows = <List<Object?>>[
+    final rows = <List<dynamic>>[
       ['date', 'type', 'wallet_id', 'category_id', 'amount_vnd', 'note'],
       ...transactions.map(
         (item) => [
@@ -98,7 +98,7 @@ class ExportService {
         ].map(_escapeSpreadsheetFormulaCell).toList(),
       ),
     ];
-    return const ListToCsvConverter().convert(rows);
+    return csv.encode(rows);
   }
 
   Object? _escapeSpreadsheetFormulaCell(Object? value) {
