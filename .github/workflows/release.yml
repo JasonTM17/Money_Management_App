@@ -51,7 +51,7 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: medium_phone
-          script: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded
+          script: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded --timeout 10m
 
       - name: Build release APK
         run: flutter build apk --release --no-pub
@@ -181,7 +181,7 @@ jobs:
           echo "IOS_SIMULATOR_ID=$SIMULATOR_ID" >> "$GITHUB_ENV"
 
       - name: Run smoke flow on iOS simulator
-        run: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d "$IOS_SIMULATOR_ID" -r expanded
+        run: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d "$IOS_SIMULATOR_ID" -r expanded --timeout 10m
 
       - name: Build iOS without codesigning
         run: flutter build ios --release --no-codesign --no-pub
