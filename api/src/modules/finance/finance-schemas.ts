@@ -35,7 +35,7 @@ export const idParamSchema = z.object({
 export const walletSchema = z.object({
   name: z.string().trim().min(1),
   type: z.enum(['cash', 'bank', 'eWallet', 'creditCard']),
-  initialBalance: z.number().int().nonnegative(),
+  initialBalance: z.number().int().nonnegative().max(999999999999),
 });
 
 export const walletPatchSchema = walletSchema.partial().refine(
@@ -59,8 +59,13 @@ const transactionBaseSchema = z.object({
   toWalletId: z.string().uuid().nullable().optional(),
   categoryId: z.string().uuid(),
   type: z.enum(['income', 'expense', 'transfer']),
-  amount: z.number().int().positive(),
-  date: z.string().datetime(),
+  amount: z.number().int().positive().max(999999999999),
+  date: z.string().datetime().refine((val) => {
+    const d = new Date(val);
+    const now = new Date();
+    const maxFuture = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    return d <= maxFuture;
+  }, 'Transaction date cannot be more than 1 day in the future'),
   note: z.string(),
   isRecurring: z.boolean(),
 });
@@ -88,7 +93,7 @@ const budgetBaseSchema = z.object({
     isFirstDayDateOnly,
     'Budget month must be the first day of the month',
   ),
-  limitAmount: z.number().int().positive(),
+  limitAmount: z.number().int().positive().max(999999999999),
 });
 
 export const budgetSchema = budgetBaseSchema;
@@ -100,8 +105,8 @@ export const budgetPatchSchema = budgetBaseSchema.partial().refine(
 
 const savingGoalBaseSchema = z.object({
   name: z.string().trim().min(1),
-  targetAmount: z.number().int().positive(),
-  savedAmount: z.number().int().nonnegative(),
+  targetAmount: z.number().int().positive().max(999999999999),
+  savedAmount: z.number().int().nonnegative().max(999999999999),
   deadline: z.string().date(),
 });
 

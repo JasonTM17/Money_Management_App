@@ -7,6 +7,7 @@ import {
   verify,
   type KeyObject,
 } from 'node:crypto';
+import { env } from './env.js';
 import { unauthorized } from './api-error.js';
 
 const accessTokenTtlSeconds = 900;
@@ -158,30 +159,30 @@ function verifyToken(value: string, signature: string) {
 }
 
 function privateKey(): KeyObject {
-  const privateKeyPem = process.env.ACCESS_TOKEN_PRIVATE_KEY_PEM;
-  if (process.env.NODE_ENV === 'production' && !privateKeyPem) {
-    throw new Error('ACCESS_TOKEN_PRIVATE_KEY_PEM is required in production');
+  const privateKeyPem = env.jwtPrivateKey;
+  if (env.NODE_ENV === 'production' && !privateKeyPem) {
+    throw new Error('jwtPrivateKey is required in production');
   }
   return privateKeyPem ? createPrivateKey(privateKeyPem) : developmentKeyPair.privateKey;
 }
 
 function publicKey(): KeyObject {
-  const publicKeyPem = process.env.ACCESS_TOKEN_PUBLIC_KEY_PEM;
+  const publicKeyPem = env.jwtPublicKey;
   if (publicKeyPem) return createPublicKey(publicKeyPem);
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('ACCESS_TOKEN_PUBLIC_KEY_PEM is required in production');
+  if (env.NODE_ENV === 'production') {
+    throw new Error('jwtPublicKey is required in production');
   }
   return developmentKeyPair.publicKey;
 }
 
 function tokenKeyId() {
-  return process.env.ACCESS_TOKEN_KID ?? 'local-development-key';
+  return env.ACCESS_TOKEN_KID;
 }
 
 function tokenIssuer() {
-  return process.env.ACCESS_TOKEN_ISSUER ?? 'cashflow-manager-api';
+  return env.ACCESS_TOKEN_ISSUER;
 }
 
 function tokenAudience() {
-  return process.env.ACCESS_TOKEN_AUDIENCE ?? 'cashflow-manager-mobile';
+  return env.ACCESS_TOKEN_AUDIENCE;
 }

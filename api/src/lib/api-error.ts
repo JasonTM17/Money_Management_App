@@ -17,8 +17,8 @@ export function badRequest(
   return new ApiError(400, code, message, details);
 }
 
-export function unauthorized(message = 'Authentication required') {
-  return new ApiError(401, 'unauthorized', message);
+export function unauthorized(message = 'Authentication required', code = 'unauthorized') {
+  return new ApiError(401, code, message);
 }
 
 export function conflict(

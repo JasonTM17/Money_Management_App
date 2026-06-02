@@ -18,7 +18,7 @@ const walletCreatePayloadSchema = z
   .object({
     name: z.string().trim().min(1),
     type: walletTypeSchema,
-    initialBalance: z.number().int().nonnegative(),
+    initialBalance: z.number().int().nonnegative().max(999999999999),
   })
   .strict();
 const walletUpdatePayloadSchema = walletCreatePayloadSchema.partial().refine(
@@ -44,8 +44,13 @@ const transactionCreatePayloadSchema = z
     toWalletId: z.string().uuid().nullable().optional(),
     categoryId: z.string().uuid(),
     type: financeTypeSchema,
-    amount: z.number().int().positive(),
-    date: z.string().datetime(),
+    amount: z.number().int().positive().max(999999999999),
+    date: z.string().datetime().refine((val) => {
+      const d = new Date(val);
+      const now = new Date();
+      const maxFuture = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      return d <= maxFuture;
+    }, 'Transaction date cannot be more than 1 day in the future'),
     note: z.string(),
     isRecurring: z.boolean(),
   })
@@ -59,7 +64,7 @@ const budgetCreatePayloadSchema = z
   .object({
     categoryId: z.string().uuid(),
     month: z.string().date().refine(isFirstDayDateOnly, 'Budget month must be first day'),
-    limitAmount: z.number().int().positive(),
+    limitAmount: z.number().int().positive().max(999999999999),
   })
   .strict();
 const budgetUpdatePayloadSchema = budgetCreatePayloadSchema.partial().refine(
@@ -70,8 +75,8 @@ const budgetUpdatePayloadSchema = budgetCreatePayloadSchema.partial().refine(
 const savingGoalPayloadBaseSchema = z
   .object({
     name: z.string().trim().min(1),
-    targetAmount: z.number().int().positive(),
-    savedAmount: z.number().int().nonnegative(),
+    targetAmount: z.number().int().positive().max(999999999999),
+    savedAmount: z.number().int().nonnegative().max(999999999999),
     deadline: z.string().date(),
   })
   .strict();
@@ -431,6 +436,61 @@ export async function validateSyncMutationForUser(
 
 type SyncMutationWriter = Pick<FastifyInstance['prisma'], 'wallet' | 'category' | 'budget' | 'savingGoal' | 'transaction'>;
 
+function syncUpdateWithRevisionCheck(
+  prisma: SyncMutationWriter,
+  entityType: SyncMutation['entityType'],
+  entityId: string,
+  baseRevision: number,
+  data: Record<string, unknown>,
+) {
+  switch (entityType) {
+    case 'wallet':
+      return prisma.wallet.updateMany({
+        where: { id: entityId, revision: baseRevision },
+        data,
+      });
+    case 'category':
+      return prisma.category.updateMany({
+        where: { id: entityId, revision: baseRevision },
+        data,
+      });
+    case 'budget':
+      return prisma.budget.updateMany({
+        where: { id: entityId, revision: baseRevision },
+        data,
+      });
+    case 'savingGoal':
+      return prisma.savingGoal.updateMany({
+        where: { id: entityId, revision: baseRevision },
+        data,
+      });
+    case 'transaction':
+      return prisma.transaction.updateMany({
+        where: { id: entityId, revision: baseRevision },
+        data,
+      });
+  }
+}
+
+function syncFindAfterUpdate(
+  prisma: SyncMutationWriter,
+  entityType: SyncMutation['entityType'],
+  entityId: string,
+) {
+  switch (entityType) {
+    case 'wallet':
+      return prisma.wallet.findUniqueOrThrow({ where: { id: entityId } });
+    case 'category':
+      return prisma.category.findUniqueOrThrow({ where: { id: entityId } });
+    case 'budget':
+      return prisma.budget.findUniqueOrThrow({ where: { id: entityId } });
+    case 'savingGoal':
+      return prisma.savingGoal.findUniqueOrThrow({ where: { id: entityId } });
+    case 'transaction':
+      return prisma.transaction.findUniqueOrThrow({ where: { id: entityId } });
+  }
+}
+
 async function applySyncMutation(
   prisma: SyncMutationWriter,
   userId: string,
@@ -450,13 +510,17 @@ async function applySyncMutation(
           },
         });
       }
-      return prisma.wallet.update({
-        where: { id: mutation.entityId },
-        data: {
+      {
+        const baseRevision = mutation.baseRevision!;
+        const { count } = await syncUpdateWithRevisionCheck(prisma, 'wallet', mutation.entityId, baseRevision, {
           ...(mutation.operation === 'delete' ? { deletedAt } : walletUpdatePayload(mutation)),
           revision: { increment: 1 },
-        },
-      });
+        });
+        if (count === 0) {
+          throw conflict('sync_conflict', 'Record was modified by another request');
+        }
+        return syncFindAfterUpdate(prisma, 'wallet', mutation.entityId);
+      }
     case 'category':
       if (mutation.operation === 'create') {
         return prisma.category.create({
@@ -469,13 +533,17 @@ async function applySyncMutation(
           },
         });
       }
-      return prisma.category.update({
-        where: { id: mutation.entityId },
-        data: {
+      {
+        const baseRevision = mutation.baseRevision!;
+        const { count } = await syncUpdateWithRevisionCheck(prisma, 'category', mutation.entityId, baseRevision, {
           ...(mutation.operation === 'delete' ? { deletedAt } : categoryUpdatePayload(mutation)),
           revision: { increment: 1 },
-        },
-      });
+        });
+        if (count === 0) {
+          throw conflict('sync_conflict', 'Record was modified by another request');
+        }
+        return syncFindAfterUpdate(prisma, 'category', mutation.entityId);
+      }
     case 'budget':
       if (mutation.operation === 'create') {
         return prisma.budget.create({
@@ -488,13 +556,17 @@ async function applySyncMutation(
           },
         });
       }
-      return prisma.budget.update({
-        where: { id: mutation.entityId },
-        data: {
+      {
+        const baseRevision = mutation.baseRevision!;
+        const { count } = await syncUpdateWithRevisionCheck(prisma, 'budget', mutation.entityId, baseRevision, {
           ...(mutation.operation === 'delete' ? { deletedAt } : budgetUpdatePayload(mutation)),
           revision: { increment: 1 },
-        },
-      });
+        });
+        if (count === 0) {
+          throw conflict('sync_conflict', 'Record was modified by another request');
+        }
+        return syncFindAfterUpdate(prisma, 'budget', mutation.entityId);
+      }
     case 'savingGoal':
       if (mutation.operation === 'create') {
         return prisma.savingGoal.create({
@@ -508,13 +580,17 @@ async function applySyncMutation(
           },
         });
       }
-      return prisma.savingGoal.update({
-        where: { id: mutation.entityId },
-        data: {
+      {
+        const baseRevision = mutation.baseRevision!;
+        const { count } = await syncUpdateWithRevisionCheck(prisma, 'savingGoal', mutation.entityId, baseRevision, {
           ...(mutation.operation === 'delete' ? { deletedAt } : savingGoalUpdatePayload(mutation)),
           revision: { increment: 1 },
-        },
-      });
+        });
+        if (count === 0) {
+          throw conflict('sync_conflict', 'Record was modified by another request');
+        }
+        return syncFindAfterUpdate(prisma, 'savingGoal', mutation.entityId);
+      }
     case 'transaction':
       if (mutation.operation === 'create') {
         return prisma.transaction.create({
@@ -532,13 +608,17 @@ async function applySyncMutation(
           },
         });
       }
-      return prisma.transaction.update({
-        where: { id: mutation.entityId },
-        data: {
+      {
+        const baseRevision = mutation.baseRevision!;
+        const { count } = await syncUpdateWithRevisionCheck(prisma, 'transaction', mutation.entityId, baseRevision, {
           ...(mutation.operation === 'delete' ? { deletedAt } : transactionUpdatePayload(mutation)),
           revision: { increment: 1 },
-        },
-      });
+        });
+        if (count === 0) {
+          throw conflict('sync_conflict', 'Record was modified by another request');
+        }
+        return syncFindAfterUpdate(prisma, 'transaction', mutation.entityId);
+      }
   }
 }
 
