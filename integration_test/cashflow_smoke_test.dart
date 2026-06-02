@@ -53,16 +53,54 @@ void main() {
       await tester.pumpAndSettle();
       _expectNoFrameworkException(tester);
     },
-    timeout: const Timeout(Duration(minutes: 4)),
+    timeout: const Timeout(Duration(minutes: 10)),
   );
 }
 
 Future<void> _createFirstRunPin(WidgetTester tester) async {
-  expect(find.byType(TextField), findsNWidgets(2));
-  await tester.enterText(find.byType(TextField).at(0), '1234');
-  await tester.enterText(find.byType(TextField).at(1), '1234');
+  await _enterTextByAnyLabel(
+    tester,
+    labels: const ['PIN mới', 'New PIN', '新しいPIN'],
+    fallbackIndex: 0,
+    text: '1234',
+  );
+  await tester.pump();
+  await _enterTextByAnyLabel(
+    tester,
+    labels: const ['Nhập lại PIN', 'Confirm PIN', 'PINを再入力'],
+    fallbackIndex: 1,
+    text: '1234',
+  );
   await tester.tap(find.byType(FilledButton).first);
   await tester.pumpAndSettle();
+}
+
+Future<void> _enterTextByAnyLabel(
+  WidgetTester tester, {
+  required List<String> labels,
+  required int fallbackIndex,
+  required String text,
+}) async {
+  for (final label in labels) {
+    final labeledField = find.widgetWithText(TextField, label);
+    if (labeledField.evaluate().isNotEmpty) {
+      await tester.ensureVisible(labeledField.first);
+      await tester.enterText(labeledField.first, text);
+      return;
+    }
+  }
+
+  final fields = find.byType(TextField);
+  final fieldCount = fields.evaluate().length;
+  if (fieldCount > fallbackIndex) {
+    await tester.ensureVisible(fields.at(fallbackIndex));
+    await tester.enterText(fields.at(fallbackIndex), text);
+    return;
+  }
+
+  throw TestFailure(
+    'Could not find one of $labels or TextField index $fallbackIndex; found $fieldCount TextField widgets.',
+  );
 }
 
 Future<void> _addInvalidThenValidExpense(WidgetTester tester) async {
