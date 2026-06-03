@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/app_localizations.dart';
 import '../../app/app_theme.dart';
+import '../../app/shimmer_loading.dart';
 import '../../data/local_finance_store.dart';
 import 'finance_controller.dart';
 import 'home_widgets.dart';
@@ -75,7 +76,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ),
       body: finance.when(
         data: (state) => _tabs(state)[_index],
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const DashboardShimmer(),
         error: (error, _) => Center(child: Text(l10n.t('loadDataFailed'))),
       ),
       bottomNavigationBar: DecoratedBox(

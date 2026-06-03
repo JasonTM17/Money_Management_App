@@ -4,6 +4,7 @@ import 'dart:math' as math;
 
 import '../../../app/app_localizations.dart';
 import '../../../app/app_theme.dart';
+import '../../../app/animated_balance.dart';
 import '../../../core/finance_models.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
@@ -87,69 +88,81 @@ class HeroBalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final netPositive = summary.netCashflow >= 0;
     final colorScheme = Theme.of(context).colorScheme;
-    return SoftPanel(
-      tint: colorScheme.primary,
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  Icons.account_balance_wallet,
-                  color: colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  context.l10n.t('totalBalance'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colorScheme.primary.withValues(alpha: isDark ? 0.22 : 0.12),
+            colorScheme.primary.withValues(alpha: isDark ? 0.06 : 0.03),
+            colorScheme.primary.withValues(alpha: isDark ? 0.14 : 0.07),
+          ],
+        ),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: isDark ? 0.18 : 0.12),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    Icons.account_balance_wallet,
+                    color: colorScheme.primary,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          FittedBox(
-            alignment: Alignment.centerLeft,
-            fit: BoxFit.scaleDown,
-            child: Text(
-              Money(summary.totalBalance).formatVnd(),
-              maxLines: 1,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    context.l10n.t('totalBalance'),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            AnimatedBalance(
+              value: Money(summary.totalBalance).formatVnd(),
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w800,
-              ),
+              ) ?? const TextStyle(),
             ),
-          ),
-          const SizedBox(height: 14),
-          LayoutBuilder(
-            builder: (context, constraints) => ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: constraints.maxWidth),
-              child: StatusPill(
-                label: context.l10n.netCashflow(
-                  Money(summary.netCashflow).formatVnd(),
+            const SizedBox(height: 14),
+            LayoutBuilder(
+              builder: (context, constraints) => ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                child: StatusPill(
+                  label: context.l10n.netCashflow(
+                    Money(summary.netCashflow).formatVnd(),
+                  ),
+                  color: netPositive
+                      ? colorScheme.primary
+                      : AppTheme.warningAmber,
+                  icon: netPositive ? Icons.trending_up : Icons.trending_down,
                 ),
-                color: netPositive
-                    ? colorScheme.primary
-                    : AppTheme.warningAmber,
-                icon: netPositive ? Icons.trending_up : Icons.trending_down,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
