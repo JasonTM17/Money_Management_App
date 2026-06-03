@@ -56,11 +56,16 @@ jobs:
       - name: Run smoke flow on Android emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
-          api-level: 36
+          api-level: 34
           target: google_apis
           arch: x86_64
           profile: medium_phone
-          script: flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded --timeout 10m
+          disable-animations: true
+          ram-size: 2048M
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -netdelay none -netspeed full
+          script: |
+            adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 5; done'
+            flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded --timeout 10m
 
   ios:
     name: iOS simulator smoke and no-codesign build
@@ -89,7 +94,11 @@ jobs:
         run: |
           set -euo pipefail
           xcrun simctl list devices available
-          SIMULATOR_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ && /Shutdown|Booted/ {print $2; exit}')"
+          # Prefer iPhone 16, fall back to any available iPhone
+          SIMULATOR_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone 16/ && /Booted|Shutdown/ {print $2; exit}')"
+          if [ -z "$SIMULATOR_ID" ]; then
+            SIMULATOR_ID="$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ && /Booted|Shutdown/ {print $2; exit}')"
+          fi
           if [ -z "$SIMULATOR_ID" ]; then
             echo "::error::No available iPhone simulator found"
             exit 1
