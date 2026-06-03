@@ -49,7 +49,7 @@ jobs:
         run: npx --yes @redocly/cli@latest lint docs/openapi.yaml --skip-rule operation-operationId --skip-rule info-license --skip-rule operation-4xx-response
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
