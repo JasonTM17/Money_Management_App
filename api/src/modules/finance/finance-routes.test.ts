@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
-import { createAccessToken } from '../auth/auth-service.js';
+import { createAccessToken } from '../../lib/session-tokens.js';
 
 const DB_URL =
   'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public';
 
 function authHeader(sub = '00000000-0000-4000-8000-000000000001') {
-  const token = createAccessToken({ sub, iss: 'cashflow-manager-api', aud: 'cashflow-manager-mobile' });
+  const token = createAccessToken({ sub, email: 'test@test.local' });
   return { Authorization: `Bearer ${token}` };
 }
 
