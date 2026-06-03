@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CashFlow Manager — Architecture Dashboard</title>
+<style>
+  :root {
+    --bg: #051424; --surface: #0D1C2D; --card: #122131; --elevated: #1C2B3C;
+    --primary: #62DF7D; --primary-dim: #16A34A; --income: #3B82F6; --warning: #F59E0B; --expense: #EF4444;
+    --text: #F1F5F9; --text-dim: #94A3B8; --border: #1E293B; --radius: 12px; --radius-lg: 16px;
+    color-scheme: dark;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Be Vietnam Pro','Noto Sans JP',system-ui,sans-serif; line-height:1.5; min-height:100vh; }
+  a { color:var(--primary); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+
+  .container { max-width:1400px; margin:0 auto; padding:20px 24px; }
+
+  /* Header */
+  .header { display:flex; align-items:center; gap:16px; padding:24px 0 16px; border-bottom:1px solid var(--border); margin-bottom:32px; }
+  .header img { width:48px; height:48px; }
+  .header h1 { font-size:24px; font-weight:700; }
+  .header h1 span { color:var(--primary); }
+  .header p { color:var(--text-dim); font-size:14px; }
+
+  /* Section */
+  .section-title { font-size:20px; font-weight:700; margin:40px 0 16px; padding-bottom:8px; border-bottom:2px solid var(--primary-dim); display:flex; align-items:center; gap:8px; }
+  .section-title .badge { font-size:11px; background:var(--primary-dim); color:#fff; padding:2px 8px; border-radius:20px; font-weight:600; }
+
+  /* C4 Diagram */
+  .c4-level { margin-bottom:40px; }
+  .c4-label { font-size:11px; text-transform:uppercase; letter-spacing:1px; color:var(--text-dim); margin-bottom:8px; }
+  .c4-diagram { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:center; padding:16px 0; }
+  .c4-box { position:relative; cursor:pointer; transition:transform .15s,box-shadow .15s; }
+  .c4-box:hover { transform:translateY(-2px); }
+  .c4-box-inner { border-radius:var(--radius); padding:16px 20px; min-width:140px; text-align:center; transition:box-shadow .15s; }
+  .c4-box-inner .icon { font-size:28px; display:block; margin-bottom:6px; }
+  .c4-box-inner .title { font-weight:700; font-size:14px; }
+  .c4-box-inner .sub { font-size:11px; color:var(--text-dim); margin-top:2px; }
+
+  .box-person { background:var(--card); border:2px solid var(--income); }
+  .box-person:hover { box-shadow:0 0 20px rgba(59,130,246,0.3); }
+  .box-mobile { background:var(--card); border:2px solid var(--primary); }
+  .box-mobile:hover { box-shadow:0 0 20px rgba(98,223,125,0.3); }
+  .box-api { background:var(--card); border:2px solid var(--warning); }
+  .box-api:hover { box-shadow:0 0 20px rgba(245,158,11,0.3); }
+  .box-db { background:var(--card); border:2px solid #8B5CF6; border-radius:50%; width:130px; height:130px; display:flex; align-items:center; justify-content:center; }
+  .box-db:hover { box-shadow:0 0 20px rgba(139,92,246,0.3); }
+  .box-n8n { background:var(--card); border:2px solid #EC4899; }
+  .box-n8n:hover { box-shadow:0 0 20px rgba(236,72,153,0.3); }
+  .box-external { background:transparent; border:2px dashed var(--border); }
+  .box-external:hover { border-color:var(--text-dim); }
+
+  /* Arrow connector */
+  .connector { display:flex; align-items:center; color:var(--text-dim); font-size:20px; }
+  .connector-vert { flex-direction:column; }
+
+  /* Container diagram */
+  .container-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
+  .container-card { background:var(--card); border-radius:var(--radius-lg); padding:20px; border:1px solid var(--border); cursor:pointer; transition:transform .15s,box-shadow .15s; }
+  .container-card:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(0,0,0,0.3); border-color:var(--primary-dim); }
+  .container-card .icon { font-size:32px; }
+  .container-card h3 { font-size:16px; margin:8px 0 4px; }
+  .container-card p { font-size:12px; color:var(--text-dim); }
+  .container-card .meta { font-size:11px; color:var(--text-dim); margin-top:8px; display:flex; gap:12px; }
+  .container-card .meta span { background:var(--elevated); padding:2px 8px; border-radius:4px; }
+
+  /* Doc navigation */
+  .doc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:10px; }
+  .doc-card { display:flex; align-items:center; gap:14px; background:var(--card); border-radius:var(--radius); padding:16px 18px; border:1px solid var(--border); cursor:pointer; transition:all .15s; }
+  .doc-card:hover { border-color:var(--primary-dim); transform:translateX(4px); box-shadow:0 4px 16px rgba(0,0,0,0.2); }
+  .doc-card .doc-icon { font-size:24px; min-width:36px; text-align:center; }
+  .doc-card .doc-info h4 { font-size:14px; font-weight:600; }
+  .doc-card .doc-info p { font-size:11px; color:var(--text-dim); }
+
+  /* Component diagram */
+  .comp-flow { display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:center; padding:8px 0; }
+  .comp-group { background:var(--card); border-radius:var(--radius-lg); padding:16px; border:1px solid var(--border); min-width:200px; }
+  .comp-group h4 { font-size:12px; color:var(--primary); text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px; }
+  .comp-item { background:var(--elevated); border-radius:8px; padding:8px 12px; margin:4px 0; font-size:12px; cursor:pointer; transition:all .12s; border:1px solid transparent; }
+  .comp-item:hover { border-color:var(--primary-dim); }
+
+  /* Sequence step */
+  .seq-flow { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:8px 0; }
+  .seq-step { background:var(--elevated); border-radius:8px; padding:10px 14px; font-size:12px; text-align:center; border-left:3px solid var(--primary); }
+  .seq-arrow { color:var(--primary-dim); font-size:18px; }
+
+  /* Tech grid */
+  .tech-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .tech-badge { background:var(--elevated); border:1px solid var(--border); border-radius:20px; padding:6px 14px; font-size:12px; color:var(--text-dim); transition:all .12s; cursor:default; }
+  .tech-badge:hover { border-color:var(--primary-dim); color:var(--text); }
+
+  /* Footer */
+  .footer { margin-top:48px; padding:24px 0; border-top:1px solid var(--border); text-align:center; font-size:12px; color:var(--text-dim); }
+  .footer a { color:var(--primary-dim); }
+
+  @media (max-width:768px) {
+    .container { padding:12px 14px; }
+    .c4-diagram { flex-direction:column; }
+    .connector { transform:rotate(90deg); }
+    .container-grid,.doc-grid { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Header -->
+  <div class="header">
+    <span style="font-size:40px">💰</span>
+    <div>
+      <h1>CashFlow Manager <span>Architecture Dashboard</span></h1>
+      <p>Interactive system architecture · Click any block to explore · <a href="README.md">← Back to docs index</a></p>
+    </div>
+  </div>
+
+  <!-- === C4 LEVEL 1: SYSTEM CONTEXT === -->
+  <div class="c4-level">
+    <div class="c4-label">C4 Level 1 — System Context</div>
+    <div class="c4-diagram">
+      <a href="#docs-users" class="c4-box"><div class="c4-box-inner box-person"><span class="icon">👤</span><span class="title">User</span><span class="sub">VI · EN · JA</span></div></a>
+      <span class="connector">→</span>
+      <a href="#docs-flutter" class="c4-box"><div class="c4-box-inner box-mobile"><span class="icon">📱</span><span class="title">Flutter Mobile App</span><span class="sub">Android · iOS · Desktop</span></div></a>
+      <span class="connector">→</span>
+      <a href="#docs-api" class="c4-box"><div class="c4-box-inner box-api"><span class="icon">⚙️</span><span class="title">Fastify API</span><span class="sub">Node.js · TypeScript</span></div></a>
+      <span class="connector">→</span>
+      <a href="#docs-db" class="c4-box"><div class="c4-box-inner box-db"><span class="title">PostgreSQL</span><span class="sub">16 Alpine</span></div></a>
+      <span class="connector">→</span>
+      <a href="#docs-n8n" class="c4-box"><div class="c4-box-inner box-n8n"><span class="icon">🔀</span><span class="title">n8n Automation</span><span class="sub">AI Analysis</span></div></a>
+      <span class="connector">→</span>
+      <a href="#" class="c4-box"><div class="c4-box-inner box-external"><span class="icon">🤖</span><span class="title">OpenAI Provider</span><span class="sub">External</span></div></a>
+    </div>
+  </div>
+
+  <!-- === C4 LEVEL 2: CONTAINERS === -->
+  <h2 class="section-title">🐳 <span>C4 Level 2 — Containers</span> <span class="badge">Docker Runtime</span></h2>
+  <div class="container-grid">
+    <a href="system-architecture.md#c4-level-2--container" class="container-card">
+      <div class="icon">📱</div><h3>Flutter App</h3><p>Offline-first mobile app with SQLite local DB, Riverpod state, and optional API sync</p>
+      <div class="meta"><span>Dart 3.12</span><span>Flutter 3.44</span><span>Android/iOS</span></div>
+    </a>
+    <a href="../api/README.md" class="container-card">
+      <div class="icon">🔧</div><h3>API Service</h3><p>Fastify REST API with Prisma ORM, JWT/JWKS auth, finance CRUD, sync engine</p>
+      <div class="meta"><span>Node.js 22</span><span>TypeScript</span><span>Port :3000</span></div>
+    </a>
+    <a href="database-schema.md" class="container-card">
+      <div class="icon">🗄️</div><h3>PostgreSQL 16</h3><p>Server-side persistence for accounts, finance data, sync revisions</p>
+      <div class="meta"><span>Alpine</span><span>Port 5433</span><span>pg_isready</span></div>
+    </a>
+    <a href="../Dockerfile.frontend" class="container-card">
+      <div class="icon">🌐</div><h3>Frontend Server</h3><p>Nginx Alpine serving Flutter APK as static artifact</p>
+      <div class="meta"><span>nginx:alpine</span><span>Port :8080</span><span>Read-only</span></div>
+    </a>
+    <a href="../infra/n8n/workflows/" class="container-card">
+      <div class="icon">🔀</div><h3>n8n Automation</h3><p>Workflow engine for AI analysis. HMAC-protected webhook receiver</p>
+      <div class="meta"><span>n8n 1.121</span><span>Port :5678</span><span>Profile: automation</span></div>
+    </a>
+    <a href="deployment-guide.md" class="container-card">
+      <div class="icon">🚀</div><h3>Deployment</h3><p>Docker Compose full stack · GHCR + Docker Hub registry · CI/CD pipelines</p>
+      <div class="meta"><span>docker compose up</span><span>GH Actions</span><span>6 workflows</span></div>
+    </a>
+  </div>
+
+  <!-- === C4 LEVEL 3: FLUTTER COMPONENTS === -->
+  <h2 class="section-title">🧩 <span>C4 Level 3 — Flutter Components</span></h2>
+  <div class="comp-flow">
+    <div class="comp-group"><h4>UI Layer</h4>
+      <a href="ui-flow.md" class="comp-item">📊 Dashboard Tab</a>
+      <a href="ui-flow.md" class="comp-item">💳 Transactions Tab</a>
+      <a href="ui-flow.md" class="comp-item">👛 Wallets Tab</a>
+      <a href="ui-flow.md" class="comp-item">📈 Budgets Tab</a>
+      <a href="ui-flow.md" class="comp-item">📋 Reports Tab</a>
+      <a href="ui-flow.md" class="comp-item">⚙️ Settings</a>
+    </div>
+    <span class="connector">→</span>
+    <div class="comp-group"><h4>State Layer (Riverpod)</h4>
+      <a href="../lib/features/home/finance_controller.dart" class="comp-item">FinanceController</a>
+      <a href="../lib/features/account/remote_account_controller.dart" class="comp-item">RemoteAccount</a>
+      <a href="../lib/core/privacy_lock_service.dart" class="comp-item">PrivacyLock</a>
+      <a href="../lib/app/app_theme.dart" class="comp-item">ThemeMode</a>
+      <a href="../lib/app/app_localizations.dart" class="comp-item">Locale</a>
+    </div>
+    <span class="connector">→</span>
+    <div class="comp-group"><h4>Data Layer</h4>
+      <a href="../lib/data/local_finance_store.dart" class="comp-item">LocalFinanceStore</a>
+      <a href="../lib/core/remote_sync_client.dart" class="comp-item">RemoteSyncClient</a>
+      <a href="../lib/core/remote_session_store.dart" class="comp-item">SessionStore</a>
+    </div>
+    <span class="connector">→</span>
+    <div class="comp-group"><h4>Service Layer</h4>
+      <a href="../lib/core/finance_calculator.dart" class="comp-item">FinanceCalculator</a>
+      <a href="../lib/core/export_service.dart" class="comp-item">ExportService</a>
+      <a href="../lib/core/finance_backup_service.dart" class="comp-item">BackupService</a>
+      <a href="../lib/core/privacy_lock_service.dart" class="comp-item">PrivacyService</a>
+    </div>
+  </div>
+
+  <!-- === C4 LEVEL 3: API COMPONENTS === -->
+  <h2 class="section-title">🔌 <span>C4 Level 3 — API Components</span></h2>
+  <div class="comp-flow">
+    <div class="comp-group"><h4>Entrypoints</h4>
+      <a href="../api/src/modules/health/" class="comp-item">/healthz · /readyz</a>
+      <a href="../api/src/modules/well-known/" class="comp-item">/.well-known/jwks.json</a>
+      <a href="../api/src/modules/auth/" class="comp-item">/v1/auth/*</a>
+      <a href="../api/src/modules/finance/" class="comp-item">/v1/wallets/*</a>
+      <a href="../api/src/modules/sync/" class="comp-item">/v1/sync/*</a>
+      <a href="../api/src/modules/ai/" class="comp-item">/v1/ai/analysis</a>
+    </div>
+    <span class="connector">→</span>
+    <div class="comp-group"><h4>Middleware Chain</h4>
+      <a href="../api/src/app.ts" class="comp-item">request-id</a>
+      <a href="../api/src/app.ts" class="comp-item">trace-propagation</a>
+      <a href="../api/src/app.ts" class="comp-item">access-log</a>
+      <a href="../api/src/app.ts" class="comp-item">recover</a>
+      <a href="../api/src/app.ts" class="comp-item">timeout</a>
+      <a href="../api/src/app.ts" class="comp-item">metrics</a>
+    </div>
+    <span class="connector">→</span>
+    <div class="comp-group"><h4>Infrastructure</h4>
+      <a href="../api/src/lib/prisma-client.ts" class="comp-item">Prisma Client</a>
+      <a href="../api/src/lib/env.ts" class="comp-item">Zod Env</a>
+      <a href="../api/src/lib/" class="comp-item">Rate Limiter</a>
+      <a href="../api/src/lib/" class="comp-item">Error Handler</a>
+    </div>
+  </div>
+
+  <!-- === SYNC FLOW === -->
+  <h2 class="section-title">🔄 <span>Sync Flow — Full Sequence</span></h2>
+  <div class="seq-flow">
+    <span class="seq-step">👤 User creates<br>transaction</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">📱 App saves to<br>SQLite (immediate)</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">🏷️ Row marked<br>dirty + baseRevision</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">📤 POST /v1/sync/push<br>JWT Bearer auth</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">✅ 200: mark clean<br>or ⚠️ 409: conflict</span>
+    <span class="seq-arrow">→</span>
+    <span class="seq-step">📥 GET /v1/sync/changes<br>advance cursor</span>
+  </div>
+
+  <!-- === TECH STACK === -->
+  <h2 class="section-title">🛠️ <span>Technology Stack</span></h2>
+  <div class="tech-grid">
+    <span class="tech-badge">Flutter 3.44</span>
+    <span class="tech-badge">Dart 3.12</span>
+    <span class="tech-badge">Riverpod 2.x</span>
+    <span class="tech-badge">SQLite (sqflite)</span>
+    <span class="tech-badge">Fastify 5.x</span>
+    <span class="tech-badge">Node.js 22</span>
+    <span class="tech-badge">TypeScript 5.x</span>
+    <span class="tech-badge">Prisma 7.8</span>
+    <span class="tech-badge">PostgreSQL 16</span>
+    <span class="tech-badge">Ed25519 JWT</span>
+    <span class="tech-badge">JWKS</span>
+    <span class="tech-badge">n8n 1.121</span>
+    <span class="tech-badge">Docker Compose</span>
+    <span class="tech-badge">Nginx Alpine</span>
+    <span class="tech-badge">GitHub Actions</span>
+    <span class="tech-badge">GHCR · Docker Hub</span>
+    <span class="tech-badge">OpenAPI 3.1</span>
+    <span class="tech-badge">Be Vietnam Pro</span>
+    <span class="tech-badge">Zod 4</span>
+    <span class="tech-badge">Vitest</span>
+    <span class="tech-badge">Gitleaks · Trivy · CodeQL</span>
+  </div>
+
+  <!-- === DOCUMENTATION INDEX === -->
+  <h2 class="section-title" id="docs-users">📚 <span>Documentation Index</span></h2>
+
+  <h3 style="font-size:15px; margin:16px 0 10px; color:var(--primary);">Core Architecture</h3>
+  <div class="doc-grid">
+    <a href="system-architecture.md" class="doc-card"><span class="doc-icon">🏗️</span><div class="doc-info"><h4>System Architecture</h4><p>C4 model diagrams (Context → Container → Component)</p></div></a>
+    <a href="system-diagrams.md" class="doc-card"><span class="doc-icon">📊</span><div class="doc-info"><h4>System Diagrams</h4><p>Sequence & flow diagrams for sync, auth, AI, backup, CI/CD</p></div></a>
+    <a href="technical-design.md" class="doc-card"><span class="doc-icon">📐</span><div class="doc-info"><h4>Technical Design</h4><p>Flutter/API/n8n architecture, sync model, security</p></div></a>
+    <a href="adr/" class="doc-card"><span class="doc-icon">📝</span><div class="doc-info"><h4>ADR Index</h4><p>Architectural Decision Records (0001-0004)</p></div></a>
+  </div>
+
+  <h3 style="font-size:15px; margin:16px 0 10px; color:var(--primary);">Developer Reference</h3>
+  <div class="doc-grid">
+    <a href="codebase-summary.md" class="doc-card"><span class="doc-icon">🗂️</span><div class="doc-info"><h4>Codebase Summary</h4><p>Project structure, module map, data flow, conventions</p></div></a>
+    <a href="code-standards.md" class="doc-card"><span class="doc-icon">📏</span><div class="doc-info"><h4>Code Standards</h4><p>Flutter/Dart + TypeScript conventions, security, commits</p></div></a>
+    <a href="design-guidelines.md" class="doc-card"><span class="doc-icon">🎨</span><div class="doc-info"><h4>Design Guidelines</h4><p>Color tokens, typography, UI vocabulary, accessibility</p></div></a>
+    <a href="openapi.yaml" class="doc-card"><span class="doc-icon">🔗</span><div class="doc-info"><h4>OpenAPI Contract</h4><p>Backend API source of truth (YAML 3.1)</p></div></a>
+  </div>
+
+  <h3 style="font-size:15px; margin:16px 0 10px; color:var(--primary);">Product & Quality</h3>
+  <div class="doc-grid">
+    <a href="project-overview-pdr.md" class="doc-card"><span class="doc-icon">📋</span><div class="doc-info"><h4>Project Overview</h4><p>Goals, personas, MVP scope, technical decisions</p></div></a>
+    <a href="project-roadmap.md" class="doc-card"><span class="doc-icon">🗺️</span><div class="doc-info"><h4>Project Roadmap</h4><p>Version timeline v1.0 → v1.2</p></div></a>
+    <a href="product-requirements.md" class="doc-card"><span class="doc-icon">📝</span><div class="doc-info"><h4>Product Requirements</h4><p>Personas, MVP scope, acceptance notes</p></div></a>
+    <a href="database-schema.md" class="doc-card"><span class="doc-icon">🗃️</span><div class="doc-info"><h4>Database Schema</h4><p>SQLite local + PostgreSQL backend data model</p></div></a>
+  </div>
+
+  <h3 style="font-size:15px; margin:16px 0 10px; color:var(--primary);">QA & Release</h3>
+  <div class="doc-grid">
+    <a href="test-plan.md" class="doc-card"><span class="doc-icon">🧪</span><div class="doc-info"><h4>Test Plan</h4><p>Unit, widget, media, API, integration, release gates</p></div></a>
+    <a href="qa-report.md" class="doc-card"><span class="doc-icon">✅</span><div class="doc-info"><h4>QA Report</h4><p>Android emulator results + iOS/real-device blockers</p></div></a>
+    <a href="release-checklist.md" class="doc-card"><span class="doc-icon">🚀</span><div class="doc-info"><h4>Release Checklist</h4><p>Android/iOS/Docker/release validation gates</p></div></a>
+    <a href="deployment-guide.md" class="doc-card"><span class="doc-icon">📦</span><div class="doc-info"><h4>Deployment Guide</h4><p>VPS, Docker, TLS, secrets management</p></div></a>
+  </div>
+
+  <h3 style="font-size:15px; margin:16px 0 10px; color:var(--primary);">Source Code</h3>
+  <div class="doc-grid">
+    <a href="../lib/" class="doc-card"><span class="doc-icon">📱</span><div class="doc-info"><h4>Flutter App Source</h4><p>lib/ — app, core, data, features</p></div></a>
+    <a href="../api/src/" class="doc-card"><span class="doc-icon">🔧</span><div class="doc-info"><h4>API Source</h4><p>api/src/ — modules, lib, app.ts</p></div></a>
+    <a href="../api/prisma/schema.prisma" class="doc-card"><span class="doc-icon">🗄️</span><div class="doc-info"><h4>Prisma Schema</h4><p>Database model definitions</p></div></a>
+    <a href="../.github/workflows/" class="doc-card"><span class="doc-icon">⚡</span><div class="doc-info"><h4>CI/CD Workflows</h4><p>6 GitHub Actions pipelines</p></div></a>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>CashFlow Manager v1.0.0+1 · Built with <a href="https://flutter.dev">Flutter</a> + <a href="https://fastify.dev">Fastify</a> + <a href="https://www.prisma.io">Prisma</a></p>
+    <p><a href="https://github.com/JasonTM17/Money_Management_App">GitHub</a> · <a href="../README.md">README</a> · <a href="../LICENSE">MIT License</a></p>
+  </div>
+
+</div>
+</body>
+</html>
