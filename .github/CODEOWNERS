@@ -1,0 +1,23 @@
+# Code ownership for CashFlow Manager
+# Last updated: 2026-06-03
+
+# Global ownership
+* @JasonTM17
+
+# API and backend
+api/                         @JasonTM17
+
+# Mobile app
+lib/                         @JasonTM17
+android/                     @JasonTM17
+ios/                         @JasonTM17
+
+# Infrastructure
+docker-compose.yml           @JasonTM17
+Dockerfile.frontend          @JasonTM17
+api/Dockerfile               @JasonTM17
+.github/workflows/           @JasonTM17
+
+# Documentation
+docs/                        @JasonTM17
+*.md                         @JasonTM17
