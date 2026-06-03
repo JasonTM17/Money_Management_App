@@ -97,14 +97,14 @@ jobs:
       - name: Generate SBOM for API image
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/jasontm17/cashflow-manager-api:${{ github.sha }}
+          image: ghcr.io/jasontm17/cashflow-manager-api:sha-${{ github.sha }}
           artifact-name: sbom-api.spdx.json
           output-file: ./sbom-api.spdx.json
 
       - name: Generate SBOM for frontend image
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/jasontm17/cashflow-manager-frontend:${{ github.sha }}
+          image: ghcr.io/jasontm17/cashflow-manager-frontend:sha-${{ github.sha }}
           artifact-name: sbom-frontend.spdx.json
           output-file: ./sbom-frontend.spdx.json
 
