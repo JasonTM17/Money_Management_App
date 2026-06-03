@@ -1,135 +1,291 @@
-# System Diagrams
+# System Diagrams / Sơ đồ hệ thống / システム図
 
-These Mermaid.js v11 diagrams summarize the CashFlow Manager runtime architecture, local-first data flow, optional sync, and automation boundaries.
+Dynamic behavior diagrams: sync, auth, AI analysis, backup, and CI/CD flows. Mermaid.js v11.
+For static architecture (C4 model), see [System Architecture](system-architecture.md).
 
-## Runtime Architecture
+---
 
-```mermaid
-flowchart TB
-    User["Mobile user"] --> App["Flutter app<br/>Android, iOS, desktop-ready"]
+## 1. Full Account Sync Flow
 
-    subgraph Device["User device"]
-        App --> Gate["PrivacyGate<br/>PIN and opt-in biometrics"]
-        Gate --> Controller["FinanceController<br/>Riverpod state"]
-        Controller --> Store["LocalFinanceStore<br/>SQLite"]
-        Controller --> Calculator["FinanceCalculator<br/>balances, budgets, forecasts"]
-        Controller --> Exporter["Export and backup services<br/>CSV, PDF, JSON backup"]
-        Controller --> SyncClient["RemoteSyncClient<br/>optional account sync"]
-    end
-
-    SyncClient -->|"HTTPS / OpenAPI"| Api["Fastify API"]
-
-    subgraph Backend["Docker backend"]
-        Api --> Auth["Auth, account, JWT, JWKS"]
-        Api --> Finance["Finance CRUD and validation"]
-        Api --> Sync["Sync bootstrap, changes, push"]
-        Api --> Households["Households and shared budgets"]
-        Api --> Entitlements["Entitlements, IAP, SePay foundations"]
-        Api --> AiProxy["AI analysis proxy"]
-        Api --> Pg[("PostgreSQL")]
-    end
-
-    AiProxy -->|"HMAC webhook"| N8N["n8n workflow"]
-    N8N --> Provider["OpenAI-compatible chat provider"]
-
-    classDef mobile fill:#E8F7EF,stroke:#16A34A,color:#092D1F;
-    classDef backend fill:#EAF2FF,stroke:#2563EB,color:#10233F;
-    classDef data fill:#FFF7E6,stroke:#D97706,color:#3A2500;
-    class App,Gate,Controller,Store,Calculator,Exporter,SyncClient mobile;
-    class Api,Auth,Finance,Sync,Households,Entitlements,AiProxy,N8N,Provider backend;
-    class Pg data;
-```
-
-## Local-First Data Flow
-
-```mermaid
-flowchart LR
-    Action["User creates or edits finance data"] --> Controller["FinanceController command"]
-    Controller --> Validate["Local validation and money math"]
-    Validate --> SQLite[("SQLite local store")]
-    SQLite --> State["FinanceState reload"]
-    State --> UI["Dashboard, transactions, budgets, reports"]
-    State --> Derived["Derived insights<br/>cashflow, alerts, forecasts"]
-    State --> Backup["Backup and export surfaces"]
-
-    SQLite -. "dirty sync metadata" .-> Queue["Optional sync queue"]
-    Queue -. "when account and network exist" .-> Remote["RemoteSyncClient"]
-
-    classDef local fill:#F0FDF4,stroke:#22C55E,color:#102A18;
-    classDef optional fill:#F5F3FF,stroke:#7C3AED,color:#25114D;
-    class Action,Controller,Validate,SQLite,State,UI,Derived,Backup local;
-    class Queue,Remote optional;
-```
-
-## Optional Account Sync
+End-to-end sync: registration → bootstrap → changes → push → conflict resolution.
 
 ```mermaid
 sequenceDiagram
     actor User
-    participant App as Flutter app
-    participant Local as SQLite store
+    participant App as Flutter App
+    participant Local as SQLite (local)
     participant API as Fastify API
     participant DB as PostgreSQL
 
-    User->>App: Sign in or register
-    App->>API: POST /v1/auth/login or /v1/auth/register
-    API->>DB: Verify account and refresh token state
-    API-->>App: Access token and refresh token
-    App->>Local: Store remote session securely
+    Note over User,DB: === Phase 1: Account Setup ===
+    User->>App: Create account (email + password)
+    App->>API: POST /v1/auth/register
+    API->>DB: Insert user, hash password
+    API-->>App: { accessToken, refreshToken }
+    App->>Local: Store tokens securely
 
+    Note over User,DB: === Phase 2: Bootstrap ===
+    User->>App: Enable sync
     App->>API: GET /v1/sync/bootstrap
     API->>DB: Load server finance snapshot
-    API-->>App: Bootstrap payload and cursor
-    App->>Local: Merge acknowledged remote state
+    API-->>App: { wallets, categories, budgets, goals, cursor }
+    App->>Local: Merge into local DB, record cursor
 
-    User->>App: Edit wallet, transaction, budget, or goal
-    App->>Local: Save local-first change immediately
-    App->>API: POST /v1/sync/push with clientMutationId and baseRevision
-    API->>DB: Apply mutation or detect conflict
-    alt Mutation accepted
-        API-->>App: Applied mutation and new revision
-        App->>Local: Mark row clean with remote revision
-    else Revision conflict
-        API-->>App: 409 sync_conflict
-        App->>Local: Keep local data and surface conflict path
+    Note over User,DB: === Phase 3: Local Edit + Push ===
+    User->>App: Add transaction "Coffee 45,000đ"
+    App->>Local: Insert immediately (offline-first)
+    App->>Local: Mark row dirty, record baseRevision
+    App->>API: POST /v1/sync/push { clientMutationId, baseRevision, changes }
+
+    alt Revision valid (200)
+        API->>DB: Apply mutation, increment revision
+        API-->>App: { newRevision, serverTimestamp }
+        App->>Local: Mark row clean, update revision
+    else Stale revision (409 sync_conflict)
+        API-->>App: 409 { serverRevision, conflictType }
+        App->>Local: Keep local data, surface conflict
+        App->>API: GET /v1/sync/changes?since=cursor
+        API-->>App: Recent server changes
+        App->>Local: Apply server changes locally
+        User->>App: Resolve conflict manually
     end
+
+    Note over User,DB: === Phase 4: Pull Changes ===
+    App->>API: GET /v1/sync/changes?since=lastCursor
+    API->>DB: Load changes ordered by revision
+    API-->>App: [{ changeType, entity, revision, timestamp }]
+    App->>Local: Apply each change, advance cursor
 ```
 
-## Automation And Release Boundary
+---
+
+## 2. Authentication Flow
+
+Register → Login → Token Refresh → JWKS Verification.
 
 ```mermaid
-flowchart TB
-    subgraph CI["GitHub Actions"]
-        FlutterCI["Flutter analyze, tests, Android builds"]
-        ApiCI["API Prisma generate, typecheck, tests"]
-        DockerCI["Docker image build and publish lane"]
-        ReleaseCI["Release APK, AAB, package metadata"]
+sequenceDiagram
+    actor User
+    participant App as Flutter App
+    participant API as Fastify Auth
+    participant DB as PostgreSQL
+    participant Verifier as External Verifier (other service)
+
+    Note over User,Verifier: === Registration ===
+    User->>App: Register (email, password, name)
+    App->>API: POST /v1/auth/register
+    API->>API: Validate input (Zod)
+    API->>DB: Check email uniqueness
+    API->>DB: Insert user, hash password (argon2)
+    API->>API: Generate Ed25519 keypair (if first user)
+    API->>API: Sign accessToken { sub, aud, iss, exp }
+    API->>API: Create rotating refreshToken (opaque 32B)
+    API->>DB: Store refreshToken hash
+    API-->>App: { accessToken, refreshToken, user }
+
+    Note over User,Verifier: === Login ===
+    User->>App: Login (email, password)
+    App->>API: POST /v1/auth/login
+    API->>DB: Lookup user by email
+    API->>API: Verify password hash
+    API->>API: Sign new accessToken
+    API->>DB: Rotate refreshToken (invalidate old)
+    API-->>App: { accessToken, refreshToken }
+
+    Note over User,Verifier: === Token Refresh ===
+    App->>API: POST /v1/auth/refresh { refreshToken }
+    API->>DB: Find matching refreshToken hash
+    alt Valid refresh token
+        API->>DB: Rotate refreshToken
+        API->>API: Sign new accessToken
+        API-->>App: { accessToken, refreshToken }
+    else Invalid or reused (revocation)
+        API->>DB: Revoke ALL user refresh tokens
+        API-->>App: 401 { error: "token_revoked" }
     end
 
-    subgraph Runtime["Optional local or hosted runtime"]
-        Compose["Docker Compose"] --> Postgres[("PostgreSQL 16")]
-        Compose --> Api["Fastify API container"]
-        Compose --> Frontend["APK artifact server"]
-        Compose --> N8N["n8n automation profile"]
-        N8N --> N8NDb[("n8n PostgreSQL")]
-    end
-
-    Api -->|"signed webhook"| N8N
-    N8N -->|"strict JSON answer"| Api
-    Api -->|"optional"| SePay["SePay direct/off-store payments"]
-    Api -->|"optional"| Stores["Apple or Google IAP verification"]
-
-    classDef ci fill:#EFF6FF,stroke:#2563EB,color:#10233F;
-    classDef runtime fill:#F8FAFC,stroke:#475569,color:#111827;
-    classDef external fill:#FFF7ED,stroke:#EA580C,color:#3B1F00;
-    class FlutterCI,ApiCI,DockerCI,ReleaseCI ci;
-    class Compose,Postgres,Api,Frontend,N8N,N8NDb runtime;
-    class SePay,Stores external;
+    Note over User,Verifier: === JWKS Verification ===
+    Verifier->>API: GET /.well-known/jwks.json
+    API-->>Verifier: { keys: [{ kid, kty, crv, x }] }
+    Verifier->>Verifier: Cache JWKS (30 min TTL)
+    Verifier->>Verifier: Verify JWT signature with public key
+    Verifier->>Verifier: Validate claims (iss, aud, exp, sub)
 ```
+
+---
+
+## 3. AI Analysis Flow
+
+HMAC-protected API → n8n → OpenAI-compatible provider → response.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant App as Flutter App
+    participant API as Fastify API
+    participant N8N as n8n Workflow
+    participant AI as OpenAI-compatible Provider
+
+    User->>App: Tap "Phân tích chi tiêu"
+    App->>API: POST /v1/ai/analysis
+    Note right of App: Authorization: Bearer <accessToken>
+    Note right of App: Body: { query, context }
+
+    API->>API: Validate JWT
+    API->>API: Validate input (Zod)
+    API->>API: Build payload { query, userId, locale }
+    API->>API: Sign payload with HMAC-SHA256
+    Note right of API: X-Signature-SHA256: <hex>
+
+    API->>N8N: POST webhook (HMAC signed)
+    N8N->>N8N: Verify HMAC signature
+    alt HMAC mismatch
+        N8N-->>API: 401 Unauthorized
+        API-->>App: 502 AI service unavailable
+    else HMAC valid
+        N8N->>N8N: Extract query + context
+        N8N->>AI: POST /v1/chat/completions
+        Note right of N8N: System prompt: Vietnamese finance assistant
+        Note right of N8N: Model: gpt-4o-mini (configurable)
+
+        AI-->>N8N: { choices: [{ message: { content: "..." } }] }
+        N8N->>N8N: Extract content, validate JSON
+        N8N-->>API: { analysis, insights, suggestions }
+        Note left of N8N: Strict JSON answer enforced
+
+        API-->>App: { analysis, insights, suggestions }
+        App->>App: Render AI analysis card
+    end
+```
+
+---
+
+## 4. Backup & Restore Flow
+
+Encrypted backup export + secure restore with preview.
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant App as Flutter App
+    participant Privacy as PrivacyLockService
+    participant Backup as FinanceBackupService
+    participant Local as SQLite
+
+    Note over User,Local: === Backup Export ===
+    User->>App: Settings → Export Backup
+    App->>Privacy: Re-authenticate (PIN/biometric)
+    Privacy-->>App: Authenticated
+    App->>Backup: exportBackup(passphrase)
+    Backup->>Local: Read all finance data
+    Backup->>Backup: JSON serialize
+    Backup->>Backup: AES-GCM encrypt (passphrase-derived key)
+    Backup-->>App: Encrypted backup file (.json.enc)
+    App->>App: Share sheet (save/send)
+
+    Note over User,Local: === Backup Restore ===
+    User->>App: Settings → Restore Backup → Select file
+    App->>Backup: validateBackup(file)
+    alt File > 5 MB
+        Backup-->>App: Error: file too large
+    else Encrypted (schema v2)
+        App->>User: Prompt for passphrase
+        Backup->>Backup: AES-GCM decrypt
+    else Plaintext (schema v1, legacy)
+        Backup->>Backup: JSON parse directly
+    end
+    Backup->>Backup: Validate data shape (required fields)
+    Backup-->>App: Preview: { walletCount, txCount, budgetCount }
+
+    App->>User: Confirm restore (preview shown)
+    User->>App: Confirm
+    App->>Privacy: Re-authenticate
+    Privacy-->>App: Authenticated
+    App->>Backup: restoreBackup(data)
+    Backup->>Local: Replace all finance tables
+    Backup-->>App: Restore complete
+    App->>App: Reload FinanceState
+```
+
+---
+
+## 5. CI/CD Pipeline Flow
+
+```mermaid
+flowchart LR
+    Push["git push<br/>master branch"] --> CI{CI Workflow}
+
+    subgraph CI["GitHub Actions CI"]
+        Flutter["Flutter<br/>analyze · test · build"]
+        Android["Android Emulator<br/>integration smoke"]
+        iOS["iOS Simulator<br/>smoke · no-codesign"]
+        API_CI["API<br/>generate · typecheck · test"]
+        PG["PostgreSQL<br/>migrate · seed"]
+        Docker["Docker<br/>compose config · build"]
+    end
+
+    CI --> Security{Security Workflow}
+    subgraph Security2["Security Scans"]
+        Gitleaks["Gitleaks<br/>secret scan"]
+        Trivy["Trivy<br/>fs + image scan"]
+        Audit["npm audit<br/>flutter outdated"]
+    end
+
+    Security --> CodeQL[CodeQL SAST]
+
+    CodeQL --> Publish{Docker Publish}
+    subgraph Publish2["Docker Publish"]
+        GHCR["ghcr.io/jasontm17/*"]
+        DH["nguyenson1710/*"]
+    end
+
+    classDef pass fill:#DCFCE7,stroke:#16A34A,color:#052E16;
+    classDef scan fill:#EFF6FF,stroke:#2563EB,color:#10233F;
+    classDef publish fill:#FEF3C7,stroke:#D97706,color:#3A2500;
+    class Flutter,Android,iOS,API_CI,PG,Docker pass;
+    class Gitleaks,Trivy,Audit,CodeQL scan;
+    class GHCR,DH publish;
+```
+
+---
+
+## 6. Local-First Data Flow
+
+```mermaid
+flowchart TD
+    UserAction["User creates, edits, or deletes data"] --> Controller["FinanceController<br/>command handler"]
+    Controller --> Validate["Local validation<br/>money math, referential integrity"]
+    Validate --> SQLite[("SQLite<br/>cashflow_manager.sqlite")]
+    SQLite --> State["FinanceState<br/>rebuilt on change"]
+    State --> UI["UI Rebuild"]
+    UI --> Dashboard["Dashboard"]
+    UI --> Transactions["Transactions"]
+    UI --> Budgets["Budgets"]
+    UI --> Reports["Reports"]
+
+    State --> Derived["Derived Insights"]
+    Derived --> Alerts["Budget alerts"]
+    Derived --> Forecast["Cashflow forecast"]
+    Derived --> Suggestions["Saving suggestions"]
+
+    SQLite -.->|"dirty rows"| Queue["Sync Queue<br/>(optional)"]
+    Queue -.->|"when account + network"| Remote["RemoteSyncClient"]
+    Remote -.->|"HTTPS · JWT"| API["Fastify API"]
+
+    classDef immediate fill:#F0FDF4,stroke:#22C55E,color:#102A18;
+    classDef derived fill:#FEF9C3,stroke:#CA8A04,color:#2E2000;
+    classDef optional fill:#F5F3FF,stroke:#7C3AED,color:#25114D;
+    class UserAction,Controller,Validate,SQLite,State,UI,Dashboard,Transactions,Budgets,Reports immediate;
+    class Derived,Alerts,Forecast,Suggestions derived;
+    class Queue,Remote,API optional;
+```
+
+---
 
 ## Reading Notes
 
-- The mobile app remains useful without account, network, PostgreSQL, n8n, or payment providers.
-- PostgreSQL is never accessed directly from Flutter; all remote data access goes through the Fastify API and OpenAPI contract.
-- Sync is optional and conflict-aware; failed remote operations must not delete or corrupt local finance data.
-- n8n receives only the signed AI-analysis payload from the API, not hidden local app data.
+- All diagrams use Mermaid.js v11 — render in any Mermaid-compatible viewer
+- For static C4 architecture diagrams, see [System Architecture](system-architecture.md)
+- For screen-level flows, see [UI Flow](ui-flow.md)
+- For database schema details, see [Database Schema](database-schema.md)
+- Export any diagram to PNG/SVG with `mermaid-cli` or the `/ck:tech-graph` skill
