@@ -148,7 +148,7 @@ jobs:
         run: npm run prisma:generate
 
       - name: Push Prisma schema to DB
-        run: npx prisma db push --skip-generate
+        run: npx prisma db push
 
       - name: Typecheck
         run: npm run typecheck
