@@ -20,7 +20,18 @@
 ![Version](https://img.shields.io/badge/version-1.0.0%2B1-16A34A)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-CashFlow Manager is an offline-first Flutter app for Android and iOS that helps users manage personal expenses, wallets, budgets, cashflow forecasts, saving goals, and monthly reports in Vietnamese, English, and Japanese.
+**Prerequisites:** Flutter SDK 3.44+ · Dart 3.12+ · Docker 24+ (optional, for backend)
+
+[Quick Start](#quick-start) · [Docs](docs/README.md) · [Architecture](docs/system-architecture.md) · [API](docs/openapi.yaml) · [CI/CD](.github/workflows/) · [ADRs](docs/adr/) · [Security](SECURITY.md)
+
+## At a Glance
+
+| | |
+|---|---|
+| **What** | Offline-first Flutter personal finance app — 3 languages (VI/EN/JA), zero network dependency |
+| **Flagship feature** | Full local finance engine: wallets, budgets, goals, forecasts, export, encrypted backup — all offline |
+| **Production-shaped** | Docker Compose (9 services), Ed25519 JWT/JWKS, CI/CD (6 workflows), security gates (Gitleaks+Trivy+CodeQL+SBOM) |
+| **Not claimed** | No bank integration, no real-time collaboration, no web frontend, no production cloud sync (foundations ready) |
 
 ## Demo
 
@@ -184,7 +195,7 @@ docker compose up --build
 
 The API exposes `/healthz`, `/readyz`, `/.well-known/jwks.json`, auth/account routes, finance CRUD routes, sync bootstrap/changes/push routes, household/shared-budget foundations, entitlement/payment foundations, and an optional n8n-backed `/v1/ai/analysis` endpoint. `/readyz` checks the migrated application schema, so run `migrate` before treating the API as ready. The mobile app release version (`1.0.0+1`) and backend/API package version (`0.1.0`) are versioned independently.
 
-## Optional n8n ChatbotAI Workflow
+<details><summary>Optional n8n ChatbotAI Workflow (click to expand)</summary>
 
 ```powershell
 $env:N8N_CHATBOT_WEBHOOK_URL = 'http://n8n:5678/webhook/cashflow-ai-analysis'
@@ -225,6 +236,34 @@ Troubleshooting:
 | Invalid HMAC smoke fails | Secret mismatch between the smoke script/API and n8n | Use the same local placeholder secret on both sides |
 | Provider returns 401 | `N8N_AI_API_KEY` is invalid or missing | Replace it only in a local `.env` file or deployment secret store |
 | n8n import fails | Docker daemon, n8n database, or workflow import job is not ready | Re-run after Docker responds and inspect `docker compose logs n8n n8n-postgres` |
+
+</details>
+
+
+## CI/CD Status
+
+| Lane | Status |
+|------|--------|
+| Flutter (analyze, test, build) | ![CI](https://github.com/JasonTM17/Money_Management_App/actions/workflows/ci.yml/badge.svg) |
+| API (generate, typecheck, test) | ![CI](https://github.com/JasonTM17/Money_Management_App/actions/workflows/ci.yml/badge.svg) |
+| Security (Gitleaks, Trivy, audit) | ![Security](https://github.com/JasonTM17/Money_Management_App/actions/workflows/security.yml/badge.svg) |
+| CodeQL SAST | ![CodeQL](https://github.com/JasonTM17/Money_Management_App/actions/workflows/codeql.yml/badge.svg) |
+| Docker Publish (GHCR + Docker Hub) | ![Docker](https://github.com/JasonTM17/Money_Management_App/actions/workflows/docker-publish.yml/badge.svg) |
+
+## Quick Links
+
+| Need | Link |
+|------|------|
+| Full documentation index | [`docs/README.md`](docs/README.md) |
+| C4 architecture diagrams | [`docs/system-architecture.md`](docs/system-architecture.md) |
+| Sequence & flow diagrams | [`docs/system-diagrams.md`](docs/system-diagrams.md) |
+| Interactive architecture dashboard | [`docs/architecture-dashboard.html`](docs/architecture-dashboard.html) |
+| OpenAPI 3.1 contract | [`docs/openapi.yaml`](docs/openapi.yaml) |
+| ADRs (4 records) | [`docs/adr/`](docs/adr/) |
+| Database schema | [`docs/database-schema.md`](docs/database-schema.md) |
+| Deployment guide | [`docs/deployment-guide.md`](docs/deployment-guide.md) |
+| Code standards | [`docs/code-standards.md`](docs/code-standards.md) |
+| Design guidelines | [`docs/design-guidelines.md`](docs/design-guidelines.md) |
 
 ## Release and Package Story
 
