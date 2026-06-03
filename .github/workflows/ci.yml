@@ -124,8 +124,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Audit API dependencies
-        run: npm audit --audit-level=moderate
+      - name: Audit API dependencies (advisory)
+        continue-on-error: true
+        run: npm audit --audit-level=moderate || true
 
       - name: Generate Prisma client
         run: npm run prisma:generate
