@@ -107,6 +107,20 @@ jobs:
   api:
     name: API generate, typecheck, test, and build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: cashflow_manager
+          POSTGRES_USER: cashflow_app
+          POSTGRES_PASSWORD: change-me-local-only
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U cashflow_app -d cashflow_manager"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     defaults:
       run:
         working-directory: api
