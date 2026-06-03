@@ -102,21 +102,21 @@ jobs:
           output-file: dist/sbom.spdx.json
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cashflow-manager-${{ github.ref_name }}-android-apk
           path: dist/cashflow-manager-${{ github.ref_name }}-android.apk
           if-no-files-found: error
 
       - name: Upload App Bundle artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cashflow-manager-${{ github.ref_name }}-android-aab
           path: dist/cashflow-manager-${{ github.ref_name }}-android.aab
           if-no-files-found: error
 
       - name: Upload release metadata artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cashflow-manager-${{ github.ref_name }}-release-metadata
           path: |
@@ -125,7 +125,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload release checksums
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cashflow-manager-${{ github.ref_name }}-checksums
           path: dist/SHA256SUMS.txt
@@ -256,7 +256,7 @@ jobs:
         run: flutter build ipa --release --export-options-plist="$IOS_EXPORT_OPTIONS_PATH" --no-pub
 
       - name: Upload IPA artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: cashflow-manager-${{ github.ref_name }}-ios-ipa
           path: build/ios/ipa/*.ipa
