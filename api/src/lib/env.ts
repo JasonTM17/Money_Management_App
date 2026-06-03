@@ -7,7 +7,7 @@ const rawSchema = z.object({
     .string()
     .url()
     .default(
-      'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public',
+      'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public',
     ),
   NODE_ENV: z
     .enum(['development', 'test', 'production'])

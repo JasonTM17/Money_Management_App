@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { buildApp } from '../../app.js';
 
 const DB_URL =
-  'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public';
+  'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public';
 
 describe('auth route boundaries', () => {
   it('rejects invalid register payloads with the API error envelope', async () => {

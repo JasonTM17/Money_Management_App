@@ -19,7 +19,7 @@ function snapshotEnv(keys: string[]) {
 describe('AI analysis route', () => {
   it('requires bearer auth', async () => {
     const app = buildApp({
-      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public',
+      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public',
     });
 
     try {
@@ -44,7 +44,7 @@ describe('AI analysis route', () => {
     delete process.env.N8N_CHATBOT_WEBHOOK_URL;
     delete process.env.N8N_CHATBOT_WEBHOOK_SECRET;
     const app = buildApp({
-      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public',
+      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public',
     });
     const token = createAccessToken({
       sub: '00000000-0000-4000-8000-000000000001',
@@ -75,7 +75,7 @@ describe('AI analysis route', () => {
     process.env.N8N_CHATBOT_WEBHOOK_URL = 'http://127.0.0.1:1/webhook/cashflow-ai-analysis';
     process.env.N8N_CHATBOT_WEBHOOK_SECRET = 'test-webhook-secret';
     const app = buildApp({
-      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public',
+      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public',
     });
     const token = createAccessToken({
       sub: '00000000-0000-4000-8000-000000000001',
@@ -166,7 +166,7 @@ describe('AI analysis route', () => {
     process.env.N8N_CHATBOT_WEBHOOK_URL = `http://127.0.0.1:${address.port}/webhook/cashflow-ai-analysis`;
     process.env.N8N_CHATBOT_WEBHOOK_SECRET = secret;
     const app = buildApp({
-      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public',
+      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public',
     });
     const token = createAccessToken({
       sub: '00000000-0000-4000-8000-000000000001',
@@ -215,7 +215,7 @@ describe('AI analysis route', () => {
     process.env.N8N_CHATBOT_WEBHOOK_URL = 'http://127.0.0.1:1/webhook/cashflow-ai-analysis';
     process.env.N8N_CHATBOT_WEBHOOK_SECRET = 'test-webhook-secret';
     const app = buildApp({
-      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public',
+      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public',
     });
     const token = createAccessToken({
       sub: '00000000-0000-4000-8000-000000000001',
@@ -257,7 +257,7 @@ describe('AI analysis route', () => {
     process.env.N8N_CHATBOT_WEBHOOK_URL = `http://127.0.0.1:${address.port}/webhook/cashflow-ai-analysis`;
     process.env.N8N_CHATBOT_WEBHOOK_SECRET = 'test-webhook-secret';
     const app = buildApp({
-      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public',
+      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public',
     });
     const token = createAccessToken({
       sub: '00000000-0000-4000-8000-000000000001',
@@ -298,7 +298,7 @@ describe('AI analysis route', () => {
     process.env.N8N_CHATBOT_WEBHOOK_URL = `http://127.0.0.1:${address.port}/webhook/cashflow-ai-analysis`;
     process.env.N8N_CHATBOT_WEBHOOK_SECRET = 'test-webhook-secret';
     const app = buildApp({
-      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public',
+      databaseUrl: 'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public',
     });
     const token = createAccessToken({
       sub: '00000000-0000-4000-8000-000000000001',

@@ -75,7 +75,7 @@ docker compose --profile tools run --rm --build seed
 docker compose up --build -d api frontend
 ```
 
-If you deliberately run Prisma from the host, first confirm the published Postgres port with `docker compose port postgres 5432`, then set `DATABASE_URL` to that host port.
+If you deliberately run Prisma from the host, first confirm the published Postgres port with `docker compose port postgres 5432`, then set `DATABASE_URL` to that host port (default: `localhost:5433`).
 
 ## Test
 
@@ -98,5 +98,5 @@ Coverage gates will be added when route modules move beyond the health/readiness
 - Check JWKS: open `http://localhost:3000/.well-known/jwks.json` and confirm the active `kid` is present.
 - Apply existing migrations with `npm run prisma:deploy`; use `npm run prisma:migrate` only for local schema iteration.
 - Seed demo data: `npm run db:seed` after migrations are applied.
-- If Prisma returns `P1010`, verify `docker compose port postgres 5432`, TCP password auth, and database ownership before changing schema code.
+- If Prisma returns `P1010`, verify `docker compose port postgres 5432` (default host port `5433`), TCP password auth, and database ownership before changing schema code.
 - Rotate database credentials in deployment secrets, then restart `api` and `postgres` services.

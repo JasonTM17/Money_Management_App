@@ -3,7 +3,7 @@ import { createPrismaClient } from '../src/lib/prisma-client.js';
 
 const databaseUrl =
   process.env.DATABASE_URL ??
-  'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public';
+  'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public';
 const prisma = createPrismaClient(databaseUrl);
 
 async function main() {

@@ -3,7 +3,7 @@ import { defineConfig } from 'prisma/config';
 
 const databaseUrl =
   process.env.DATABASE_URL ??
-  'postgresql://cashflow_app:change-me-local-only@localhost:5432/cashflow_manager?schema=public';
+  'postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public';
 
 export default defineConfig({
   schema: 'prisma/schema.prisma',
