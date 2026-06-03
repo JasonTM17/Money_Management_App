@@ -72,6 +72,28 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{version}}
 
+      - name: Build and publish API image to GHCR
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: api/Dockerfile
+          push: true
+          build-args: |
+            REVISION=${{ github.sha }}
+          tags: ${{ steps.meta-api-ghcr.outputs.tags }}
+          labels: ${{ steps.meta-api-ghcr.outputs.labels }}
+
+      - name: Build and publish frontend image to GHCR
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: true
+          build-args: |
+            REVISION=${{ github.sha }}
+          tags: ${{ steps.meta-frontend-ghcr.outputs.tags }}
+          labels: ${{ steps.meta-frontend-ghcr.outputs.labels }}
+
       - name: Generate SBOM for API image
         uses: anchore/sbom-action@v0
         with:
@@ -94,28 +116,6 @@ jobs:
             ./sbom-api.spdx.json
             ./sbom-frontend.spdx.json
           retention-days: 90
-
-      - name: Build and publish API image to GHCR
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: api/Dockerfile
-          push: true
-          build-args: |
-            REVISION=${{ github.sha }}
-          tags: ${{ steps.meta-api-ghcr.outputs.tags }}
-          labels: ${{ steps.meta-api-ghcr.outputs.labels }}
-
-      - name: Build and publish frontend image to GHCR
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: Dockerfile.frontend
-          push: true
-          build-args: |
-            REVISION=${{ github.sha }}
-          tags: ${{ steps.meta-frontend-ghcr.outputs.tags }}
-          labels: ${{ steps.meta-frontend-ghcr.outputs.labels }}
 
       - name: Extract API Docker Hub metadata
         if: steps.dockerhub.outputs.enabled == 'true'
