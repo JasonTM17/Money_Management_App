@@ -147,8 +147,8 @@ jobs:
         env:
           DATABASE_URL: postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public
 
-      - name: Run Prisma migrations
-        run: npx prisma migrate deploy
+      - name: Push Prisma schema to DB
+        run: npx prisma db push --skip-generate
         env:
           DATABASE_URL: postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public
 
