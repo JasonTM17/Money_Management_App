@@ -7,7 +7,7 @@ RUN flutter pub get
 COPY . .
 RUN flutter build apk --release
 
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.31-alpine AS runtime
 ARG REVISION=local
 LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Money_Management_App"
 LABEL org.opencontainers.image.licenses="MIT"
