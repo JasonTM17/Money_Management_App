@@ -25,6 +25,7 @@ void main() {
       );
 
       await _createFirstRunPin(tester);
+      await tester.pumpAndSettle(const Duration(seconds: 2));
       expect(find.text('CashFlow Manager'), findsOneWidget);
       _expectNoFrameworkException(tester);
 
@@ -81,6 +82,13 @@ Future<void> _enterTextByAnyLabel(
   required int fallbackIndex,
   required String text,
 }) async {
+  // Wait for TextField to render (simulator can be slow to build)
+  for (int attempt = 0; attempt < 15; attempt++) {
+    await tester.pump(const Duration(milliseconds: 300));
+    final fields = find.byType(TextField);
+    if (fields.evaluate().isNotEmpty) break;
+  }
+
   for (final label in labels) {
     final labeledField = find.widgetWithText(TextField, label);
     if (labeledField.evaluate().isNotEmpty) {
