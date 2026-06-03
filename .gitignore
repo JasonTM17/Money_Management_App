@@ -1,8 +1,11 @@
 # Local environment and secrets
 .env
 .env.*
+!.env.example
+!.env.production.example
 *.local
 *.local.*
+!docker-compose.local.yml
 
 # Claude/OMC private tooling and plans
 .claude/

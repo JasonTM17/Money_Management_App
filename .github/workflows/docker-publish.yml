@@ -72,6 +72,29 @@ jobs:
             type=ref,event=tag
             type=semver,pattern={{version}}
 
+      - name: Generate SBOM for API image
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/jasontm17/cashflow-manager-api:${{ github.sha }}
+          artifact-name: sbom-api.spdx.json
+          output-file: ./sbom-api.spdx.json
+
+      - name: Generate SBOM for frontend image
+        uses: anchore/sbom-action@v0
+        with:
+          image: ghcr.io/jasontm17/cashflow-manager-frontend:${{ github.sha }}
+          artifact-name: sbom-frontend.spdx.json
+          output-file: ./sbom-frontend.spdx.json
+
+      - name: Upload SBOM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-artifacts
+          path: |
+            ./sbom-api.spdx.json
+            ./sbom-frontend.spdx.json
+          retention-days: 90
+
       - name: Build and publish API image to GHCR
         uses: docker/build-push-action@v7
         with:

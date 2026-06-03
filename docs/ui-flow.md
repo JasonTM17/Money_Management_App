@@ -69,4 +69,4 @@ README screenshots and GIF are generated from deterministic fake financial data 
 
 ## Stitch Prompt
 
-See `docs/STITCH_PROMPT.md` for the historical prompt and verified Stitch design-system evidence.
+See `docs/stitch-prompt.md` for the historical prompt and verified Stitch design-system evidence.

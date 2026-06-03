@@ -1,0 +1,19 @@
+# Local development override — remaps ports to avoid conflicts with other projects.
+# Usage: docker compose -f docker-compose.yml -f docker-compose.local.yml up
+
+services:
+  postgres:
+    ports:
+      - "5433:5432"
+
+  api:
+    ports:
+      - "3001:3000"
+
+  frontend:
+    ports:
+      - "8081:8080"
+
+  n8n:
+    ports:
+      - "5679:5678"

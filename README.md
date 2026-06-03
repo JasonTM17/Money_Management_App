@@ -96,6 +96,8 @@ n8n automation
 
 API contract: [`docs/openapi.yaml`](docs/openapi.yaml)
 
+Architecture decisions: [`docs/adr/`](docs/adr/)
+
 ## Tech Stack
 
 - Flutter 3.44 / Dart 3.12
@@ -107,6 +109,32 @@ API contract: [`docs/openapi.yaml`](docs/openapi.yaml)
 - Fastify + Prisma API for authenticated PostgreSQL-backed sync foundation and AI analysis proxy
 - Docker Compose with PostgreSQL 16, migration/seed jobs, API, frontend artifact server, and optional n8n automation
 - GitHub Actions CI for Flutter analyze/tests/builds, Android emulator smoke, iOS simulator/no-codesign validation, API Prisma/typecheck/tests/build, PostgreSQL migration/seed validation, Docker image builds, Android release artifacts, and Docker Hub and GHCR publishing
+
+## Project Structure
+
+```
+.
+├── lib/                          # Flutter app source
+│   ├── app/                      # App shell, router, theme
+│   ├── core/                     # Shared services (export, privacy, sync)
+│   ├── data/                     # SQLite store, sync, backup/restore
+│   └── features/                 # Feature modules (dashboard, transactions, etc.)
+├── api/                          # Fastify + Prisma backend
+│   ├── src/
+│   │   ├── modules/             # auth, finance, sync, households, payments, ai
+│   │   └── lib/                  # Shared utilities (errors, env, tokens)
+│   └── prisma/                   # Schema + migrations + seed
+├── test/                         # Flutter unit + widget tests
+├── integration_test/             # Flutter integration (smoke) tests
+├── docs/                         # Documentation (ADRs, OpenAPI, architecture)
+├── infra/n8n/workflows/          # n8n automation workflow definitions
+├── scripts/                      # Demo media capture, smoke tests
+├── .github/workflows/            # CI/CD pipelines
+├── docker-compose.yml            # Production stack
+├── docker-compose.local.yml      # Local dev override (port remapping)
+├── Dockerfile.frontend           # Flutter APK build + nginx artifact server
+└── api/Dockerfile                # Multi-stage Fastify API image
+```
 
 ## Quick Start
 
