@@ -144,6 +144,13 @@ jobs:
 
       - name: Generate Prisma client
         run: npm run prisma:generate
+        env:
+          DATABASE_URL: postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public
+
+      - name: Run Prisma migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://cashflow_app:change-me-local-only@localhost:5433/cashflow_manager?schema=public
 
       - name: Typecheck
         run: npm run typecheck
