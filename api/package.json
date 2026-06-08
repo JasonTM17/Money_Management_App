@@ -24,7 +24,7 @@
     "zod": "4.4.3"
   },
   "devDependencies": {
-    "@emnapi/core": "1.10.0",
+    "@emnapi/core": "1.11.0",
     "@emnapi/runtime": "1.10.0",
     "@types/node": "25.9.1",
     "prisma": "7.8.0",
