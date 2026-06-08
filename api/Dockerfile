@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1
 
-FROM node:22-alpine AS deps
+FROM node:26-alpine AS deps
 WORKDIR /app
 COPY api/package*.json ./
 RUN npm ci
 
-FROM node:22-alpine AS builder
+FROM node:26-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY api/package*.json ./
@@ -20,12 +20,12 @@ RUN npm run build
 FROM builder AS tools
 ENV NODE_ENV=development
 
-FROM node:22-alpine AS production-deps
+FROM node:26-alpine AS production-deps
 WORKDIR /app
 COPY api/package*.json ./
 RUN npm ci --omit=dev
 
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 WORKDIR /app
 ARG REVISION=local
 LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Money_Management_App"
