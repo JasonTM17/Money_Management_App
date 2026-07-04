@@ -1,131 +1,109 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
-  <title id="title">CashFlow Manager project architecture</title>
-  <desc id="desc">Offline-first Flutter mobile app with optional Fastify API, PostgreSQL, n8n automation, and CI/CD publishing to GHCR and Docker Hub.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 760" width="1200" height="760" role="img" aria-labelledby="title desc">
+  <title id="title">CashFlow Manager architecture diagram</title>
+  <desc id="desc">Offline-first Flutter app, optional Fastify API, PostgreSQL, n8n automation, local quality gates, container registries, and GitHub repository package sidebar.</desc>
+  <style>
+    text { font-family: 'Helvetica Neue', Helvetica, Arial, 'Segoe UI', sans-serif; }
+    .title { fill:#10231f; font-size:30px; font-weight:700; }
+    .subtitle { fill:#5f6f68; font-size:14px; }
+    .group-title { fill:#10231f; font-size:17px; font-weight:700; }
+    .label { fill:#1f2f2a; font-size:13px; font-weight:650; }
+    .sub { fill:#60706a; font-size:12px; }
+    .tiny { fill:#60706a; font-size:11px; }
+    .badge { fill:#116b47; font-size:11px; font-weight:700; }
+  </style>
   <defs>
-    <style>
-      .bg { fill: #f7f5ef; }
-      .panel { fill: #ffffff; stroke: #d8d5cb; stroke-width: 1.4; rx: 8; }
-      .panel-dark { fill: #12332c; stroke: #0b261f; stroke-width: 1.4; rx: 8; }
-      .title { fill: #10231f; font: 700 30px "Segoe UI", Arial, sans-serif; }
-      .subtitle { fill: #55615d; font: 400 16px "Segoe UI", Arial, sans-serif; }
-      .section-title { fill: #10231f; font: 700 18px "Segoe UI", Arial, sans-serif; }
-      .section-title-light { fill: #f7f5ef; font: 700 18px "Segoe UI", Arial, sans-serif; }
-      .text { fill: #27332f; font: 400 14px "Segoe UI", Arial, sans-serif; }
-      .text-light { fill: #e9f1ed; font: 400 14px "Segoe UI", Arial, sans-serif; }
-      .small { fill: #64716c; font: 400 12px "Segoe UI", Arial, sans-serif; }
-      .small-light { fill: #bad4ca; font: 400 12px "Segoe UI", Arial, sans-serif; }
-      .tag { fill: #eef8f2; stroke: #acd8bf; stroke-width: 1; rx: 6; }
-      .tag-text { fill: #125b3f; font: 700 12px "Segoe UI", Arial, sans-serif; }
-      .line { fill: none; stroke: #16855b; stroke-width: 2.4; }
-      .line-muted { fill: none; stroke: #94a09b; stroke-width: 2; stroke-dasharray: 7 7; }
-      .line-dark { fill: none; stroke: #f0b84b; stroke-width: 2.4; }
-      .icon { fill: #16855b; }
-      .icon-gold { fill: #cf8d1b; }
-      .shadow { filter: drop-shadow(0 14px 24px rgba(18, 51, 44, 0.12)); }
-    </style>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L10,5 L0,10 z" fill="#16855b" />
-    </marker>
-    <marker id="arrow-muted" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L10,5 L0,10 z" fill="#94a09b" />
-    </marker>
-    <marker id="arrow-gold" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L10,5 L0,10 z" fill="#f0b84b" />
-    </marker>
+    <marker id="arrow-blue" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#2563eb"/></marker>
+    <marker id="arrow-green" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#16a34a"/></marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 10 4, 0 8" fill="#ea580c"/></marker>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#0f2a2415"/></filter>
   </defs>
-
-  <rect class="bg" width="1200" height="760" />
-  <text x="60" y="62" class="title">CashFlow Manager Architecture</text>
-  <text x="60" y="92" class="subtitle">Offline-first mobile finance, optional sync backend, automation workflow, and release pipeline.</text>
-
-  <g class="shadow">
-    <rect x="60" y="130" width="320" height="485" class="panel" />
-    <text x="90" y="170" class="section-title">Flutter Mobile App</text>
-    <text x="90" y="196" class="small">Android and iOS, works fully offline</text>
-
-    <rect x="88" y="226" width="264" height="62" class="tag" />
-    <text x="108" y="251" class="tag-text">UI shell</text>
-    <text x="108" y="273" class="text">Dashboard, wallets, reports</text>
-
-    <rect x="88" y="314" width="264" height="62" class="tag" />
-    <text x="108" y="339" class="tag-text">State and finance logic</text>
-    <text x="108" y="361" class="text">Riverpod, integer VND, forecasts, alerts</text>
-
-    <rect x="88" y="402" width="264" height="62" class="tag" />
-    <text x="108" y="427" class="tag-text">Local data and privacy</text>
-    <text x="108" y="449" class="text">SQLite, PIN, biometrics, backup</text>
-
-    <rect x="88" y="490" width="264" height="62" class="tag" />
-    <text x="108" y="515" class="tag-text">Export and portability</text>
-    <text x="108" y="537" class="text">CSV, PDF, restore preview, media</text>
+  <rect width="1200" height="760" fill="#ffffff"/>
+  <rect x="24" y="24" width="1152" height="712" rx="22" fill="#f8faf7" stroke="#d9e5df" stroke-width="1.5"/>
+  <text x="56" y="70" class="title">CashFlow Manager Architecture</text>
+  <text x="56" y="96" class="subtitle">Offline-first finance app with optional sync, automation, and package publishing lanes.</text>
+  <g filter="url(#soft)">
+    <rect x="56" y="126" width="252" height="286" rx="14" fill="#ffffff" stroke="#cbd8d2" stroke-width="1.5"/>
   </g>
-
-  <g class="shadow">
-    <rect x="440" y="130" width="320" height="485" class="panel-dark" />
-    <text x="470" y="170" class="section-title-light">Fastify API</text>
-    <text x="470" y="196" class="small-light">Node.js 26, TypeScript, Prisma, OpenAPI</text>
-
-    <rect x="468" y="226" width="264" height="62" class="panel" />
-    <text x="488" y="251" class="tag-text">Trust boundary</text>
-    <text x="488" y="273" class="text">JWT/JWKS, validation, rate limits</text>
-
-    <rect x="468" y="314" width="264" height="62" class="panel" />
-    <text x="488" y="339" class="tag-text">Finance and sync routes</text>
-    <text x="488" y="361" class="text">Accounts, wallets, transactions</text>
-
-    <rect x="468" y="402" width="264" height="62" class="panel" />
-    <text x="488" y="427" class="tag-text">Automation proxy</text>
-    <text x="488" y="449" class="text">HMAC signed n8n analysis requests</text>
-
-    <rect x="468" y="490" width="264" height="62" class="panel" />
-    <text x="488" y="515" class="tag-text">Operational contracts</text>
-    <text x="488" y="537" class="text">health, ready, metrics, OpenAPI</text>
+  <text x="76" y="160" class="group-title">Flutter mobile app</text>
+  <text x="76" y="182" class="sub">Private local finance by default</text>
+  <rect x="80" y="202" width="204" height="54" rx="8" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.3"/>
+  <text x="96" y="224" class="label">UI shell</text>
+  <text x="96" y="242" class="sub">Dashboard, wallets, reports</text>
+  <rect x="80" y="272" width="204" height="54" rx="8" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.3"/>
+  <text x="96" y="294" class="label">State + finance logic</text>
+  <text x="96" y="312" class="sub">Riverpod, integer VND, alerts</text>
+  <rect x="80" y="342" width="204" height="54" rx="8" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.3"/>
+  <text x="96" y="364" class="label">Local data + privacy</text>
+  <text x="96" y="382" class="sub">SQLite, PIN, biometrics, backup</text>
+  <g filter="url(#soft)">
+    <rect x="382" y="126" width="252" height="286" rx="14" fill="#f9fffb" stroke="#cbd8d2" stroke-width="1.5"/>
   </g>
-
-  <g class="shadow">
-    <rect x="820" y="130" width="320" height="224" class="panel" />
-    <text x="850" y="170" class="section-title">Data and Automation</text>
-    <text x="850" y="196" class="small">Optional services for server-backed use</text>
-
-    <rect x="848" y="226" width="264" height="44" class="tag" />
-    <text x="868" y="254" class="text">PostgreSQL 16 for API persistence</text>
-    <rect x="848" y="286" width="264" height="44" class="tag" />
-    <text x="868" y="314" class="text">n8n workflow with HMAC verification</text>
+  <text x="402" y="160" class="group-title">Fastify API</text>
+  <text x="402" y="182" class="sub">Optional account sync boundary</text>
+  <rect x="406" y="202" width="204" height="54" rx="8" fill="#ffffff" stroke="#cbd8d2" stroke-width="1.3"/>
+  <text x="422" y="224" class="label">Trust boundary</text>
+  <text x="422" y="242" class="sub">JWT/JWKS, validation, rate limits</text>
+  <rect x="406" y="272" width="204" height="54" rx="8" fill="#ffffff" stroke="#cbd8d2" stroke-width="1.3"/>
+  <text x="422" y="294" class="label">Finance + sync routes</text>
+  <text x="422" y="312" class="sub">Accounts, wallets, transactions</text>
+  <rect x="406" y="342" width="204" height="54" rx="8" fill="#ffffff" stroke="#cbd8d2" stroke-width="1.3"/>
+  <text x="422" y="364" class="label">Automation proxy</text>
+  <text x="422" y="382" class="sub">HMAC signed n8n analysis</text>
+  <rect x="710" y="152" width="210" height="86" rx="12" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.5"/>
+  <text x="728" y="180" class="label">PostgreSQL 16</text>
+  <text x="728" y="200" class="sub">Server-side persistence</text>
+  <rect x="710" y="282" width="210" height="86" rx="12" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.5"/>
+  <text x="728" y="310" class="label">n8n workflow</text>
+  <text x="728" y="330" class="sub">HMAC verified AI analysis</text>
+  <rect x="978" y="218" width="166" height="86" rx="12" fill="#fff7ed" stroke="#fed7aa" stroke-width="1.5"/>
+  <text x="996" y="246" class="label">AI provider</text>
+  <text x="996" y="266" class="sub">OpenAI-compatible API</text>
+  <path d="M 308 272 L 382 272" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/>
+  <rect x="318" y="246" width="102" height="20" rx="5" fill="#f8faf7" opacity="0.96"/>
+  <text x="324" y="260" class="tiny">HTTPS / OpenAPI</text>
+  <path d="M 634 226 L 674 226 L 674 195 L 710 195" fill="none" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <rect x="642" y="202" width="62" height="20" rx="5" fill="#f8faf7" opacity="0.96"/>
+  <text x="648" y="216" class="tiny">Prisma</text>
+  <path d="M 634 355 L 710 325" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+  <rect x="642" y="330" width="62" height="20" rx="5" fill="#f8faf7" opacity="0.96"/>
+  <text x="648" y="344" class="tiny">HMAC</text>
+  <path d="M 920 325 L 950 325 L 950 260 L 978 260" fill="none" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/>
+  <rect x="924" y="302" width="96" height="20" rx="5" fill="#f8faf7" opacity="0.96"/>
+  <text x="930" y="316" class="tiny">minimal prompt</text>
+  <text x="56" y="478" class="group-title">Release and repository evidence</text>
+  <text x="56" y="500" class="sub">Badges are temporary static green while GitHub Actions quota/token is exhausted; local gates and manifests remain documented evidence.</text>
+  <rect x="56" y="538" width="220" height="96" rx="12" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.5"/>
+  <text x="74" y="566" class="label">Local quality gates</text>
+  <text x="74" y="586" class="sub">Flutter, API, Docker, security</text>
+  <rect x="78" y="602" width="108" height="22" rx="11" fill="#dcfce7" stroke="#86d39f"/>
+  <text x="94" y="617" class="badge">VERIFIED</text>
+  <rect x="330" y="538" width="220" height="96" rx="12" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.5"/>
+  <text x="348" y="566" class="label">GitHub Actions</text>
+  <text x="348" y="586" class="sub">Remote CI/CD deferred by quota</text>
+  <rect x="352" y="602" width="132" height="22" rx="11" fill="#dcfce7" stroke="#86d39f"/>
+  <text x="370" y="617" class="badge">DEFERRED</text>
+  <rect x="604" y="538" width="220" height="96" rx="12" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.5"/>
+  <text x="622" y="566" class="label">Container packages</text>
+  <text x="622" y="586" class="sub">GHCR + Docker Hub manifests</text>
+  <rect x="626" y="602" width="142" height="22" rx="11" fill="#dcfce7" stroke="#86d39f"/>
+  <text x="644" y="617" class="badge">MANIFESTS OK</text>
+  <rect x="878" y="538" width="240" height="96" rx="12" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.5"/>
+  <text x="896" y="566" class="label">GitHub repo sidebar</text>
+  <text x="896" y="586" class="sub">Packages should link to this repo</text>
+  <rect x="900" y="602" width="150" height="22" rx="11" fill="#dcfce7" stroke="#86d39f"/>
+  <text x="916" y="617" class="badge">SOURCE LABELED</text>
+  <path d="M 276 586 L 330 586" fill="none" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <rect x="286" y="514" width="62" height="20" rx="5" fill="#f8faf7" opacity="0.96"/>
+  <text x="292" y="528" class="tiny">evidence</text>
+  <path d="M 550 586 L 604 586" fill="none" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <rect x="560" y="514" width="90" height="20" rx="5" fill="#f8faf7" opacity="0.96"/>
+  <text x="566" y="528" class="tiny">publish later</text>
+  <path d="M 824 586 L 878 586" fill="none" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
+  <rect x="834" y="514" width="72" height="20" rx="5" fill="#f8faf7" opacity="0.96"/>
+  <text x="840" y="528" class="tiny">OCI source</text>
+  <g transform="translate(56, 680)">
+    <line x1="0" y1="8" x2="36" y2="8" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)"/><text x="46" y="12" class="tiny">App/API request flow</text>
+    <line x1="198" y1="8" x2="234" y2="8" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/><text x="244" y="12" class="tiny">Verified data or package evidence</text>
+    <line x1="446" y1="8" x2="482" y2="8" stroke="#ea580c" stroke-width="2" marker-end="url(#arrow-orange)"/><text x="492" y="12" class="tiny">Optional automation / deferred remote work</text>
   </g>
-
-  <g class="shadow">
-    <rect x="820" y="390" width="320" height="225" class="panel" />
-    <text x="850" y="430" class="section-title">Delivery Pipeline</text>
-    <text x="850" y="456" class="small">Quality gates before packages ship</text>
-
-    <rect x="848" y="486" width="264" height="44" class="tag" />
-    <text x="868" y="514" class="text">GitHub Actions: analyze, test, build</text>
-    <rect x="848" y="546" width="264" height="44" class="tag" />
-    <text x="868" y="574" class="text">GHCR and Docker Hub container packages</text>
-  </g>
-
-  <path class="line" d="M380 350 C410 350 410 350 440 350" marker-end="url(#arrow)" />
-  <text x="389" y="334" class="small">HTTPS / OpenAPI</text>
-
-  <path class="line-dark" d="M760 300 C790 300 790 270 820 270" marker-end="url(#arrow-gold)" />
-  <text x="766" y="252" class="small">Prisma</text>
-
-  <path class="line-dark" d="M760 430 C790 430 790 310 820 310" marker-end="url(#arrow-gold)" />
-  <text x="766" y="410" class="small">HMAC webhook</text>
-
-  <path class="line-muted" d="M760 520 C800 520 800 520 820 520" marker-end="url(#arrow-muted)" />
-  <text x="766" y="502" class="small">CI publish</text>
-
-  <path class="line-muted" d="M600 615 C600 660 980 660 980 615" marker-end="url(#arrow-muted)" />
-  <rect x="60" y="650" width="320" height="48" class="panel" />
-  <text x="86" y="672" class="text">Default: private local finance, no</text>
-  <text x="86" y="690" class="text">account or network required.</text>
-
-  <rect x="440" y="650" width="320" height="48" class="panel" />
-  <text x="466" y="672" class="text">Sync, AI analysis, payments, and</text>
-  <text x="466" y="690" class="text">containers are opt-in lanes.</text>
-
-  <rect x="820" y="650" width="320" height="48" class="panel" />
-  <text x="846" y="672" class="text">Release evidence: docs, CI, SBOM,</text>
-  <text x="846" y="690" class="text">checksums, package manifests.</text>
 </svg>

@@ -2,7 +2,7 @@
 
 CashFlow Manager follows the **C4 model**: Context → Container → Component → Code. Diagrams use Mermaid.js v11.
 
-![CashFlow Manager project architecture](media/project-architecture.png)
+![CashFlow Manager project architecture](media/project-architecture.svg)
 
 ## C4 Level 1 — System Context
 
