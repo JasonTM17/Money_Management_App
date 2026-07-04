@@ -64,6 +64,15 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    testWidgets('dashboard renders without overflow at 360x640', (tester) async {
+      await usePhoneSurface(tester, size: const Size(360, 640));
+      await pumpCashFlowApp(tester);
+
+      expect(find.byKey(const ValueKey('add-transaction-action-button')),
+          findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('shows budget tab with progress copy', (tester) async {
       await pumpCashFlowApp(tester);
 

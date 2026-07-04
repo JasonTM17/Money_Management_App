@@ -11,6 +11,15 @@ void main() {
   });
 
   group('transactions', () {
+    testWidgets('renders without overflow at 360x640', (tester) async {
+      await usePhoneSurface(tester, size: const Size(360, 640));
+      await pumpCashFlowApp(tester);
+
+      await tester.tap(find.text('Giao dịch'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('filters transactions by search query', (tester) async {
       await pumpCashFlowApp(tester);
 

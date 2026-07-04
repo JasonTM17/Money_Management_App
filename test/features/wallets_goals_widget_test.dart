@@ -10,6 +10,15 @@ void main() {
   });
 
   group('wallets and saving goals', () {
+    testWidgets('renders without overflow at 360x640', (tester) async {
+      await usePhoneSurface(tester, size: const Size(360, 640));
+      await pumpCashFlowApp(tester);
+
+      await tester.tap(find.text('Ví'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    });
+
     testWidgets('creates and deletes a saving goal', (tester) async {
       await pumpCashFlowApp(tester);
 
