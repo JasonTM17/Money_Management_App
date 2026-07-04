@@ -79,6 +79,13 @@ Direct package links are present in `README.md` so package access remains visibl
 - GHCR API: `https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-api`
 - GHCR frontend: `https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-frontend`
 
+Additional audit on 2026-07-04:
+
+- `gh auth status` shows the active token has `repo`, `read:org`, and `gist` scopes, but not `read:packages`.
+- `gh api user/packages/container/cashflow-manager-api` and `gh api user/packages/container/cashflow-manager-frontend` return `403` with the required `read:packages` scope.
+- Direct GHCR package pages for both containers return HTTP 200, so the public package URLs are reachable even though package API/sidebar mutation is not available from this token.
+- GitHub GraphQL repository package introspection does not expose container packages through the available `PackageType` enum in this session.
+
 ## Documentation/Media State
 
 | Asset | Status |
