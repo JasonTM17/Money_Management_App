@@ -1,8 +1,14 @@
 # iOS and Android QA Report
 
-Date: 2026-06-01
+Date: 2026-07-04
 
 Scope: release QA hardening for CashFlow Manager mobile UI/UX, privacy, and core finance business flows. Public screenshots and automated media use seeded fake data only. No real financial data, signing assets, local paths, secrets, or tokens are included in this report.
+
+This report was refreshed after the July 2026 professional mobile UI pass:
+shared home widgets were modularized, dashboard hero hierarchy was tightened,
+transaction filtering gained a compact result-count/reset treatment, wallets
+gained a portfolio summary, and repository ignore rules were expanded for
+signing/build artifacts.
 
 ## Environment
 
@@ -18,7 +24,7 @@ Scope: release QA hardening for CashFlow Manager mobile UI/UX, privacy, and core
 | Gate | Result | Evidence |
 |---|---|---|
 | Flutter analyze | Pass | `flutter analyze --no-pub` |
-| Unit/widget tests | Pass | `flutter test --no-pub -r expanded` |
+| Unit/widget tests | Pass | `flutter test --no-pub -r expanded` (83 tests) |
 | Demo media capture | Pass | `flutter test --no-pub scripts/capture_demo_media_test.dart -r expanded` |
 | Android emulator smoke | Pass | `flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded --timeout 180s` |
 | Android debug APK | Pass | `flutter build apk --debug --no-pub` |

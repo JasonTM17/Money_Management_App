@@ -2,6 +2,28 @@
 
 Visual language, design tokens, and UI patterns for CashFlow Manager. All screens must inherit this vocabulary.
 
+## 2026-07 Professional Mobile Refresh
+
+CashFlow Manager now follows a calmer premium-finance mobile direction:
+
+- **First viewport:** Dashboard leads with a large balance hero, net cashflow
+  pill, and compact income/expense mini metrics before secondary cards.
+- **Navigation:** Five Material 3 bottom destinations remain the primary app
+  structure. App-bar add/settings actions stay global and visible.
+- **Surfaces:** Use restrained dark slate layers with thin semantic accent
+  rails. Avoid broad saturated backgrounds except deliberate hero/CTA emphasis.
+- **Numbers:** Money values use tabular figures where possible to reduce layout
+  jitter in balances, ledgers, and metric cards.
+- **Transactions:** Keep search + type/wallet/category/month filters visible,
+  with a compact result-count pill. Reset filters inline through the search
+  suffix action.
+- **Wallets:** Start with a portfolio summary showing total balance and wallet
+  count before individual wallet rows.
+- **Responsive layout:** Main scroll content is constrained on larger screens
+  while staying full-width and touch-friendly on phones.
+- **Docs media:** Screenshots are regenerated from deterministic fake data after
+  UI changes and manually checked for blank, clipped, or overlapped states.
+
 ## Design Tokens
 
 ### Color System
@@ -156,3 +178,7 @@ These are the shared CSS/animation tokens. Every page MUST use them — never in
 - Use `data-testid="content-ready"` with `page.waitForSelector` in Playwright
 - All amounts in VND (đồng) format
 - Screenshots are the #1 first-impression signal — empty UI looks broken
+- Regenerate mobile media with
+  `flutter test --no-pub scripts/capture_demo_media_test.dart -r expanded`
+  after any UI polish that changes first viewport hierarchy, tabs, charts,
+  settings, or navigation.

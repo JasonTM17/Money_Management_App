@@ -24,6 +24,8 @@ Sensitive flows such as data reset and backup restore require re-authentication 
 ## Dashboard
 
 - Tổng số dư hiện tại
+- Net cashflow pill inside the balance hero
+- Compact income/expense mini metrics inside the balance hero
 - Thu tháng này
 - Chi tháng này
 - Dòng tiền ròng
@@ -43,11 +45,16 @@ Bottom sheet flow:
 
 ## Transactions
 
-The transactions tab supports search, wallet/category/month filters, edit for income/expense rows, delete confirmation, and read-only display for wallet transfers.
+The transactions tab supports search, wallet/category/month filters, compact
+result count, quick filter reset, edit for income/expense rows, delete
+confirmation, and read-only display for wallet transfers.
 
 ## Wallets and Goals
 
-Wallets show current balances by wallet type. Users can transfer money between different wallets with same-wallet validation. Saving goals show progress, remaining amount, deadline, and suggested monthly saving.
+Wallets start with a portfolio summary showing total balance and wallet count,
+then show current balances by wallet type. Users can transfer money between
+different wallets with same-wallet validation. Saving goals show progress,
+remaining amount, deadline, and suggested monthly saving.
 
 ## Budgets
 
@@ -66,6 +73,10 @@ The account/sync panel is optional and isolated from local finance tracking. Sig
 ## Demo Media
 
 README screenshots and GIF are generated from deterministic fake financial data through `scripts/capture_demo_media_test.dart`. Do not capture real user finance data, secrets, terminal output, local paths, or visible n8n credentials for repository media.
+
+Latest refreshed media set was captured after the July 2026 professional mobile
+UI pass and includes dashboard, transactions, wallets, budgets, reports, and
+privacy/settings screens.
 
 ## Stitch Prompt
 
