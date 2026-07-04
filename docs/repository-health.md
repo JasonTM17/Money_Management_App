@@ -10,14 +10,14 @@ Scope: unmerged remote branches, open Dependabot pull requests, dependency refre
 |---|---|---|
 | Default branch | `master` | Local branch tracks `origin/master` |
 | Visibility | Private | `gh repo view ... --json isPrivate` returned `true` |
-| GitHub About | Needs final sync after this pass | Description and topics are listed below |
-| Open unmerged Dependabot branches | 12 after prune | `git fetch --all --prune --tags` then `git branch -r --no-merged origin/master` |
-| Open Dependabot PRs | 12 | `gh pr list --state open --json number,title,headRefName,mergeStateStatus,mergeable` |
+| GitHub About | Synced | Description updated, homepage kept empty, `security` topic added |
+| Open unmerged Dependabot branches | 0 after cleanup | `git fetch --all --prune --tags` then `git branch -r --no-merged origin/master` returned no stale refs |
+| Open Dependabot PRs | 0 after cleanup | `gh pr list --state open --json number,title,headRefName --limit 50` returned `[]` |
 | Package API access | Limited | GitHub package API returned 403 without `read:packages` |
 | Docker Hub packages | Verified by manifest in this pass | `nguyenson1710/cashflow-manager-api:latest` and `nguyenson1710/cashflow-manager-frontend:latest` resolved |
 | GHCR packages | Verified by manifest in this pass | `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` and `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0` resolved; GitHub package API needs additional token scope |
 
-The user mentioned 13 unmerged branches. After pruning stale refs on 2026-07-04, the authoritative remote list is 12 unmerged Dependabot branches.
+The user mentioned 13 unmerged branches. After pruning stale refs on 2026-07-04, the authoritative pre-cleanup remote list was 12 unmerged Dependabot branches. Those 12 PRs were superseded by master commit `099dbbc`, closed with an audit comment, and their remote branches were deleted.
 
 ## Dependabot PR Audit
 
@@ -36,7 +36,7 @@ The user mentioned 13 unmerged branches. After pruning stale refs on 2026-07-04,
 | 37 | `dependabot/npm_and_yarn/api/types/node-26.0.1` | API dev dependency | `@types/node@26.0.1` | Applied to `api/package.json`; CI Node version aligned to 26 |
 | 38 | `dependabot/npm_and_yarn/api/fastify-5.9.0` | API dependency | `fastify@5.9.0` | Applied to `api/package.json` and lockfile |
 
-Planned cleanup after validation and push: close these Dependabot PRs as superseded by the master dependency refresh, delete their remote branches where GitHub permits it, fetch/prune again, and verify `git branch -r --no-merged origin/master` no longer lists stale Dependabot refs.
+Cleanup result: all 12 PRs in the table were closed as superseded, all 12 remote branches were deleted, and `git branch -r --no-merged origin/master` returned no output after fetch/prune.
 
 ## GitHub About Target
 
@@ -81,16 +81,21 @@ The repository package sidebar should show the API and frontend container packag
 | Security posture | Added as `docs/security-posture.md` |
 | Branch/package audit | This document |
 
+## Completed Cleanup
+
+- Validated API/Flutter/Docker/docs gates after dependency refresh.
+- Pushed focused commits to `master`.
+- Closed superseded Dependabot PRs `#22`, `#26`, `#27`, `#28`, `#30`, `#31`, `#32`, `#33`, `#35`, `#36`, `#37`, and `#38`.
+- Deleted the corresponding remote Dependabot branches.
+- Fetched/pruned remotes and confirmed stale unmerged Dependabot branch count is zero.
+- Synced GitHub About description/topics to the target above.
+- Re-ran package manifest checks for Docker Hub and GHCR.
+
 ## Follow-up Checklist
 
-- Validate API/Flutter/Docker/docs gates after dependency refresh.
-- Push focused commits to `master`.
-- Close superseded Dependabot PRs with a comment pointing to the pushed master commit.
-- Fetch/prune remotes and confirm the stale Dependabot branch count is zero or document any branch GitHub refuses to delete.
-- Sync GitHub About description/topics to the target above.
-- Re-run package manifest checks for Docker Hub and GHCR where token scope permits.
+- Keep Dependabot open PR count at zero by either merging or superseding future dependency PRs promptly.
+- Re-run GitHub package API verification with a token that has `read:packages` if UI-level package/sidebar auditing is required.
 
 ## Unresolved Questions
 
-- Should stale Dependabot PRs be closed immediately after this pass, or left open for GitHub audit history after master includes the same or newer versions?
 - Should repository visibility remain private until Android real-device and macOS/iOS release blockers are cleared?
