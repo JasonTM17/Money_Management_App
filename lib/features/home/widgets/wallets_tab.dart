@@ -24,6 +24,10 @@ class WalletsTab extends StatelessWidget {
       transactions: state.transactions,
     );
     final l10n = context.l10n;
+    final totalBalance = balances.values.fold<int>(
+      0,
+      (sum, item) => sum + item,
+    );
     return AppScrollView(
       children: [
         AppSectionHeader(
@@ -36,6 +40,11 @@ class WalletsTab extends StatelessWidget {
                 : () => _showTransferSheet(context),
           ),
         ),
+        _WalletPortfolioSummary(
+          walletCount: state.wallets.length,
+          totalBalance: totalBalance,
+        ),
+        const SizedBox(height: 10),
         ...state.wallets.map(
           (wallet) =>
               _WalletCard(wallet: wallet, balance: balances[wallet.id] ?? 0),
@@ -167,6 +176,75 @@ class WalletsTab extends StatelessWidget {
     await ProviderScope.containerOf(
       context,
     ).read(financeControllerProvider.notifier).deleteGoal(goal.id);
+  }
+}
+
+class _WalletPortfolioSummary extends StatelessWidget {
+  const _WalletPortfolioSummary({
+    required this.walletCount,
+    required this.totalBalance,
+  });
+
+  final int walletCount;
+  final int totalBalance;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return SoftPanel(
+      tint: colorScheme.primary,
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.13),
+              borderRadius: BorderRadius.circular(AppTheme.controlRadius),
+            ),
+            child: Icon(
+              Icons.account_balance_wallet,
+              color: colorScheme.primary,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  context.l10n.t('totalBalance'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  Money(totalBalance).formatVnd(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          StatusPill(
+            label: '$walletCount ${context.l10n.t('wallets')}',
+            color: colorScheme.primary,
+            icon: Icons.layers_outlined,
+          ),
+        ],
+      ),
+    );
   }
 }
 

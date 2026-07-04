@@ -9,16 +9,27 @@ class AppScrollView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
+    final width = MediaQuery.sizeOf(context).width;
+    final horizontalPadding = width >= 700 ? 28.0 : 20.0;
+    final bottomPadding =
         MediaQuery.of(context).padding.bottom +
-            AppTheme.bottomNavigationHeight +
-            24,
+        AppTheme.bottomNavigationHeight +
+        24;
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(
+        horizontalPadding,
+        12,
+        horizontalPadding,
+        bottomPadding,
       ),
-      children: children,
+      itemCount: children.length,
+      itemBuilder: (context, index) => Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 720),
+          child: children[index],
+        ),
+      ),
     );
   }
 }

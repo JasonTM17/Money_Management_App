@@ -84,7 +84,14 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
         : null;
     return AppScrollView(
       children: [
-        AppSectionHeader(title: l10n.t('transactions')),
+        AppSectionHeader(
+          title: l10n.t('transactions'),
+          action: StatusPill(
+            label: '${transactions.length} ${l10n.t('transactions')}',
+            color: Theme.of(context).colorScheme.primary,
+            icon: Icons.filter_list,
+          ),
+        ),
         SoftPanel(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -96,6 +103,13 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
                 decoration: InputDecoration(
                   prefixIcon: const Icon(Icons.search),
                   hintText: l10n.t('searchTransactions'),
+                  suffixIcon: _hasActiveFilters
+                      ? IconButton(
+                          tooltip: l10n.t('all'),
+                          icon: const Icon(Icons.close),
+                          onPressed: _clearFilters,
+                        )
+                      : null,
                 ),
                 onChanged: (_) => setState(() {}),
               ),
@@ -260,6 +274,23 @@ class _TransactionsTabState extends ConsumerState<TransactionsTab> {
           matchesMonth &&
           matchesQuery;
     }).toList();
+  }
+
+  bool get _hasActiveFilters =>
+      _search.text.trim().isNotEmpty ||
+      _filter != null ||
+      _walletFilterId != null ||
+      _categoryFilterId != null ||
+      _monthFilter != null;
+
+  void _clearFilters() {
+    _search.clear();
+    setState(() {
+      _filter = null;
+      _walletFilterId = null;
+      _categoryFilterId = null;
+      _monthFilter = null;
+    });
   }
 
   List<DateTime> _transactionMonths() {

@@ -96,6 +96,9 @@ class TransactionTile extends StatelessWidget {
                                 textAlign: TextAlign.end,
                                 style: TextStyle(
                                   color: color,
+                                  fontFeatures: const [
+                                    FontFeature.tabularFigures(),
+                                  ],
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),

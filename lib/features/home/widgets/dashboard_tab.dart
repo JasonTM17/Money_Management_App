@@ -1,6 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
 
 import '../../../app/app_localizations.dart';
 import '../../../app/app_theme.dart';
@@ -141,10 +142,13 @@ class HeroBalanceCard extends StatelessWidget {
             const SizedBox(height: 18),
             AnimatedBalance(
               value: Money(summary.totalBalance).formatVnd(),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w800,
-              ) ?? const TextStyle(),
+              style:
+                  Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    fontWeight: FontWeight.w800,
+                  ) ??
+                  const TextStyle(),
             ),
             const SizedBox(height: 14),
             LayoutBuilder(
@@ -161,8 +165,114 @@ class HeroBalanceCard extends StatelessWidget {
                 ),
               ),
             ),
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final stacked = constraints.maxWidth < 330;
+                final children = [
+                  _HeroMiniMetric(
+                    label: context.l10n.t('income'),
+                    value: Money(summary.monthIncome).formatVnd(),
+                    color: AppTheme.incomeBlue,
+                    icon: Icons.south_west,
+                  ),
+                  _HeroMiniMetric(
+                    label: context.l10n.t('expense'),
+                    value: Money(summary.monthExpense).formatVnd(),
+                    color: AppTheme.expenseRed,
+                    icon: Icons.north_east,
+                  ),
+                ];
+                if (stacked) {
+                  return Column(
+                    children: [
+                      children.first,
+                      const SizedBox(height: 8),
+                      children.last,
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    Expanded(child: children.first),
+                    const SizedBox(width: 10),
+                    Expanded(child: children.last),
+                  ],
+                );
+              },
+            ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _HeroMiniMetric extends StatelessWidget {
+  const _HeroMiniMetric({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.48),
+        borderRadius: BorderRadius.circular(AppTheme.controlRadius),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 17),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: color,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
