@@ -24,18 +24,18 @@ class SoftPanel extends StatelessWidget {
     final accent = tint ?? colorScheme.primary;
     final panelColor = isDark ? AppTheme.cardSlate : AppTheme.lightPanel;
     final baseBorder = isDark
-        ? Colors.white.withValues(alpha: 0.07)
-        : colorScheme.outlineVariant.withValues(alpha: 0.78);
+        ? Colors.white.withValues(alpha: 0.065)
+        : colorScheme.outlineVariant.withValues(alpha: 0.82);
     final borderColor = tint == null
         ? baseBorder
         : Color.alphaBlend(
-            accent.withValues(alpha: isDark ? 0.14 : 0.10),
+            accent.withValues(alpha: isDark ? 0.12 : 0.08),
             baseBorder,
           );
     final backgroundColor = tint == null
         ? panelColor
         : Color.alphaBlend(
-            accent.withValues(alpha: isDark ? 0.022 : 0.018),
+            accent.withValues(alpha: isDark ? 0.020 : 0.026),
             panelColor,
           );
     final decoration = BoxDecoration(
@@ -46,9 +46,9 @@ class SoftPanel extends StatelessWidget {
           ? null
           : [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.035),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
+                color: AppTheme.ink.withValues(alpha: 0.045),
+                blurRadius: 22,
+                offset: const Offset(0, 12),
               ),
             ],
     );
@@ -63,14 +63,18 @@ class SoftPanel extends StatelessWidget {
             if (tint != null)
               Positioned(
                 left: 0,
-                top: 14,
-                bottom: 14,
+                right: 0,
+                top: 0,
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: accent.withValues(alpha: isDark ? 0.68 : 0.58),
-                    borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+                    gradient: LinearGradient(
+                      colors: [
+                        accent.withValues(alpha: isDark ? 0.16 : 0.10),
+                        accent.withValues(alpha: 0),
+                      ],
+                    ),
                   ),
-                  child: const SizedBox(width: 3),
+                  child: const SizedBox(height: 44),
                 ),
               ),
             Material(

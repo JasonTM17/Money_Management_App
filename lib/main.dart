@@ -18,7 +18,7 @@ class CashFlowManagerApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref
         .watch(themeModeControllerProvider)
-        .maybeWhen(data: (mode) => mode, orElse: () => ThemeMode.dark);
+        .maybeWhen(data: (mode) => mode, orElse: () => ThemeMode.light);
     final locale = ref
         .watch(localeControllerProvider)
         .maybeWhen(data: (locale) => locale, orElse: () => const Locale('vi'));

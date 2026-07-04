@@ -20,25 +20,16 @@ class MetricCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return SoftPanel(
       tint: color,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(15),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(minHeight: 104),
+        constraints: const BoxConstraints(minHeight: 96),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.10),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(icon, color: color, size: 21),
-                ),
-                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     title,
@@ -50,8 +41,19 @@ class MetricCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                const SizedBox(width: 10),
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(11),
+                  ),
+                  child: Icon(icon, color: color, size: 19),
+                ),
               ],
             ),
+            const SizedBox(height: 18),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -63,6 +65,7 @@ class MetricCard extends StatelessWidget {
                     color: color,
                     fontFeatures: const [FontFeature.tabularFigures()],
                     fontWeight: FontWeight.w800,
+                    height: 1.18,
                   ),
                 ),
               ],
@@ -105,8 +108,8 @@ class InlineInfoCard extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.13),
-              shape: BoxShape.circle,
+              color: accent.withValues(alpha: 0.11),
+              borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(icon, color: accent, size: 22),
           ),

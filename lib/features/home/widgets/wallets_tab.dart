@@ -258,7 +258,7 @@ class _WalletCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = switch (wallet.type) {
       WalletType.cash => AppTheme.warningAmber,
-      WalletType.bank => AppTheme.incomeBlue,
+      WalletType.bank => AppTheme.incomeGreen,
       WalletType.eWallet => AppTheme.seed,
       WalletType.creditCard => AppTheme.expenseRed,
     };

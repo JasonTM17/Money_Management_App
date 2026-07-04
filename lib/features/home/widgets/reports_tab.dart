@@ -8,7 +8,7 @@ import '../../../core/finance_models.dart';
 import '../../../core/money.dart';
 import '../../../data/local_finance_store.dart';
 import 'cashflow_forecast_card.dart';
-import 'dashboard_tab.dart';
+import 'dashboard_summary_widgets.dart';
 import 'home_common_widgets.dart';
 import 'monthly_trend_card.dart';
 import 'report_insight_cards.dart';

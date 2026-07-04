@@ -35,7 +35,7 @@ class MonthlyTrendCard extends StatelessWidget {
       (current, item) => math.max(current, math.max(item.income, item.expense)),
     );
     return SoftPanel(
-      tint: AppTheme.incomeBlue,
+      tint: AppTheme.incomeGreen,
       padding: const EdgeInsets.all(18),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -123,7 +123,7 @@ class MonthlyTrendCard extends StatelessWidget {
                               toY: trends[index].income.toDouble(),
                               width: 10,
                               borderRadius: BorderRadius.circular(4),
-                              color: AppTheme.incomeBlue,
+                              color: AppTheme.incomeGreen,
                             ),
                             BarChartRodData(
                               toY: trends[index].expense.toDouble(),
@@ -143,7 +143,7 @@ class MonthlyTrendCard extends StatelessWidget {
               spacing: 12,
               runSpacing: 8,
               children: [
-                _LegendDot(color: AppTheme.incomeBlue, label: l10n.t('income')),
+                _LegendDot(color: AppTheme.incomeGreen, label: l10n.t('income')),
                 _LegendDot(
                   color: AppTheme.expenseRed,
                   label: l10n.t('expense'),

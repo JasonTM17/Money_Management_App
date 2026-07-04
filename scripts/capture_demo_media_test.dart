@@ -10,6 +10,7 @@ import 'package:cashflow_manager/main.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -136,6 +137,11 @@ Future<void> _pumpDemoApp(
   WidgetTester tester, {
   required FakeFinanceStore store,
 }) async {
+  // ignore: invalid_use_of_visible_for_testing_member
+  FlutterSecureStorage.setMockInitialValues({
+    'theme_mode': 'light',
+    'locale': 'vi',
+  });
   await tester.pumpWidget(
     RepaintBoundary(
       key: _captureKey,

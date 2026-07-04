@@ -18,7 +18,7 @@ class AppScrollView extends StatelessWidget {
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(
         horizontalPadding,
-        12,
+        8,
         horizontalPadding,
         bottomPadding,
       ),

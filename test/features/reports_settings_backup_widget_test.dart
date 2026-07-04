@@ -64,6 +64,10 @@ void main() {
 
       await _openReportsTab(tester);
 
+      await tester.scrollUntilVisible(
+        find.text('Xu hướng thu chi 4 tháng'),
+        300,
+      );
       expect(find.text('Xu hướng thu chi 4 tháng'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Chi tiêu theo danh mục'), 300);
       expect(find.text('Chi tiêu theo danh mục'), findsOneWidget);

@@ -64,7 +64,7 @@ class AppSectionHeader extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.only(top: 18, bottom: 10),
+      padding: const EdgeInsets.only(top: 14, bottom: 8),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final useStackedAction = action != null && constraints.maxWidth < 380;

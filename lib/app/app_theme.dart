@@ -23,7 +23,7 @@ class ThemeModeController extends AsyncNotifier<ThemeMode> {
       final value = await ref.read(secureStorageProvider).read(key: _key);
       return _themeModeFromName(value);
     } on Object {
-      return ThemeMode.dark;
+      return ThemeMode.light;
     }
   }
 
@@ -66,7 +66,7 @@ ThemeMode _themeModeFromName(String? value) => switch (value) {
   'light' => ThemeMode.light,
   'dark' => ThemeMode.dark,
   'system' => ThemeMode.system,
-  _ => ThemeMode.dark,
+  _ => ThemeMode.light,
 };
 
 Locale _localeFromCode(String? value) => switch (value) {
@@ -79,32 +79,35 @@ class AppTheme {
   static const fontFamily = 'Be Vietnam Pro';
   static const fontFallback = ['Noto Sans JP'];
 
-  static const seed = Color(0xFF16A34A);
-  static const stitchPrimary = Color(0xFF62DF7D);
-  static const deepSlate = Color(0xFF051424);
-  static const surfaceSlate = Color(0xFF0D1C2D);
-  static const cardSlate = Color(0xFF122131);
-  static const elevatedSlate = Color(0xFF1C2B3C);
-  static const lightSurface = Color(0xFFF8FAFC);
-  static const lightPanel = Color(0xFFFFFFFF);
-  static const incomeBlue = Color(0xFF3B82F6);
-  static const warningAmber = Color(0xFFF59E0B);
-  static const expenseRed = Color(0xFFEF4444);
-  static const forecastNext = Color(0xFF0D9488);
+  static const seed = Color(0xFF0F7A5C);
+  static const stitchPrimary = Color(0xFF7BE0B3);
+  static const deepSlate = Color(0xFF101613);
+  static const surfaceSlate = Color(0xFF151D19);
+  static const cardSlate = Color(0xFF1B2721);
+  static const elevatedSlate = Color(0xFF24352C);
+  static const lightSurface = Color(0xFFF4F0E7);
+  static const lightPanel = Color(0xFFFFFCF4);
+  static const lightPanelTint = Color(0xFFF8F2E6);
+  static const ink = Color(0xFF1D251F);
+  static const mutedInk = Color(0xFF667267);
+  static const incomeGreen = Color(0xFF0F8F68);
+  static const warningAmber = Color(0xFFB7791F);
+  static const expenseRed = Color(0xFFC2413A);
+  static const forecastNext = Color(0xFF126E6A);
 
   static const List<Color> chartPalette = [
-    incomeBlue,
+    incomeGreen,
     expenseRed,
     warningAmber,
     seed,
     forecastNext,
   ];
 
-  static const controlRadius = 8.0;
-  static const cardRadius = 16.0;
-  static const sheetRadius = 16.0;
+  static const controlRadius = 12.0;
+  static const cardRadius = 18.0;
+  static const sheetRadius = 22.0;
   static const pillRadius = 999.0;
-  static const bottomNavigationHeight = 68.0;
+  static const bottomNavigationHeight = 72.0;
 
   static const animationFast = Duration(milliseconds: 180);
   static const animationMedium = Duration(milliseconds: 250);
@@ -124,28 +127,26 @@ class AppTheme {
     );
     final scheme = baseScheme.copyWith(
       primary: isDark ? stitchPrimary : seed,
-      onPrimary: isDark ? const Color(0xFF003914) : Colors.white,
+      onPrimary: isDark ? const Color(0xFF092116) : Colors.white,
       primaryContainer: isDark
-          ? const Color(0xFF1CA64D)
-          : const Color(0xFFDDFBE4),
+          ? const Color(0xFF244F3B)
+          : const Color(0xFFDDEFE4),
       onPrimaryContainer: isDark
-          ? const Color(0xFFE8FFED)
-          : const Color(0xFF064E20),
-      secondary: incomeBlue,
+          ? const Color(0xFFDDFCE9)
+          : const Color(0xFF173E2C),
+      secondary: incomeGreen,
       onSecondary: Colors.white,
       tertiary: warningAmber,
-      onTertiary: const Color(0xFF2A1700),
+      onTertiary: const Color(0xFF2A1B00),
       error: expenseRed,
       surface: isDark ? deepSlate : lightSurface,
-      onSurface: isDark ? const Color(0xFFD4E4FA) : const Color(0xFF0F172A),
-      onSurfaceVariant: isDark
-          ? const Color(0xFFB8C6D8)
-          : const Color(0xFF475569),
-      outline: isDark ? const Color(0xFF879485) : const Color(0xFF94A3B8),
+      onSurface: isDark ? const Color(0xFFE8EFE8) : ink,
+      onSurfaceVariant: isDark ? const Color(0xFFBAC7BB) : mutedInk,
+      outline: isDark ? const Color(0xFF788778) : const Color(0xFFB7AD9D),
       outlineVariant: isDark
-          ? const Color(0xFF3E4A3D)
-          : const Color(0xFFE2E8F0),
-      surfaceContainerHighest: isDark ? elevatedSlate : lightPanel,
+          ? const Color(0xFF354338)
+          : const Color(0xFFE5DBC9),
+      surfaceContainerHighest: isDark ? elevatedSlate : lightPanelTint,
     );
     final baseTextTheme = ThemeData(brightness: brightness, useMaterial3: true)
         .textTheme
@@ -156,13 +157,16 @@ class AppTheme {
         );
     final textTheme = baseTextTheme.copyWith(
       headlineMedium: baseTextTheme.headlineMedium?.copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0,
       ),
       titleLarge: baseTextTheme.titleLarge?.copyWith(
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w800,
+        letterSpacing: 0,
       ),
       titleMedium: baseTextTheme.titleMedium?.copyWith(
         fontWeight: FontWeight.w600,
+        letterSpacing: 0,
       ),
       bodyLarge: baseTextTheme.bodyLarge?.copyWith(height: 1.45),
       bodyMedium: baseTextTheme.bodyMedium?.copyWith(height: 1.45),
@@ -189,39 +193,39 @@ class AppTheme {
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: scheme.surface,
+        backgroundColor: Colors.transparent,
         foregroundColor: scheme.onSurface,
-        titleSpacing: 20,
+        titleSpacing: 18,
         titleTextStyle: textTheme.titleLarge?.copyWith(
           color: scheme.onSurface,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w800,
         ),
       ),
       cardTheme: CardThemeData(
         clipBehavior: Clip.antiAlias,
         elevation: 0,
-        margin: const EdgeInsets.symmetric(vertical: 6),
+        margin: const EdgeInsets.symmetric(vertical: 5),
         color: panelColor,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(cardRadius),
           side: BorderSide(
             color: isDark
-                ? Colors.white.withValues(alpha: 0.06)
+                ? Colors.white.withValues(alpha: 0.055)
                 : scheme.outlineVariant,
           ),
         ),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: isDark
-            ? Colors.white.withValues(alpha: 0.07)
-            : seed.withValues(alpha: 0.08),
-        selectedColor: seed.withValues(alpha: 0.16),
+            ? Colors.white.withValues(alpha: 0.055)
+            : seed.withValues(alpha: 0.075),
+        selectedColor: seed.withValues(alpha: isDark ? 0.20 : 0.13),
         disabledColor: scheme.onSurface.withValues(alpha: 0.08),
         labelStyle: textTheme.labelMedium?.copyWith(color: scheme.onSurface),
         side: BorderSide(
           color: isDark
-              ? Colors.white.withValues(alpha: 0.08)
+              ? Colors.white.withValues(alpha: 0.075)
               : scheme.outlineVariant,
         ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
@@ -292,7 +296,7 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 14,
+          horizontal: 16,
           vertical: 14,
         ),
         border: OutlineInputBorder(
@@ -318,7 +322,7 @@ class AppTheme {
         filled: true,
         fillColor: isDark
             ? surfaceSlate.withValues(alpha: 0.78)
-            : Colors.white.withValues(alpha: 0.96),
+            : lightPanel.withValues(alpha: 0.98),
       ),
       listTileTheme: ListTileThemeData(
         minLeadingWidth: 34,
@@ -338,9 +342,9 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         height: bottomNavigationHeight,
-        backgroundColor: isDark ? surfaceSlate : Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.18 : 0.10),
+        indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.13),
         indicatorShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(999),
         ),
@@ -348,9 +352,9 @@ class AppTheme {
           final selected = states.contains(WidgetState.selected);
           return textTheme.labelSmall?.copyWith(
             color: selected ? scheme.primary : scheme.onSurfaceVariant,
-            fontSize: 10.5,
+            fontSize: 10.8,
             height: 1.05,
-            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
           );
         }),
       ),

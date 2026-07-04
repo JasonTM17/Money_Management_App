@@ -27,7 +27,7 @@ class TransactionTile extends StatelessWidget {
     final isIncome = transaction.type == TransactionType.income;
     final isTransfer = transaction.type == TransactionType.transfer;
     final color = isIncome
-        ? AppTheme.incomeBlue
+        ? AppTheme.incomeGreen
         : isTransfer
         ? AppTheme.seed
         : AppTheme.expenseRed;
@@ -40,20 +40,20 @@ class TransactionTile extends StatelessWidget {
         ? categoryLabel ?? transaction.categoryId
         : transaction.note;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.only(bottom: 8),
       child: SoftPanel(
         tint: color,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
         onTap: onTap,
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 34,
+              height: 34,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(11),
               ),
               child: Icon(
                 isIncome
@@ -62,15 +62,16 @@ class TransactionTile extends StatelessWidget {
                     ? Icons.swap_horiz
                     : Icons.arrow_upward,
                 color: color,
+                size: 18,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 10),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Expanded(
                         child: Text(
@@ -78,12 +79,15 @@ class TransactionTile extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: Theme.of(context).textTheme.bodyLarge
-                              ?.copyWith(fontWeight: FontWeight.w700),
+                              ?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                height: 1.18,
+                              ),
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      const SizedBox(width: 8),
                       ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 122),
+                        constraints: const BoxConstraints(maxWidth: 108),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -94,27 +98,22 @@ class TransactionTile extends StatelessWidget {
                                 '$prefix${Money(transaction.amount).formatVnd()}',
                                 maxLines: 1,
                                 textAlign: TextAlign.end,
-                                style: TextStyle(
-                                  color: color,
-                                  fontFeatures: const [
-                                    FontFeature.tabularFigures(),
-                                  ],
-                                  fontWeight: FontWeight.w800,
-                                ),
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(
+                                      color: color,
+                                      fontFeatures: const [
+                                        FontFeature.tabularFigures(),
+                                      ],
+                                      fontWeight: FontWeight.w800,
+                                    ),
                               ),
                             ),
-                            if (onDelete != null)
-                              IconButton(
-                                tooltip: context.l10n.t('deleteTransaction'),
-                                icon: const Icon(Icons.delete_outline),
-                                onPressed: onDelete,
-                              ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 7),
                   Wrap(
                     spacing: 6,
                     runSpacing: 6,
@@ -134,6 +133,24 @@ class TransactionTile extends StatelessWidget {
                 ],
               ),
             ),
+            if (onDelete != null) ...[
+              const SizedBox(width: 4),
+              SizedBox.square(
+                dimension: 32,
+                child: IconButton(
+                  tooltip: context.l10n.t('deleteTransaction'),
+                  icon: const Icon(Icons.delete_outline),
+                  iconSize: 22,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints.tightFor(
+                    width: 32,
+                    height: 32,
+                  ),
+                  visualDensity: VisualDensity.compact,
+                  onPressed: onDelete,
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -151,10 +168,10 @@ class _MetaChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.58),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
