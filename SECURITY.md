@@ -17,6 +17,8 @@ Include:
 
 ## Security Scope
 
+Detailed threat model, local audit evidence, and unresolved security questions are tracked in [`docs/security-posture.md`](docs/security-posture.md).
+
 CashFlow Manager protects local financial data with:
 
 - Local-only PIN and opt-in biometric privacy gate.

@@ -48,14 +48,14 @@
 - [ ] Verify `.github/workflows/ci.yml` and `.github/workflows/release.yml` cover Android emulator smoke plus iOS simulator smoke/no-codesign build before tagged release artifacts are attached.
 - [ ] Verify `.github/workflows/release.yml` uploads Android APK/AAB artifacts from tag or manual runs and supports manual signed iOS IPA builds with fail-fast secret validation.
 - [ ] Verify `.github/workflows/docker-publish.yml` grants `packages: write`, always publishes GHCR with `GITHUB_TOKEN`, and publishes Docker Hub only when `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` are configured.
-- [ ] Run `gh repo view JasonTM17/Money_Management_App --json description,homepageUrl,repositoryTopics,isPrivate,url` and verify the repo is public at `https://github.com/JasonTM17/Money_Management_App`.
-- [ ] Verify GitHub About description is exactly `Offline-first Flutter personal finance manager with PIN/opt-in biometrics, SQLite, Docker/PostgreSQL API, OpenAPI, and n8n HMAC automation.`.
+- [ ] Run `gh repo view JasonTM17/Money_Management_App --json description,homepageUrl,repositoryTopics,isPrivate,url` and verify repo visibility is intentional. Current target is private until real-device Android and macOS/iOS release blockers are cleared.
+- [ ] Verify GitHub About description is exactly `Professional offline-first Flutter personal finance app with PIN/biometrics, SQLite, Riverpod 3, Node 26 Fastify/PostgreSQL API, OpenAPI, Docker Hub/GHCR packages, and n8n HMAC automation.`.
 - [ ] Verify GitHub homepage is empty until a real public release/download page exists.
-- [ ] Verify GitHub topics are exactly `dart`, `docker`, `fastify`, `flutter`, `n8n`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `sqlite`, `android`, `offline-first`.
+- [ ] Verify GitHub topics are exactly `android`, `android-app`, `dart`, `docker`, `fastify`, `finance-app`, `flutter`, `flutter-app`, `mobile-app`, `n8n`, `offline-finance`, `offline-first`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `security`, `sqlite`, `vietnamese`.
 - [ ] Run `gh release view v1.0.0 --repo JasonTM17/Money_Management_App --json tagName,name,isDraft,isPrerelease,publishedAt,url,assets` and verify published release `CashFlow Manager 1.0.0+1` includes APK `cashflow-manager-v1.0.0-android.apk` and App Bundle `cashflow-manager-v1.0.0-android.aab`.
 - [ ] Verify release workflow uploads SBOM and SHA256 checksum artifacts and attaches them to tagged GitHub Releases.
 - [ ] Verify GHCR package visibility after Docker publish with `docker manifest inspect ghcr.io/jasontm17/cashflow-manager-api:1.0.0` and `docker manifest inspect ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0`; both public manifests must resolve.
-- [ ] Verify Docker Hub images `nguyenson1710/cashflow-manager-api` and `nguyenson1710/cashflow-manager-frontend` only after Docker Hub secrets are configured; the verified workflow run published GHCR only and Docker Hub currently has no public tags for these targets.
+- [ ] Verify Docker Hub images `nguyenson1710/cashflow-manager-api:latest` and `nguyenson1710/cashflow-manager-frontend:latest` with `docker manifest inspect`.
 - [ ] Launch the app locally on an Android device or emulator after release gates pass so the user can manually test the main flows.
 - [ ] Launch the app locally on an iPhone or iOS simulator after release gates pass so the user can manually test the main flows.
 - [ ] Commit README/docs updates together with referenced public artifacts such as `api/`, `docs/openapi.yaml`, `docs/media/`, `infra/`, Docker files, and workflow files.
@@ -136,7 +136,7 @@ Target public image names:
 - GHCR: `ghcr.io/jasontm17/cashflow-manager-api`
 - GHCR: `ghcr.io/jasontm17/cashflow-manager-frontend`
 
-The verified Docker Publish workflow run published public GHCR manifests for `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` and `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0`. Release builds also tag images with `v1.0.0`, git SHA, and `latest`. Docker Hub images are not public yet because Docker Hub secrets were not configured for that run.
+The verified Docker Publish workflow run published public GHCR manifests for `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` and `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0`. Release builds also tag images with `v1.0.0`, git SHA, and `latest`. Docker Hub `latest` manifests are available for `nguyenson1710/cashflow-manager-api` and `nguyenson1710/cashflow-manager-frontend`.
 
 ## Known Issues
 

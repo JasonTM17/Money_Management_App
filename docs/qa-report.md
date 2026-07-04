@@ -30,11 +30,14 @@ regenerated from seeded fake data, and GitHub About metadata was updated.
 | Demo media capture | Pass | `flutter test --no-pub scripts/capture_demo_media_test.dart -r expanded` |
 | Docs validation | Pass with known legacy warnings | `node .claude/scripts/validate-docs.cjs docs/` |
 | API audit | Pass | `npm --prefix api audit` and `npm --prefix api audit --omit=dev` |
+| Secret scan | Pass | Dockerized Gitleaks scanned 110 commits and reported no leaks |
+| Trivy targeted scan | Pass | Dockerized Trivy: `api/package-lock.json` 0 high/critical vulns, `pubspec.lock` 0 high/critical vulns, `api/Dockerfile` 0 high/critical misconfigs |
 | API type check | Pass | `npm --prefix api run typecheck` |
 | API build | Pass | `npm --prefix api run build` |
 | API tests | Pass | `npm --prefix api test -- --reporter=dot` (45 tests) |
 | Docker Compose config | Pass | `docker compose config --quiet` |
 | Android debug APK | Pass | `flutter build apk --debug --no-pub` |
+| API Docker image build | Pass | `docker build -f api/Dockerfile -t cashflow-manager-api:node26-verify .`; runtime check returned `node v26.4.0` |
 | Android release APK | Pass | `docker build -f Dockerfile.frontend ...` built `app-release.apk` (74.3 MB) |
 | API Docker image smoke | Pass | `GET /healthz` and `GET /readyz` returned 200 with local PostgreSQL |
 | Frontend Docker image smoke | Pass | `HEAD /cashflow-manager.apk` returned 200 and `Content-Length: 74337525` |

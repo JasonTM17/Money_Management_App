@@ -2,6 +2,8 @@
 
 CashFlow Manager follows the **C4 model**: Context → Container → Component → Code. Diagrams use Mermaid.js v11.
 
+![CashFlow Manager project architecture](media/project-architecture.png)
+
 ## C4 Level 1 — System Context
 
 ```mermaid
@@ -79,7 +81,7 @@ flowchart TB
 
 | Container | Image | Port | Healthcheck |
 |-----------|-------|------|-------------|
-| `api` | `Dockerfile` (multi-stage, Node 22 distroless) | 3000 | `GET /healthz` |
+| `api` | `api/Dockerfile` (multi-stage, Node 26 Alpine) | 3000 | `GET /healthz` |
 | `frontend` | `Dockerfile.frontend` (nginx:alpine) | 8080 | Wget APK artifact |
 | `postgres` | `postgres:16-alpine` | 5433→5432 | `pg_isready` |
 | `n8n` | `n8nio/n8n:1.121.3` | 5678 | `GET /healthz` |
@@ -205,9 +207,9 @@ flowchart LR
 | Layer | Technology | Purpose |
 |-------|-----------|---------|
 | Mobile Framework | Flutter 3.44 · Dart 3.12 | Cross-platform UI |
-| State Management | Riverpod 2.x | Reactive state |
+| State Management | Riverpod 3.x | Reactive state |
 | Local Database | SQLite (sqflite) | Offline-first storage |
-| API Runtime | Fastify 5.x · Node.js 22 | REST API server |
+| API Runtime | Fastify 5.x · Node.js 26 | REST API server |
 | ORM | Prisma 7.8 | Type-safe DB access |
 | Auth | Ed25519 JWT · JWKS | Asymmetric signing |
 | Database | PostgreSQL 16 | Server-side persistence |

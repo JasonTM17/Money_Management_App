@@ -12,6 +12,8 @@
 - [Technical design](technical-design.md): Flutter/API/n8n architecture and runtime flow.
 - [Codebase summary](codebase-summary.md): project structure, module map, data flow, conventions.
 - [Code standards](code-standards.md): coding conventions, security rules, commit format.
+- [Security posture](security-posture.md): threat model, controls, audit evidence, open security questions.
+- [Repository health](repository-health.md): Dependabot branch audit, package/sidebar status, GitHub About target.
 - [Design guidelines](design-guidelines.md): color tokens, typography, UI vocabulary, accessibility.
 - [Architecture decisions](adr/): ADRs for key architectural choices.
 - [System diagrams](system-diagrams.md): sequence & flow diagrams for sync, auth, AI, backup, CI/CD.
@@ -31,6 +33,8 @@
 - [Thiết kế kỹ thuật](technical-design.md): kiến trúc Flutter/API/n8n và runtime flow.
 - [Tổng quan mã nguồn](codebase-summary.md): cấu trúc dự án, sơ đồ module, luồng dữ liệu.
 - [Tiêu chuẩn code](code-standards.md): quy ước lập trình, quy tắc bảo mật, format commit.
+- [Security posture](security-posture.md): threat model, kiểm soát bảo mật, bằng chứng audit.
+- [Repository health](repository-health.md): audit branch Dependabot, package/sidebar, GitHub About.
 - [Hướng dẫn thiết kế](design-guidelines.md): color tokens, typography, UI vocabulary, accessibility.
 - [Architecture decisions](adr/): ADRs cho các lựa chọn kiến trúc.
 - [System diagrams](system-diagrams.md): sơ đồ sequence & flow cho sync, auth, AI, backup, CI/CD.
@@ -50,6 +54,8 @@
 - [技術設計](technical-design.md): Flutter/API/n8n architecture と runtime flow。
 - [コードベース概要](codebase-summary.md): プロジェクト構造、モジュールマップ、データフロー。
 - [コーディング規約](code-standards.md): コーディング規則、セキュリティルール、コミット形式。
+- [Security posture](security-posture.md): threat model, security controls, audit evidence.
+- [Repository health](repository-health.md): Dependabot branch audit, package/sidebar status, GitHub About target.
 - [デザインガイドライン](design-guidelines.md): カラートークン、タイポグラフィ、UI語彙、アクセシビリティ。
 - [Architecture decisions](adr/): 主要な architectural decision records。
 - [System diagrams](system-diagrams.md): シーケンス図・フロー図 (sync, auth, AI, backup, CI/CD)。

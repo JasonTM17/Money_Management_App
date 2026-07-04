@@ -22,7 +22,7 @@
 
 **Prerequisites:** Flutter SDK 3.44+ · Dart 3.12+ · Docker 24+ (optional, for backend)
 
-[Quick Start](#quick-start) · [Docs](docs/README.md) · [Architecture](docs/system-architecture.md) · [API](docs/openapi.yaml) · [CI/CD](.github/workflows/) · [ADRs](docs/adr/) · [Security](SECURITY.md)
+[Quick Start](#quick-start) · [Docs](docs/README.md) · [Architecture](docs/system-architecture.md) · [Security Posture](docs/security-posture.md) · [Repo Health](docs/repository-health.md) · [API](docs/openapi.yaml) · [CI/CD](.github/workflows/) · [ADRs](docs/adr/) · [Security](SECURITY.md)
 
 ## At a Glance
 
@@ -88,6 +88,8 @@ The Flutter app is useful without accounts, network access, PostgreSQL, or n8n. 
 
 ## Architecture
 
+![CashFlow Manager project architecture](docs/media/project-architecture.png)
+
 ```text
 Flutter mobile app (offline-first)
   ├─ Riverpod controllers
@@ -119,7 +121,7 @@ Architecture decisions: [`docs/adr/`](docs/adr/)
 - `fl_chart` for charts
 - `local_auth` + `flutter_secure_storage` for local lock
 - `csv`, `pdf`, `printing`, `share_plus`, `file_picker` for export and backup flows
-- Fastify + Prisma API for authenticated PostgreSQL-backed sync foundation and AI analysis proxy
+- Node.js 26 + Fastify + Prisma API for authenticated PostgreSQL-backed sync foundation and AI analysis proxy
 - Docker Compose with PostgreSQL 16, migration/seed jobs, API, frontend artifact server, and optional n8n automation
 - GitHub Actions CI for Flutter analyze/tests/builds, Android emulator smoke, iOS simulator/no-codesign validation, API Prisma/typecheck/tests/build, PostgreSQL migration/seed validation, Docker image builds, Android release artifacts, and Docker Hub and GHCR publishing
 
@@ -356,6 +358,7 @@ Use this when preparing the GitHub repository page:
 - Pin screenshots/GIF from `docs/media/` in the README.
 - GitHub Release `v1.0.0` is published with APK/AAB artifacts; the updated release workflow is configured to attach SBOM and SHA256 checksum artifacts on the next tagged release run.
 - GHCR packages are public for `1.0.0`; Docker Hub `latest` images are verified for API and frontend.
+- Security posture and branch/package audit live in `docs/security-posture.md` and `docs/repository-health.md`.
 - Do not publish secrets, signing assets, local databases, private automation files, or internal planning notes.
 
 ## Privacy Notes
