@@ -307,12 +307,13 @@ Then create the signed archive/IPA through Xcode Organizer, Fastlane, or the man
 
 The intended public container image names are:
 
-- Docker Hub: `nguyenson1710/cashflow-manager-api`
-- Docker Hub: `nguyenson1710/cashflow-manager-frontend`
-- GHCR: `ghcr.io/jasontm17/cashflow-manager-api`
-- GHCR: `ghcr.io/jasontm17/cashflow-manager-frontend`
+- Docker Hub: [`nguyenson1710/cashflow-manager-api`](https://hub.docker.com/r/nguyenson1710/cashflow-manager-api)
+- Docker Hub: [`nguyenson1710/cashflow-manager-frontend`](https://hub.docker.com/r/nguyenson1710/cashflow-manager-frontend)
+- GHCR: [`ghcr.io/jasontm17/cashflow-manager-api`](https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-api)
+- GHCR: [`ghcr.io/jasontm17/cashflow-manager-frontend`](https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-frontend)
 
 The Docker publish workflow has published public GHCR manifests for `1.0.0`; it also tags release builds as `v1.0.0`, git SHA, and `latest`. Docker Hub `latest` manifests are available for both API and frontend images.
+GitHub's repository sidebar package list depends on GitHub Packages visibility and source-link metadata. Current local metadata is prepared; direct package links above stay visible while the package API token/quota is unavailable.
 
 ## Test
 

@@ -72,6 +72,13 @@ android, android-app, dart, docker, fastify, finance-app, flutter, flutter-app, 
 
 Verification commands used `docker manifest inspect` against Docker Hub and GHCR. Dockerfiles and publish metadata include `org.opencontainers.image.source=https://github.com/JasonTM17/Money_Management_App` plus title/description/url/documentation labels so the next package publish has the right repository link metadata. The repository package sidebar should show the API and frontend container packages after package visibility/source linking is available. If the package sidebar is blank for other viewers, check package visibility on GHCR/Docker Hub and rerun the Docker Publish workflow after GitHub Actions quota/token is restored and registry secrets are configured.
 
+Direct package links are present in `README.md` so package access remains visible even when the GitHub repository sidebar cannot be audited through the current token:
+
+- Docker Hub API: `https://hub.docker.com/r/nguyenson1710/cashflow-manager-api`
+- Docker Hub frontend: `https://hub.docker.com/r/nguyenson1710/cashflow-manager-frontend`
+- GHCR API: `https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-api`
+- GHCR frontend: `https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-frontend`
+
 ## Documentation/Media State
 
 | Asset | Status |
