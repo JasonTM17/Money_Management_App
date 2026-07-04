@@ -48,6 +48,7 @@
 - [ ] Verify `.github/workflows/ci.yml` and `.github/workflows/release.yml` cover Android emulator smoke plus iOS simulator smoke/no-codesign build before tagged release artifacts are attached.
 - [ ] Verify `.github/workflows/release.yml` uploads Android APK/AAB artifacts from tag or manual runs and supports manual signed iOS IPA builds with fail-fast secret validation.
 - [ ] Verify `.github/workflows/docker-publish.yml` grants `packages: write`, always publishes GHCR with `GITHUB_TOKEN`, and publishes Docker Hub only when `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` are configured.
+- [ ] Verify GitHub Actions quota/token is available before rerunning CI/CD workflows; if exhausted, mark remote CI as deferred and rely on local gates until capacity is restored.
 - [ ] Run `gh repo view JasonTM17/Money_Management_App --json description,homepageUrl,repositoryTopics,isPrivate,url` and verify repo visibility is intentional. Current target is private until real-device Android and macOS/iOS release blockers are cleared.
 - [ ] Verify GitHub About description is exactly `Professional offline-first Flutter personal finance app with PIN/biometrics, SQLite, Riverpod 3, Node 26 Fastify/PostgreSQL API, OpenAPI, Docker Hub/GHCR packages, and n8n HMAC automation.`.
 - [ ] Verify GitHub homepage is empty until a real public release/download page exists.
@@ -144,6 +145,7 @@ The verified Docker Publish workflow run published public GHCR manifests for `gh
 - Supabase/Firebase sync intentionally out of MVP scope.
 - Receipt image/OCR remains local-first work for the next product phase.
 - iOS archive must be verified on macOS/Xcode with Swift installed.
+- GitHub Actions remote CI/CD must be rerun after quota/token capacity is restored.
 - `file_picker` and `share_plus` still emit Flutter's future Kotlin Gradle Plugin migration warning during Android release build.
 
 ## Next Roadmap

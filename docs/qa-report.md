@@ -46,7 +46,7 @@ regenerated from seeded fake data, and GitHub About metadata was updated.
 
 ## GitHub Actions Status
 
-Latest pushed runs for `master` were blocked before job startup by GitHub account billing/spending-limit state. GitHub check-run annotations report: "The job was not started because recent account payments have failed or your spending limit needs to be increased." Local gates above passed; rerun CI, Security, CodeQL SAST, and Docker Publish after the billing/spending-limit issue is resolved.
+Latest pushed runs for `master` were blocked before job startup. The user confirmed GitHub Actions quota/token is exhausted; GitHub surfaces the block in check-run annotations as a billing/spending-limit message. Local gates above passed. Do not rerun the workflows while quota/token is exhausted; rerun CI, Security, CodeQL SAST, and Docker Publish after Actions capacity is restored.
 
 ## Automated Smoke Flow Coverage
 
@@ -103,6 +103,7 @@ Current automated UI criteria covered locally: phone-sized surface, primary navi
 - Real iPhone smoke/manual QA is not complete because no iPhone is available in this environment.
 - Android release AAB was not rerun in this pass; run before any Play Console release candidate.
 - Signed iOS archive/IPA remains blocked until valid Apple signing certificate, provisioning profile, keychain password, and export options are available in Xcode/Fastlane or CI secrets.
+- GitHub Actions remote verification is deferred until Actions quota/token is available again.
 - Android builds emit Flutter's future Kotlin Gradle Plugin migration warning for `file_picker`, `local_auth_android`, and `share_plus`; builds pass today, but plugin upgrades must be tracked.
 
 ## Next Required Platform Gates

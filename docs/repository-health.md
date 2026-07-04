@@ -13,7 +13,7 @@ Scope: unmerged remote branches, open Dependabot pull requests, dependency refre
 | GitHub About | Synced | Description updated, homepage kept empty, `security` topic added |
 | Open unmerged Dependabot branches | 0 after cleanup | `git fetch --all --prune --tags` then `git branch -r --no-merged origin/master` returned no stale refs |
 | Open Dependabot PRs | 0 after cleanup | `gh pr list --state open --json number,title,headRefName --limit 50` returned `[]` |
-| GitHub Actions latest push | Blocked before job start | GitHub check-run annotation: recent account payments failed or spending limit needs to be increased |
+| GitHub Actions latest push | Deferred by Actions quota/token | User confirmed GitHub Actions quota/token is exhausted; latest check-run annotation surfaces this as a billing/spending-limit block before job startup |
 | Package API access | Limited | GitHub package API returned 403 without `read:packages` |
 | Docker Hub packages | Verified by manifest in this pass | `nguyenson1710/cashflow-manager-api:latest` and `nguyenson1710/cashflow-manager-frontend:latest` resolved |
 | GHCR packages | Verified by manifest in this pass | `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` and `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0` resolved; GitHub package API needs additional token scope |
@@ -63,14 +63,14 @@ android, android-app, dart, docker, fastify, finance-app, flutter, flutter-app, 
 
 ## Package Presentation
 
-| Package | Registry | Expected tags | Verification path |
+| Package | Registry | Verified tag | Manifest digest |
 |---|---|---|---|
-| `cashflow-manager-api` | Docker Hub | `latest` | `docker manifest inspect nguyenson1710/cashflow-manager-api:latest` |
-| `cashflow-manager-frontend` | Docker Hub | `latest` | `docker manifest inspect nguyenson1710/cashflow-manager-frontend:latest` |
-| `cashflow-manager-api` | GHCR | `1.0.0`, `v1.0.0`, `latest`, SHA tags | GitHub Packages UI or token with `read:packages` |
-| `cashflow-manager-frontend` | GHCR | `1.0.0`, `v1.0.0`, `latest`, SHA tags | GitHub Packages UI or token with `read:packages` |
+| `cashflow-manager-api` | Docker Hub | `latest` | `sha256:44c8449b7cf9f970bffabe3c29027f62171a0a22127a03bc099324a98d72cd23` |
+| `cashflow-manager-frontend` | Docker Hub | `latest` | `sha256:a609d47764a660bdb022efad62360084e3695a0c543e9f26a27a24502862f6ba` |
+| `cashflow-manager-api` | GHCR | `1.0.0` | `sha256:ab89295de33dfacaf41b069d818b5aefd5eaaa98c236e6cfb3e9942eef608d58` |
+| `cashflow-manager-frontend` | GHCR | `1.0.0` | `sha256:af9a0012daf3d81966165dcbd7a031a3534a7ca07c0b849cf2c03e5dfe1c4318` |
 
-The repository package sidebar should show the API and frontend container packages. If the package sidebar is blank for other viewers, check package visibility on GHCR/Docker Hub and rerun the Docker Publish workflow with registry secrets configured.
+Verification commands used `docker manifest inspect` against Docker Hub and GHCR. The repository package sidebar should show the API and frontend container packages. If the package sidebar is blank for other viewers, check package visibility on GHCR/Docker Hub and rerun the Docker Publish workflow after GitHub Actions quota/token is restored and registry secrets are configured.
 
 ## Documentation/Media State
 
@@ -91,12 +91,12 @@ The repository package sidebar should show the API and frontend container packag
 - Fetched/pruned remotes and confirmed stale unmerged Dependabot branch count is zero.
 - Synced GitHub About description/topics to the target above.
 - Re-ran package manifest checks for Docker Hub and GHCR.
-- Investigated latest GitHub Actions failures and confirmed jobs are blocked before start by GitHub billing/spending-limit state, not by repository code or workflow syntax.
+- Investigated latest GitHub Actions failures; user confirmed Actions quota/token is exhausted, and GitHub reports the pre-job block as billing/spending-limit state. No repository code or workflow syntax failure was reached.
 
 ## Follow-up Checklist
 
 - Keep Dependabot open PR count at zero by either merging or superseding future dependency PRs promptly.
-- Resolve GitHub account billing/spending limit, then rerun CI, Security, CodeQL SAST, and Docker Publish for the latest `master` commit.
+- Restore GitHub Actions quota/token or account billing capacity, then rerun CI, Security, CodeQL SAST, and Docker Publish for the latest `master` commit.
 - Re-run GitHub package API verification with a token that has `read:packages` if UI-level package/sidebar auditing is required.
 
 ## Unresolved Questions

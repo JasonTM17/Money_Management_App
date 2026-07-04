@@ -33,6 +33,8 @@ Images are pushed to Docker Hub via GitHub Actions on every push to `master`:
 - `nguyenson1710/cashflow-manager-api:latest`
 - `nguyenson1710/cashflow-manager-frontend:latest`
 
+If GitHub Actions quota/token is exhausted, Docker Hub/GHCR publishing is deferred. Keep local Docker builds as temporary evidence and rerun Docker Publish after Actions capacity is restored.
+
 ### Deployment Checklist
 1. Verify `.env.production` is configured
 2. Run `docker compose up --build -d`
@@ -74,6 +76,8 @@ docker compose up --build -d api frontend
 4. Kiểm tra `/readyz` trả về 200
 5. Kiểm tra `/.well-known/jwks.json` hợp lệ
 
+Nếu quota/token GitHub Actions đã hết, việc publish Docker Hub/GHCR sẽ tạm hoãn. Giữ bằng chứng build Docker local và chạy lại Docker Publish sau khi Actions hoạt động lại.
+
 ## 日本語
 
 ### 前提条件
@@ -107,3 +111,5 @@ docker compose up --build -d api frontend
 3. `/healthz` が200を返すことを確認
 4. `/readyz` が200を返すことを確認
 5. `/.well-known/jwks.json` が有効なJWKSを返すことを確認
+
+GitHub Actions の quota/token が不足している場合、Docker Hub/GHCR への publish は保留です。ローカル Docker build の結果を一時的な証跡として残し、Actions 復旧後に Docker Publish を再実行してください。

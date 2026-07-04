@@ -8,7 +8,7 @@ Scope: Flutter mobile app, Fastify API, Docker Compose runtime, n8n automation w
 
 CashFlow Manager is designed as a local-first finance app. The strongest security property is that core personal-finance use does not require an account, network call, PostgreSQL, n8n, or AI provider. Server, automation, payment, and package-publish lanes are optional and must stay behind explicit configuration.
 
-Current posture: no hardcoded production secrets found in local scans, API npm audit reports zero known vulnerabilities, Flutter dependency advisory review reports no current advisory on installed packages, Docker Compose hardening is present for API/frontend/n8n services, and CI contains secret/dependency/container/SBOM gates. Remaining release blockers are platform QA, full-repo security scanner evidence from CI/Linux, GitHub security-feature visibility, and production secret management.
+Current posture: no hardcoded production secrets found in local scans, API npm audit reports zero known vulnerabilities, Flutter dependency advisory review reports no current advisory on installed packages, Docker Compose hardening is present for API/frontend/n8n services, and CI contains secret/dependency/container/SBOM gates. Remaining release blockers are platform QA, full-repo security scanner evidence after GitHub Actions quota/token is restored, GitHub security-feature visibility, and production secret management.
 
 ## Threat Model
 
@@ -71,7 +71,7 @@ Current posture: no hardcoded production secrets found in local scans, API npm a
 | Trivy API dependency scan | Pass | Dockerized Trivy scan of `api/package-lock.json`: 0 high/critical vulnerabilities |
 | Trivy Flutter dependency scan | Pass | Dockerized Trivy scan of `pubspec.lock`: 0 high/critical vulnerabilities |
 | Trivy Dockerfile config scan | Pass | Dockerized Trivy config scan of `api/Dockerfile`: 0 high/critical misconfigurations |
-| Full Trivy filesystem scan | Limited locally | Full Windows bind-mount scan stalled on generated/cache trees; targeted lockfile/config scans completed and CI remains the full-repo scanner |
+| Full Trivy filesystem scan | Limited locally | Full Windows bind-mount scan stalled on generated/cache trees; targeted lockfile/config scans completed; CI remains the full-repo scanner once Actions quota/token is restored |
 | GitHub Dependabot alerts API | Not accessible | GitHub returned 403: Dependabot alerts disabled or token lacks required repository permission |
 | GitHub code scanning API | Not accessible | GitHub returned 403: code scanning not enabled or token lacks required scope |
 | GitHub package API | Not accessible | User/package API returned 403 without `read:packages`; package presence must be verified by UI or registry manifest commands |
@@ -89,8 +89,8 @@ No production secret, private key, API token, keystore, local database, or signi
    Mitigation: enable Dependabot alerts/code scanning in repository settings, then rerun the API checks with an owner token that can read those surfaces.
 
 2. Full local Trivy filesystem scan is slow on Windows bind mounts.
-   Impact: CI remains the authoritative full-repo scanner; local preflight uses targeted dependency/config scans to avoid hanging on generated/cache trees.
-   Mitigation: run the existing `.github/workflows/security.yml` on GitHub for full evidence, or rerun Trivy from Linux/WSL with generated directories excluded.
+   Impact: CI remains the authoritative full-repo scanner once GitHub Actions quota/token is available; local preflight uses targeted dependency/config scans to avoid hanging on generated/cache trees.
+   Mitigation: run the existing `.github/workflows/security.yml` on GitHub after Actions capacity is restored, or rerun Trivy from Linux/WSL with generated directories excluded.
 
 3. Local placeholder passwords exist in examples and Docker defaults.
    Impact: safe for local dev, unsafe if copied unchanged to production.
@@ -109,7 +109,7 @@ docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source=/rep
 docker run --rm -v "$PWD:/repo" aquasec/trivy:latest fs --exit-code 1 --severity CRITICAL,HIGH /repo
 ```
 
-Also verify the GitHub Actions security, CodeQL, CI, and Docker Publish runs are green on the target commit.
+Also verify the GitHub Actions security, CodeQL, CI, and Docker Publish runs are green on the target commit. If Actions quota/token is exhausted, keep local evidence as temporary release evidence and rerun those workflows when capacity is restored.
 
 ## Unresolved Questions
 
