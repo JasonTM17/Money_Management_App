@@ -117,7 +117,7 @@ class HeroBalanceCard extends StatelessWidget {
                   height: 44,
                   decoration: BoxDecoration(
                     color: colorScheme.primary.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppTheme.controlRadius),
                   ),
                   child: Icon(
                     Icons.account_balance_wallet,
@@ -258,7 +258,9 @@ class ChartCard extends StatelessWidget {
                           toY: state.summary.monthIncome.toDouble(),
                           color: AppTheme.incomeBlue,
                           width: 34,
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.pillRadius,
+                          ),
                         ),
                       ],
                     ),
@@ -269,7 +271,9 @@ class ChartCard extends StatelessWidget {
                           toY: state.summary.monthExpense.toDouble(),
                           color: AppTheme.expenseRed,
                           width: 34,
-                          borderRadius: BorderRadius.circular(999),
+                          borderRadius: BorderRadius.circular(
+                            AppTheme.pillRadius,
+                          ),
                         ),
                       ],
                     ),

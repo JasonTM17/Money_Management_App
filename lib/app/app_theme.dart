@@ -90,11 +90,28 @@ class AppTheme {
   static const incomeBlue = Color(0xFF3B82F6);
   static const warningAmber = Color(0xFFF59E0B);
   static const expenseRed = Color(0xFFEF4444);
+  static const forecastNext = Color(0xFF0D9488);
+
+  static const List<Color> chartPalette = [
+    incomeBlue,
+    expenseRed,
+    warningAmber,
+    seed,
+    forecastNext,
+  ];
 
   static const controlRadius = 8.0;
   static const cardRadius = 16.0;
   static const sheetRadius = 16.0;
+  static const pillRadius = 999.0;
   static const bottomNavigationHeight = 68.0;
+
+  static const animationFast = Duration(milliseconds: 180);
+  static const animationMedium = Duration(milliseconds: 250);
+  static const animationSlow = Duration(milliseconds: 400);
+
+  static bool motionAllowed(BuildContext context) =>
+      !MediaQuery.of(context).disableAnimations;
 
   static ThemeData light() => _theme(Brightness.light);
   static ThemeData dark() => _theme(Brightness.dark);

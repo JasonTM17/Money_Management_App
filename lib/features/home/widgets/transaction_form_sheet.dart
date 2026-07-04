@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/app_localizations.dart';
+import '../../../app/app_theme.dart';
 import '../../../core/finance_models.dart';
 import '../finance_controller.dart';
 import 'home_common_widgets.dart';
@@ -232,7 +233,7 @@ class _DatePickerField extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       key: const ValueKey('transaction-date-field'),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
       onTap: onTap,
       child: InputDecorator(
         decoration: InputDecoration(

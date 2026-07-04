@@ -92,7 +92,7 @@ class SoftPanel extends StatelessWidget {
                 child: DecoratedBox(
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: isDark ? 0.68 : 0.58),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(AppTheme.pillRadius),
                   ),
                   child: const SizedBox(width: 3),
                 ),
@@ -324,7 +324,7 @@ class SheetDragHandle extends StatelessWidget {
         height: 5,
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.outlineVariant,
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppTheme.pillRadius),
         ),
       ),
     );
@@ -481,7 +481,7 @@ class StatusPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
         border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Row(
@@ -651,7 +651,7 @@ class _MetaChip extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(AppTheme.pillRadius),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -694,7 +694,7 @@ class SectionTitle extends StatelessWidget {
             height: 20,
             decoration: BoxDecoration(
               color: colorScheme.primary,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(AppTheme.pillRadius),
             ),
           ),
           const SizedBox(width: 10),
@@ -715,10 +715,16 @@ class SectionTitle extends StatelessWidget {
 }
 
 class EmptyState extends StatelessWidget {
-  const EmptyState({super.key, required this.message, this.icon = Icons.inbox});
+  const EmptyState({
+    super.key,
+    required this.message,
+    this.icon = Icons.inbox,
+    this.action,
+  });
 
   final String message;
   final IconData icon;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -747,6 +753,65 @@ class EmptyState extends StatelessWidget {
                 fontWeight: FontWeight.w600,
               ),
             ),
+            if (action != null) ...[const SizedBox(height: 16), action!],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ErrorState extends StatelessWidget {
+  const ErrorState({
+    super.key,
+    required this.message,
+    this.icon = Icons.error_outline,
+    this.onRetry,
+    this.retryLabel,
+  });
+
+  final String message;
+  final IconData icon;
+  final VoidCallback? onRetry;
+  final String? retryLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final colorScheme = Theme.of(context).colorScheme;
+    return Center(
+      child: SoftPanel(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: colorScheme.error.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: colorScheme.error),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            if (onRetry != null) ...[
+              const SizedBox(height: 16),
+              FilledButton.tonalIcon(
+                key: const ValueKey('error-state-retry'),
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: Text(retryLabel ?? l10n.t('retry')),
+              ),
+            ],
           ],
         ),
       ),
