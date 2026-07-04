@@ -68,7 +68,7 @@ class CashflowForecastCard extends StatelessWidget {
                       title: l10n.t('forecastNextMonthEnd'),
                       value: Money(nextForecast).formatVnd(),
                       icon: Icons.event_available,
-                      color: Colors.teal,
+                      color: AppTheme.forecastNext,
                     ),
                   ),
                 ],

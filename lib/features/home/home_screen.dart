@@ -77,7 +77,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       body: finance.when(
         data: (state) => _tabs(state)[_index],
         loading: () => const DashboardShimmer(),
-        error: (error, _) => Center(child: Text(l10n.t('loadDataFailed'))),
+        error: (error, _) => ErrorState(
+          message: l10n.t('loadDataFailed'),
+          onRetry: () =>
+              ref.invalidate(financeControllerProvider),
+        ),
       ),
       bottomNavigationBar: DecoratedBox(
         decoration: BoxDecoration(

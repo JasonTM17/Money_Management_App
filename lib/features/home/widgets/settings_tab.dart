@@ -40,7 +40,7 @@ class SettingsTab extends ConsumerWidget {
           title: l10n.t('forecastNextMonthEnd'),
           value: Money(forecast).formatVnd(),
           icon: Icons.calendar_month,
-          color: Colors.teal,
+          color: AppTheme.forecastNext,
         ),
         AppSectionHeader(title: l10n.t('settings')),
         const PrivacySecurityPanel(),
