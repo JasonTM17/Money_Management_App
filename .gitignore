@@ -3,9 +3,18 @@
 .env.*
 !.env.example
 !.env.production.example
+.envrc
+.envrc.*
 *.local
 *.local.*
 !docker-compose.local.yml
+secrets/
+.secret/
+*.secret
+*.credentials.json
+service-account*.json
+google-services.json
+GoogleService-Info.plist
 
 # Claude/OMC private tooling and plans
 .claude/
@@ -22,9 +31,13 @@ repomix-output.xml
 
 # Local finance artifacts
 *.sqlite
+*.sqlite3
 *.sqlite-*
 *.db
 *.db-*
+*.db-wal
+*.db-shm
+*.db-journal
 cashflow-manager-backup*.json
 cashflow-manager-report*.pdf
 cashflow-manager-report*.csv
@@ -36,6 +49,13 @@ trivy-*.sarif
 *-sbom.cdx.json
 sbom*.spdx.json
 checksums.sha256
+
+# Local container/runtime volumes
+.n8n/
+n8n-data/
+postgres-data/
+pgdata/
+docker-data/
 
 # Node/API
 node_modules/
