@@ -51,6 +51,8 @@
 
 CashFlow Manager demonstrates a release-ready mobile finance architecture: local SQLite persistence, integer VND money logic, Riverpod state management, privacy-first PIN and opt-in biometric protection, PDF/CSV/backup flows, a separate Fastify/Prisma API, PostgreSQL-backed validation through Docker Compose, OpenAPI documentation, and an optional n8n HMAC automation workflow.
 
+The July 2026 mobile UI uses a light-first private banking ledger style with ivory surfaces, emerald finance actions, compact transaction rows, and seeded professional README media.
+
 The Flutter app is useful without accounts, network access, PostgreSQL, or n8n. The backend and automation stack are production-style foundations for authenticated sync and AI-assisted analysis, not a requirement for local-first usage.
 
 ## Feature Highlights
@@ -306,7 +308,7 @@ The intended public container image names are:
 - GHCR: `ghcr.io/jasontm17/cashflow-manager-api`
 - GHCR: `ghcr.io/jasontm17/cashflow-manager-frontend`
 
-The Docker publish workflow has published public GHCR manifests for `1.0.0`; it also tags release builds as `v1.0.0`, git SHA, and `latest`. Docker Hub images are not public yet because Docker Hub secrets were not configured for the verified workflow run.
+The Docker publish workflow has published public GHCR manifests for `1.0.0`; it also tags release builds as `v1.0.0`, git SHA, and `latest`. Docker Hub `latest` manifests are available for both API and frontend images.
 
 ## Test
 
@@ -348,12 +350,12 @@ docs/                  # Product, technical, database, UI, test, release docs, m
 
 Use this when preparing the GitHub repository page:
 
-- About: `Offline-first Flutter personal finance manager with PIN/opt-in biometrics, SQLite, Docker/PostgreSQL API, OpenAPI, and n8n HMAC automation.`
+- About: `Premium offline-first Flutter personal finance app with PIN/biometrics, SQLite, Riverpod, Docker/PostgreSQL API, OpenAPI, and n8n automation.`
 - Website/homepage: leave empty until a real public release/download page exists.
-- Topics: `dart`, `docker`, `fastify`, `flutter`, `n8n`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `sqlite`, `android`, `offline-first`.
+- Topics: `android`, `android-app`, `dart`, `docker`, `fastify`, `finance-app`, `flutter`, `flutter-app`, `mobile-app`, `n8n`, `offline-finance`, `offline-first`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `sqlite`, `vietnamese`.
 - Pin screenshots/GIF from `docs/media/` in the README.
 - GitHub Release `v1.0.0` is published with APK/AAB artifacts; the updated release workflow is configured to attach SBOM and SHA256 checksum artifacts on the next tagged release run.
-- GHCR packages are public for `1.0.0`; Docker Hub packages are not public yet because Docker Hub secrets were not configured for the verified workflow run.
+- GHCR packages are public for `1.0.0`; Docker Hub `latest` images are verified for API and frontend.
 - Do not publish secrets, signing assets, local databases, private automation files, or internal planning notes.
 
 ## Privacy Notes

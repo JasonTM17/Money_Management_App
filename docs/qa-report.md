@@ -4,11 +4,11 @@ Date: 2026-07-04
 
 Scope: release QA hardening for CashFlow Manager mobile UI/UX, privacy, and core finance business flows. Public screenshots and automated media use seeded fake data only. No real financial data, signing assets, local paths, secrets, or tokens are included in this report.
 
-This report was refreshed after the July 2026 professional mobile UI pass:
-shared home widgets were modularized, dashboard hero hierarchy was tightened,
-transaction filtering gained a compact result-count/reset treatment, wallets
-gained a portfolio summary, and repository ignore rules were expanded for
-signing/build artifacts.
+This report was refreshed after the July 2026 private-banking-ledger UI pass:
+light mode became the default, the theme moved to ivory/emerald finance tokens,
+the bottom navigation became a floating mobile capsule, dashboard summary
+widgets were split by concern, transaction rows were tightened, README media was
+regenerated from seeded fake data, and GitHub About metadata was updated.
 
 ## Environment
 
@@ -28,6 +28,7 @@ signing/build artifacts.
 | Flutter analyze | Pass | `flutter analyze --no-pub` |
 | Unit/widget tests | Pass | `flutter test --no-pub -r expanded` (83 tests) |
 | Demo media capture | Pass | `flutter test --no-pub scripts/capture_demo_media_test.dart -r expanded` |
+| Docs validation | Pass with known legacy warnings | `node .claude/scripts/validate-docs.cjs docs/` |
 | API audit | Pass | `npm --prefix api audit` and `npm --prefix api audit --omit=dev` |
 | API type check | Pass | `npm --prefix api run typecheck` |
 | API build | Pass | `npm --prefix api run build` |
