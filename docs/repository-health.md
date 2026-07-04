@@ -13,6 +13,7 @@ Scope: unmerged remote branches, open Dependabot pull requests, dependency refre
 | GitHub About | Synced | Description updated, homepage kept empty, `security` topic added |
 | Open unmerged Dependabot branches | 0 after cleanup | `git fetch --all --prune --tags` then `git branch -r --no-merged origin/master` returned no stale refs |
 | Open Dependabot PRs | 0 after cleanup | `gh pr list --state open --json number,title,headRefName --limit 50` returned `[]` |
+| GitHub Actions latest push | Blocked before job start | GitHub check-run annotation: recent account payments failed or spending limit needs to be increased |
 | Package API access | Limited | GitHub package API returned 403 without `read:packages` |
 | Docker Hub packages | Verified by manifest in this pass | `nguyenson1710/cashflow-manager-api:latest` and `nguyenson1710/cashflow-manager-frontend:latest` resolved |
 | GHCR packages | Verified by manifest in this pass | `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` and `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0` resolved; GitHub package API needs additional token scope |
@@ -90,10 +91,12 @@ The repository package sidebar should show the API and frontend container packag
 - Fetched/pruned remotes and confirmed stale unmerged Dependabot branch count is zero.
 - Synced GitHub About description/topics to the target above.
 - Re-ran package manifest checks for Docker Hub and GHCR.
+- Investigated latest GitHub Actions failures and confirmed jobs are blocked before start by GitHub billing/spending-limit state, not by repository code or workflow syntax.
 
 ## Follow-up Checklist
 
 - Keep Dependabot open PR count at zero by either merging or superseding future dependency PRs promptly.
+- Resolve GitHub account billing/spending limit, then rerun CI, Security, CodeQL SAST, and Docker Publish for the latest `master` commit.
 - Re-run GitHub package API verification with a token that has `read:packages` if UI-level package/sidebar auditing is required.
 
 ## Unresolved Questions

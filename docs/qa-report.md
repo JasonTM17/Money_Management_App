@@ -44,6 +44,10 @@ regenerated from seeded fake data, and GitHub About metadata was updated.
 | Workflow YAML parse | Pass | All workflow YAML files under `.github/workflows/` parsed with PyYAML |
 | Whitespace diff check | Pass | `git diff --check` |
 
+## GitHub Actions Status
+
+Latest pushed runs for `master` were blocked before job startup by GitHub account billing/spending-limit state. GitHub check-run annotations report: "The job was not started because recent account payments have failed or your spending limit needs to be increased." Local gates above passed; rerun CI, Security, CodeQL SAST, and Docker Publish after the billing/spending-limit issue is resolved.
+
 ## Automated Smoke Flow Coverage
 
 `integration_test/cashflow_smoke_test.dart` is deterministic and uses fake finance/privacy stores. It currently covers:
