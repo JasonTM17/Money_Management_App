@@ -28,7 +28,12 @@ RUN npm ci --omit=dev
 FROM node:26-alpine AS runtime
 WORKDIR /app
 ARG REVISION=local
+LABEL org.opencontainers.image.title="CashFlow Manager API"
+LABEL org.opencontainers.image.description="Fastify and Prisma API for optional CashFlow Manager sync, validation, and automation flows."
 LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Money_Management_App"
+LABEL org.opencontainers.image.url="https://github.com/JasonTM17/Money_Management_App"
+LABEL org.opencontainers.image.documentation="https://github.com/JasonTM17/Money_Management_App#readme"
+LABEL org.opencontainers.image.vendor="CashFlow Manager"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.revision="$REVISION"
 ENV NODE_ENV=production

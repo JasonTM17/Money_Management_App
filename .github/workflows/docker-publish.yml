@@ -55,6 +55,13 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/jasontm17/cashflow-manager-api
+          labels: |
+            org.opencontainers.image.title=CashFlow Manager API
+            org.opencontainers.image.description=Fastify and Prisma API for optional CashFlow Manager sync, validation, and automation flows.
+            org.opencontainers.image.source=https://github.com/JasonTM17/Money_Management_App
+            org.opencontainers.image.url=https://github.com/JasonTM17/Money_Management_App
+            org.opencontainers.image.documentation=https://github.com/JasonTM17/Money_Management_App#readme
+            org.opencontainers.image.vendor=CashFlow Manager
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long
@@ -66,6 +73,13 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ghcr.io/jasontm17/cashflow-manager-frontend
+          labels: |
+            org.opencontainers.image.title=CashFlow Manager Frontend Artifact Server
+            org.opencontainers.image.description=Nginx container that serves the CashFlow Manager Android APK artifact.
+            org.opencontainers.image.source=https://github.com/JasonTM17/Money_Management_App
+            org.opencontainers.image.url=https://github.com/JasonTM17/Money_Management_App
+            org.opencontainers.image.documentation=https://github.com/JasonTM17/Money_Management_App#readme
+            org.opencontainers.image.vendor=CashFlow Manager
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long
@@ -123,6 +137,13 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: nguyenson1710/cashflow-manager-api
+          labels: |
+            org.opencontainers.image.title=CashFlow Manager API
+            org.opencontainers.image.description=Fastify and Prisma API for optional CashFlow Manager sync, validation, and automation flows.
+            org.opencontainers.image.source=https://github.com/JasonTM17/Money_Management_App
+            org.opencontainers.image.url=https://github.com/JasonTM17/Money_Management_App
+            org.opencontainers.image.documentation=https://github.com/JasonTM17/Money_Management_App#readme
+            org.opencontainers.image.vendor=CashFlow Manager
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long
@@ -135,6 +156,13 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: nguyenson1710/cashflow-manager-frontend
+          labels: |
+            org.opencontainers.image.title=CashFlow Manager Frontend Artifact Server
+            org.opencontainers.image.description=Nginx container that serves the CashFlow Manager Android APK artifact.
+            org.opencontainers.image.source=https://github.com/JasonTM17/Money_Management_App
+            org.opencontainers.image.url=https://github.com/JasonTM17/Money_Management_App
+            org.opencontainers.image.documentation=https://github.com/JasonTM17/Money_Management_App#readme
+            org.opencontainers.image.vendor=CashFlow Manager
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}
             type=sha,format=long

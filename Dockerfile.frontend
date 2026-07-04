@@ -9,7 +9,12 @@ RUN flutter build apk --release
 
 FROM nginx:1.27-alpine AS runtime
 ARG REVISION=local
+LABEL org.opencontainers.image.title="CashFlow Manager Frontend Artifact Server"
+LABEL org.opencontainers.image.description="Nginx container that serves the CashFlow Manager Android APK artifact."
 LABEL org.opencontainers.image.source="https://github.com/JasonTM17/Money_Management_App"
+LABEL org.opencontainers.image.url="https://github.com/JasonTM17/Money_Management_App"
+LABEL org.opencontainers.image.documentation="https://github.com/JasonTM17/Money_Management_App#readme"
+LABEL org.opencontainers.image.vendor="CashFlow Manager"
 LABEL org.opencontainers.image.licenses="MIT"
 LABEL org.opencontainers.image.revision="$REVISION"
 RUN addgroup -S app && adduser -S app -G app && \
