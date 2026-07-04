@@ -13,9 +13,12 @@
 .omc/
 .kilo/
 .playwright-mcp/
+.agents/
 plans/
+AGENTS.md
 CLAUDE.md
 CLAUDE.MD
+repomix-output.xml
 
 # Local finance artifacts
 *.sqlite
@@ -27,6 +30,12 @@ cashflow-manager-report*.pdf
 cashflow-manager-report*.csv
 cashflow-manager-transactions*.csv
 *.log
+gitleaks-report.*
+gitleaks.sarif
+trivy-*.sarif
+*-sbom.cdx.json
+sbom*.spdx.json
+checksums.sha256
 
 # Node/API
 node_modules/
