@@ -1,6 +1,7 @@
 # Repository Health Audit
 
 Date: 2026-07-04
+Last rechecked: 2026-07-09
 
 Scope: unmerged remote branches, open Dependabot pull requests, dependency refresh state, GitHub About/sidebar metadata, package visibility, and release presentation.
 
@@ -79,7 +80,7 @@ Direct package links are present in `README.md` so package access remains visibl
 - GHCR API: `https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-api`
 - GHCR frontend: `https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-frontend`
 
-Additional audit on 2026-07-04:
+Additional audit, rechecked on 2026-07-09:
 
 - `gh auth status` shows the active token has `repo`, `read:org`, and `gist` scopes, but not `read:packages`.
 - `gh api user/packages/container/cashflow-manager-api` and `gh api user/packages/container/cashflow-manager-frontend` return `403` with the required `read:packages` scope.
