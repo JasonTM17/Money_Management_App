@@ -29,7 +29,7 @@ docker compose up --build -d api frontend
 
 ### Docker Hub Publishing
 
-Images are pushed to Docker Hub via GitHub Actions on every push to `master`:
+The Docker Publish workflow is configured to publish these Docker Hub images from `master` when Actions capacity and registry secrets are available:
 - `nguyenson1710/cashflow-manager-api:latest`
 - `nguyenson1710/cashflow-manager-frontend:latest`
 
