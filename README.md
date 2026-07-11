@@ -30,7 +30,7 @@
 |---|---|
 | **What** | Offline-first Flutter personal finance app — 3 languages (VI/EN/JA), zero network dependency |
 | **Flagship feature** | Full local finance engine: wallets, budgets, goals, forecasts, export, encrypted backup — all offline |
-| **Production-shaped** | Docker Compose (9 services), Ed25519 JWT/JWKS, CI/CD (6 workflows), security gates (Gitleaks+Trivy+CodeQL+SBOM) |
+| **Production-shaped** | Docker Compose (9 services), Ed25519 JWT/JWKS, CI/CD configured (hosted runs quota-deferred), security gates (Gitleaks+Trivy+CodeQL+SBOM) |
 | **Not claimed** | No bank integration, no real-time collaboration, no web frontend, no production cloud sync (foundations ready) |
 
 ## Demo
@@ -254,7 +254,7 @@ Troubleshooting:
 | CodeQL SAST | ![CodeQL deferred](https://img.shields.io/badge/CodeQL-deferred%20quota-16A34A) |
 | Docker Publish (GHCR + Docker Hub) | ![Packages verified](https://img.shields.io/badge/package%20manifests-verified-16A34A) |
 
-Temporary status note: GitHub Actions quota/token is exhausted, so remote workflow badges are intentionally replaced with static green local-evidence badges. Restore live workflow badges after Actions capacity is available again.
+Status note: GitHub Actions quota/token is exhausted, so remote workflow badges are intentionally replaced with static green local-evidence badges. Restore live workflow badges after Actions capacity is available again.
 
 ## Quick Links
 
@@ -313,7 +313,7 @@ The intended public container image names are:
 - GHCR: [`ghcr.io/jasontm17/cashflow-manager-frontend`](https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-frontend)
 
 The Docker publish workflow has published public GHCR manifests for `1.0.0`; it also tags release builds as `v1.0.0`, git SHA, and `latest`. Docker Hub `latest` manifests are available for both API and frontend images.
-GitHub's repository sidebar package list depends on GitHub Packages visibility and source-link metadata. Current local metadata is prepared; direct package links above stay visible while the package API token/quota is unavailable.
+GitHub's repository sidebar package list is controlled by GitHub Packages visibility and OCI source-link metadata. The local token can now verify both container packages through the package API; the direct package links above remain the stable public entry points while GitHub refreshes sidebar presentation.
 
 ## Test
 
@@ -335,29 +335,13 @@ Current coverage focus:
 - Device/simulator smoke coverage for PIN setup, navigation, transaction entry, wallet transfer, budget warning, saving goal, report export preview, backup entry, and reset confirmation.
 - Demo screenshot generation from deterministic fake financial data.
 
-## Project Structure
-
-```text
-api/                   # Fastify/Prisma backend for authenticated sync and AI analysis
-infra/n8n/             # Versioned n8n workflow import/activation assets
-lib/
-  app/                 # Theme, localization, app-level setup
-  core/                # Finance models, money math, export, privacy lock, sync DTOs
-  data/                # Local SQLite store
-  features/home/       # Riverpod controller and main mobile UI
-scripts/               # Utility scripts, including demo media capture
-test/                  # Unit and widget tests
-docs/                  # Product, technical, database, UI, test, release docs, media
-.github/workflows/     # CI
-```
-
 ## Repository Presentation Checklist
 
 Use this when preparing the GitHub repository page:
 
-- About: `Premium offline-first Flutter personal finance app with PIN/biometrics, SQLite, Riverpod, Docker/PostgreSQL API, OpenAPI, and n8n automation.`
+- About: `Professional offline-first Flutter personal finance app with PIN/biometrics, SQLite, Riverpod 3, Node 26 Fastify/PostgreSQL API, OpenAPI, Docker Hub/GHCR packages, and n8n HMAC automation.`
 - Website/homepage: leave empty until a real public release/download page exists.
-- Topics: `android`, `android-app`, `dart`, `docker`, `fastify`, `finance-app`, `flutter`, `flutter-app`, `mobile-app`, `n8n`, `offline-finance`, `offline-first`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `sqlite`, `vietnamese`.
+- Topics: `android`, `android-app`, `dart`, `docker`, `fastify`, `finance-app`, `flutter`, `flutter-app`, `mobile-app`, `n8n`, `offline-finance`, `offline-first`, `openapi`, `personal-finance`, `postgresql`, `prisma`, `riverpod`, `security`, `sqlite`, `vietnamese`.
 - Pin screenshots/GIF from `docs/media/` in the README.
 - GitHub Release `v1.0.0` is published with APK/AAB artifacts; the updated release workflow is configured to attach SBOM and SHA256 checksum artifacts on the next tagged release run.
 - GHCR packages are public for `1.0.0`; Docker Hub `latest` images are verified for API and frontend.

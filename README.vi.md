@@ -133,7 +133,7 @@ docs/                  # Product/technical/release docs và media
 
 - GitHub Release `v1.0.0` đã publish tại `https://github.com/JasonTM17/Money_Management_App/releases/tag/v1.0.0` với APK `cashflow-manager-v1.0.0-android.apk` và App Bundle `cashflow-manager-v1.0.0-android.aab`; release workflow mới sẽ attach SBOM/checksum ở lần chạy tagged release tiếp theo.
 - iOS simulator/no-codesign validation cần macOS/Xcode/Swift; signed archive/IPA cần Apple signing assets và không claim là đã build trên Windows.
-- Docker publish workflow đã publish GHCR public manifests cho `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` và `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0`; release builds cũng có tag `v1.0.0`, git SHA và `latest`. Docker Hub hiện chưa public image vì workflow đã chạy khi Docker Hub secrets chưa được cấu hình.
+- Docker publish workflow đã publish GHCR public manifests cho `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` và `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0`; release builds cũng có tag `v1.0.0`, git SHA và `latest`. Docker Hub `latest` manifests cho `nguyenson1710/cashflow-manager-api` và `nguyenson1710/cashflow-manager-frontend` đã verify.
 - GitHub About để homepage trống cho tới khi có trang release/download công khai riêng.
 ## Ghi chú riêng tư
 

@@ -89,9 +89,9 @@
   <text x="644" y="617" class="badge">MANIFESTS OK</text>
   <rect x="878" y="538" width="240" height="96" rx="12" fill="#eefaf3" stroke="#bfe3ce" stroke-width="1.5"/>
   <text x="896" y="566" class="label">GitHub repo sidebar</text>
-  <text x="896" y="586" class="sub">Packages should link to this repo</text>
+  <text x="896" y="586" class="sub">Source metadata ready for next publish</text>
   <rect x="900" y="602" width="150" height="22" rx="11" fill="#dcfce7" stroke="#86d39f"/>
-  <text x="916" y="617" class="badge">SOURCE LABELED</text>
+  <text x="916" y="617" class="badge">METADATA READY</text>
   <path d="M 276 586 L 330 586" fill="none" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow-green)"/>
   <rect x="286" y="514" width="62" height="20" rx="5" fill="#f8faf7" opacity="0.96"/>
   <text x="292" y="528" class="tiny">evidence</text>

@@ -134,7 +134,7 @@ docs/                  # Product/technical/release docs and media
 
 - GitHub Release `v1.0.0` は `https://github.com/JasonTM17/Money_Management_App/releases/tag/v1.0.0` で公開済みです。APK `cashflow-manager-v1.0.0-android.apk` と App Bundle `cashflow-manager-v1.0.0-android.aab` を含みます。更新後の release workflow は次回の tagged release run で SBOM/checksum artifacts を attach します。
 - iOS archive には macOS/Xcode/Swift が必要で、Windows で archive 済みとは記載しません。
-- Docker publish workflow は `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` と `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0` の public GHCR manifest を公開済みです。release build では `v1.0.0`、git SHA、`latest` tag も使います。Docker Hub secrets が未設定だったため、Docker Hub image はまだ public ではありません。
+- Docker publish workflow は `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` と `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0` の public GHCR manifest を公開済みです。release build では `v1.0.0`、git SHA、`latest` tag も使います。Docker Hub の `nguyenson1710/cashflow-manager-api:latest` と `nguyenson1710/cashflow-manager-frontend:latest` manifest も検証済みです。
 - GitHub About の homepage は、実際の公開 release/download ページができるまで空欄にします。
 ## プライバシー
 

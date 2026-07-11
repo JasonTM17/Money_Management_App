@@ -1,7 +1,7 @@
 # Repository Health Audit
 
 Date: 2026-07-04
-Last rechecked: 2026-07-09
+Last rechecked: 2026-07-11
 
 Scope: unmerged remote branches, open Dependabot pull requests, dependency refresh state, GitHub About/sidebar metadata, package visibility, and release presentation.
 
@@ -10,14 +10,14 @@ Scope: unmerged remote branches, open Dependabot pull requests, dependency refre
 | Area | Status | Evidence |
 |---|---|---|
 | Default branch | `master` | Local branch tracks `origin/master` |
-| Visibility | Private | `gh repo view ... --json isPrivate` returned `true` |
+| Visibility | Public | `gh repo view ... --json visibility` returned public visibility |
 | GitHub About | Synced | Description updated, homepage kept empty, `security` topic added |
 | Open unmerged Dependabot branches | 0 after cleanup | `git fetch --all --prune --tags` then `git branch -r --no-merged origin/master` returned no stale refs |
 | Open Dependabot PRs | 0 after cleanup | `gh pr list --state open --json number,title,headRefName --limit 50` returned `[]` |
 | GitHub Actions latest push | Deferred by Actions quota/token | User confirmed GitHub Actions quota/token is exhausted; latest check-run annotation surfaces this as a billing/spending-limit block before job startup |
-| Package API access | Limited | GitHub package API returned 403 without `read:packages`; package sidebar cannot be edited directly with the current token |
+| Package API access | Verified | `gh api user/packages/container/...` and `gh api users/JasonTM17/packages/container/...` returned both API and frontend package records |
 | Docker Hub packages | Verified by manifest in this pass | `nguyenson1710/cashflow-manager-api:latest` and `nguyenson1710/cashflow-manager-frontend:latest` resolved |
-| GHCR packages | Verified by manifest in this pass | `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` and `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0` resolved; GitHub package API needs additional token scope |
+| GHCR packages | Verified by manifest and package API | `ghcr.io/jasontm17/cashflow-manager-api:1.0.0` and `ghcr.io/jasontm17/cashflow-manager-frontend:1.0.0` resolved; GitHub package API also returned both packages |
 
 The user mentioned 13 unmerged branches. After pruning stale refs on 2026-07-04, the authoritative pre-cleanup remote list was 12 unmerged Dependabot branches. Those 12 PRs were superseded by master commit `099dbbc`, closed with an audit comment, and their remote branches were deleted.
 
@@ -71,21 +71,21 @@ android, android-app, dart, docker, fastify, finance-app, flutter, flutter-app, 
 | `cashflow-manager-api` | GHCR | `1.0.0` | `sha256:ab89295de33dfacaf41b069d818b5aefd5eaaa98c236e6cfb3e9942eef608d58` |
 | `cashflow-manager-frontend` | GHCR | `1.0.0` | `sha256:af9a0012daf3d81966165dcbd7a031a3534a7ca07c0b849cf2c03e5dfe1c4318` |
 
-Verification commands used `docker manifest inspect` against Docker Hub and GHCR. Dockerfiles and publish metadata include `org.opencontainers.image.source=https://github.com/JasonTM17/Money_Management_App` plus title/description/url/documentation labels so the next package publish has the right repository link metadata. The repository package sidebar should show the API and frontend container packages after package visibility/source linking is available. If the package sidebar is blank for other viewers, check package visibility on GHCR/Docker Hub and rerun the Docker Publish workflow after GitHub Actions quota/token is restored and registry secrets are configured.
+Verification commands used `docker manifest inspect` against Docker Hub and GHCR, plus GitHub package API reads for both container packages. Dockerfiles and publish metadata include `org.opencontainers.image.source=https://github.com/JasonTM17/Money_Management_App` plus title/description/url/documentation labels so the next package publish refreshes repository link metadata. If the repository sidebar does not refresh immediately for other viewers, keep the direct package links below visible and rerun Docker Publish after GitHub Actions quota/token is restored.
 
-Direct package links are present in `README.md` so package access remains visible even when the GitHub repository sidebar cannot be audited through the current token:
+Direct package links are present in `README.md` so package access remains visible while the GitHub repository sidebar refreshes:
 
 - Docker Hub API: `https://hub.docker.com/r/nguyenson1710/cashflow-manager-api`
 - Docker Hub frontend: `https://hub.docker.com/r/nguyenson1710/cashflow-manager-frontend`
 - GHCR API: `https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-api`
 - GHCR frontend: `https://github.com/users/JasonTM17/packages/container/package/cashflow-manager-frontend`
 
-Additional audit, rechecked on 2026-07-09:
+Additional audit, rechecked on 2026-07-11:
 
-- `gh auth status` shows the active token has `repo`, `read:org`, and `gist` scopes, but not `read:packages`.
-- `gh api user/packages/container/cashflow-manager-api` and `gh api user/packages/container/cashflow-manager-frontend` return `403` with the required `read:packages` scope.
-- Direct GHCR package pages for both containers return HTTP 200, so the public package URLs are reachable even though package API/sidebar mutation is not available from this token.
-- GitHub GraphQL repository package introspection does not expose container packages through the available `PackageType` enum in this session.
+- `gh auth status` shows the active token includes package write access alongside repository access.
+- `gh api user/packages/container/cashflow-manager-api` and `gh api user/packages/container/cashflow-manager-frontend` both return package records.
+- `gh api users/JasonTM17/packages/container/cashflow-manager-api` and `gh api users/JasonTM17/packages/container/cashflow-manager-frontend` both return public package records.
+- Direct GHCR package links remain in `README.md` as stable entry points even if GitHub's sidebar cache lags behind package metadata.
 
 ## Documentation/Media State
 
@@ -113,8 +113,8 @@ Additional audit, rechecked on 2026-07-09:
 
 - Keep Dependabot open PR count at zero by either merging or superseding future dependency PRs promptly.
 - Restore GitHub Actions quota/token or account billing capacity, then rerun CI, Security, CodeQL SAST, and Docker Publish for the latest `master` commit.
-- Re-run GitHub package API verification with a token that has `read:packages` if UI-level package/sidebar auditing or direct package visibility changes are required.
+- After GitHub Actions quota/token is restored, rerun Docker Publish so OCI source/title/description metadata is republished for package sidebar refresh.
 
 ## Unresolved Questions
 
-- Should repository visibility remain private until Android real-device and macOS/iOS release blockers are cleared?
+- Should repository homepage stay empty, or should it point to the GitHub Release page until a dedicated product site exists?

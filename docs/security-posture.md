@@ -1,6 +1,7 @@
 # Security Posture
 
 Date: 2026-07-04
+Last rechecked: 2026-07-11
 
 Scope: Flutter mobile app, Fastify API, Docker Compose runtime, n8n automation workflow, GitHub Actions, public README media, and release/package metadata.
 
@@ -74,7 +75,7 @@ Current posture: no hardcoded production secrets found in local scans, API npm a
 | Full Trivy filesystem scan | Limited locally | Full Windows bind-mount scan stalled on generated/cache trees; targeted lockfile/config scans completed; CI remains the full-repo scanner once Actions quota/token is restored |
 | GitHub Dependabot alerts API | Not accessible | GitHub returned 403: Dependabot alerts disabled or token lacks required repository permission |
 | GitHub code scanning API | Not accessible | GitHub returned 403: code scanning not enabled or token lacks required scope |
-| GitHub package API | Not accessible | User/package API returned 403 without `read:packages`; package presence must be verified by UI or registry manifest commands |
+| GitHub package API | Pass | User and public package API reads returned both API/frontend container package records |
 
 ## Findings
 
@@ -85,7 +86,7 @@ No production secret, private key, API token, keystore, local database, or signi
 ### Medium
 
 1. GitHub security visibility is limited from the current token/session.
-   Impact: Dependabot/code scanning/package state cannot be fully audited through the GitHub API from this machine.
+   Impact: Dependabot alert and code scanning state cannot be fully audited through the GitHub API from this machine.
    Mitigation: enable Dependabot alerts/code scanning in repository settings, then rerun the API checks with an owner token that can read those surfaces.
 
 2. Full local Trivy filesystem scan is slow on Windows bind mounts.
@@ -113,5 +114,5 @@ Also verify the GitHub Actions security, CodeQL, CI, and Docker Publish runs are
 
 ## Unresolved Questions
 
-- Should the repository remain private until real-device Android and macOS/iOS gates pass, or should it become public earlier for portfolio/demo visibility?
-- Should GitHub Advanced Security/code scanning be enabled for this private repository, or should the project rely on workflow-based CodeQL/SARIF artifacts only?
+- Should the repository homepage stay empty, or should it point to the GitHub Release page until a dedicated product site exists?
+- Should GitHub code scanning be enabled in repository settings, or should the project rely on workflow-based CodeQL/SARIF artifacts only?
