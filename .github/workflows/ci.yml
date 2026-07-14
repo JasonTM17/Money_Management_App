@@ -40,6 +40,9 @@ jobs:
   android-emulator-smoke:
     name: Android emulator integration smoke
     runs-on: ubuntu-latest
+    # Keep this advisory lane bounded: a hung device test must not cancel the
+    # entire CI workflow after GitHub's six-hour runner limit.
+    timeout-minutes: 50
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -66,7 +69,8 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -netdelay none -netspeed full
           script: |
             adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed) ]]; do sleep 5; done'
-            flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded --timeout 10m
+            timeout --signal=TERM --kill-after=30s 20m \
+              flutter test --no-pub integration_test/cashflow_smoke_test.dart -d emulator-5554 -r expanded --timeout 10m
 
   ios:
     name: iOS simulator smoke and no-codesign build
