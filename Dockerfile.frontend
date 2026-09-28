@@ -7,7 +7,7 @@ RUN flutter pub get
 COPY . .
 RUN flutter build apk --release
 
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.29-alpine AS runtime
 ARG REVISION=local
 LABEL org.opencontainers.image.title="CashFlow Manager Frontend Artifact Server"
 LABEL org.opencontainers.image.description="Nginx container that serves the CashFlow Manager Android APK artifact."
